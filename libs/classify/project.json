@@ -1,0 +1,26 @@
+{
+  "name": "classify",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/classify/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/libs/classify",
+        "main": "libs/classify/src/index.ts",
+        "tsConfig": "libs/classify/tsconfig.lib.json",
+        "assets": [
+          "libs/classify/*.md"
+        ]
+      }
+    }
+  },
+  "tags": [
+    "type:lib",
+    "platform:agnostic"
+  ]
+}

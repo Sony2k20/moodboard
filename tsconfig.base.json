@@ -1,0 +1,42 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2022",
+    "module": "esnext",
+    "lib": [
+      "es2022",
+      "dom"
+    ],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "paths": {
+      "@moodboard/shared": [
+        "./libs/shared/src/index.ts"
+      ],
+      "@moodboard/classify": [
+        "./libs/classify/src/index.ts"
+      ],
+      "@moodboard/db": [
+        "./libs/db/src/index.ts"
+      ],
+      "@moodboard/storage": [
+        "./libs/storage/src/index.ts"
+      ]
+    },
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
+}

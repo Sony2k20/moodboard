@@ -10,9 +10,11 @@ design references straight into development — instead of "looks good", an answ
 
 ## Status
 
-**Concept phase.** No application code yet. The full concept lives in
-[`docs/concept.md`](./docs/concept.md) — data model, facet vocabulary, classification pipeline,
-deployment architecture and the phased plan.
+**Phase 1 in progress.** The workspace, the data model and the facet vocabulary are in place
+(see [`docs/features/0001-foundation-data-model.md`](./docs/features/0001-foundation-data-model.md));
+deployment, authentication, the job pipeline, website capture, the UI and the MCP server are
+still to come. The full concept lives in [`docs/concept.md`](./docs/concept.md) — data model,
+facet vocabulary, classification pipeline, deployment architecture and the phased plan.
 
 ## Core idea
 
@@ -69,4 +71,41 @@ See [`docs/concept.md`](./docs/concept.md) §13.
 
 ## Development
 
-To follow, along with the project scaffolding.
+Requires Node 24 and npm 11. Postgres is an external dependency, operated by CloudNativePG in
+the cluster, and is reached locally through a port-forward rather than a local instance (concept
+§4.9) — the connection details belong in `.env`, see [`.env.example`](./.env.example). Valkey
+becomes relevant with the job pipeline; nothing here depends on it yet.
+
+```bash
+npm install
+
+npx nx run-many -t lint,test,build    # all projects
+npx nx serve api                      # NestJS API
+npx nx serve worker                   # BullMQ consumer
+npx nx serve web                      # Angular frontend
+
+npm run db:generate                   # diff the schema into a new migration
+npm run db:migrate                    # apply migrations (also the ArgoCD PreSync job, §4.11)
+npm run db:seed                       # seed the facet vocabulary, idempotent
+```
+
+`npm run db:migrate` and `npm run db:seed` need a reachable database. They read `DATABASE_URL`,
+or the key names CloudNativePG puts in its application secret (`uri`, or `host` / `port` /
+`dbname` / `username` / `password`), so in the cluster the secret can be mounted as-is with no
+key-by-key mapping.
+
+### Layout
+
+```
+apps/api        NestJS    REST API, auth, search, MCP endpoint
+apps/worker     NestJS    BullMQ consumer: thumbnails, capture, classification
+apps/web        Angular   Signals, standalone components
+libs/shared     —         Facet vocabulary, Zod schemas, the StorageService port
+libs/db         —         Drizzle schema, migrations, vocabulary seed
+libs/storage    —         HostPath adapter for the StorageService port
+libs/classify   —         Classification port; provider adapters
+```
+
+`libs/shared` is imported by the Angular bundle, so it carries no Node dependency. That is
+enforced by the `platform:` tags and the module-boundary rule in `eslint.config.mjs`, not by
+discipline.
