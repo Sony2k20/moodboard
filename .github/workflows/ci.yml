@@ -69,10 +69,28 @@ jobs:
       - name: Renders with the defaults
         run: helm template moodboard deploy/chart > /dev/null
 
-      - name: Renders both ingress variants and without Valkey
+      - name: Renders the Ingress variant and an external Valkey
         run: |
           helm template moodboard deploy/chart --set ingress.kind=Ingress > /dev/null
-          helm template moodboard deploy/chart --set valkey.deploy=false > /dev/null
+          helm template moodboard deploy/chart \
+            --set valkey.deploy=false --set valkey.host=valkey.example.com > /dev/null
+
+      - name: Refuses an external Valkey without a host
+        # valkey.host is `required` when the chart does not deploy one: without it the workers
+        # would start and queue into nothing, which looks like a stuck pipeline rather than a
+        # missing value.
+        run: |
+          if helm template moodboard deploy/chart --set valkey.deploy=false > /dev/null 2>&1; then
+            echo "::error::The chart rendered without a Valkey host. valkey.host must stay required."
+            exit 1
+          fi
+
+      - name: Refuses an unknown ingress kind
+        run: |
+          if helm template moodboard deploy/chart --set ingress.kind=Nope > /dev/null 2>&1; then
+            echo "::error::The chart rendered an unknown ingress.kind instead of failing."
+            exit 1
+          fi
 
       - name: The migration job is a PreSync hook
         # Getting this wrong means the new version starts against the old schema, which shows up
