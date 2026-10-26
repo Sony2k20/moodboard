@@ -1,7 +1,7 @@
-# Abhängigkeiten
+# Dependencies
 node_modules/
 
-# Build-Artefakte
+# Build output
 dist/
 tmp/
 out-tsc/
@@ -14,14 +14,14 @@ out-tsc/
 .nx/self-healing
 .nx/migrate-runs
 
-# Secrets und lokale Konfiguration
+# Secrets and local configuration
 .env
 .env.*
 !.env.example
 *.pem
 *.key
 
-# Laufzeit-Artefakte (Capture, Uploads, Thumbnails)
+# Runtime artefacts (captures, uploads, thumbnails)
 /data/
 /assets/
 playwright-report/
@@ -29,7 +29,7 @@ test-results/
 *.webm
 *.mp4
 
-# Tests und Coverage
+# Tests and coverage
 coverage/
 
 # IDEs
@@ -40,7 +40,7 @@ coverage/
 !.vscode/launch.json
 *.swp
 
-# Betriebssystem
+# Operating system
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -54,7 +54,7 @@ logs/
 .claude/settings.local.json
 .claude/worktrees
 
-# Lokale Infrastruktur-Notizen — enthalten umgebungsspezifische Werte,
-# die bewusst nicht im öffentlichen Repository stehen
+# Local infrastructure notes — hold environment-specific values that
+# deliberately stay out of this public repository
 *.local.md
 *.local.yaml

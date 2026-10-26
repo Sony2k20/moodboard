@@ -1,102 +1,105 @@
-# Mood Board App — Konzept
+# Mood Board App — Concept
 
-> Stand: 2026-10-26 · Status: Entwurf zur Review
+> Last updated: 2026-10-26 · Status: draft for review
 
-## 1. Leitidee
+## 1. Core Idea
 
-Ein selbst gehostetes, team-weites **Design-Gedächtnis**. Kein Bildarchiv, sondern eine
-durchsuchbare, maschinenlesbare Referenz-Datenbank.
+A self-hosted, team-wide **design memory**. Not an image archive, but a searchable,
+machine-readable reference database.
 
-Entscheidend ist die Konsumenten-Reihenfolge:
+The order of consumers is what drives every decision below:
 
-1. **Claude Code / Claude Design** — der wichtigste Konsument. Holt strukturierte Referenzen,
-   um daraus Code und Designs zu bauen.
-2. **Menschen** — pflegen Inhalte ein, kuratieren und stöbern.
+1. **Claude Code / Claude Design** — the primary consumer. Pulls structured references to build
+   code and designs from.
+2. **Humans** — add content, curate and browse.
 
-Daraus folgt die wichtigste Architekturregel des Projekts:
+From this follows the most important architectural rule of the project:
 
-> **Die Qualität der strukturierten Metadaten ist das Produkt.** Das Frontend ist Zubehör.
-> Ein Bild mit dem Tag „schön" ist wertlos. Ein Bild mit
+> **The quality of the structured metadata *is* the product.** The frontend is an accessory.
+> An image tagged "nice" is worthless. An image carrying
 > `{pattern: hero, layout: split-left-text, motion: parallax-on-scroll, palette: [...], type_pairing: [...]}`
-> ist das, was die App wertvoll macht.
+> is what makes this application valuable.
 
-Jede Abwägung in diesem Dokument fällt zugunsten der Metadatenqualität.
+Every trade-off in this document resolves in favour of metadata quality.
 
-## 2. Entschiedener Rahmen
+## 2. Decided Scope
 
-| Thema | Entscheidung |
+| Topic | Decision |
 |---|---|
-| Hosting | Linux-Server mit k3s. Zielgröße: 16 GB verfügbarer RAM |
-| Deployment | **k3s** via **ArgoCD**, generisches Helm-Chart, **HostPath-Volumes** (§4.2) |
-| Ingress | **Traefik `IngressRoute`** als Standard, `Ingress` als Option (§4.4) |
-| Domain | per Chart-Value, z. B. `moodboard.example.com` |
-| Postgres | **Externe Abhängigkeit** — per Values angebunden, nicht im Chart enthalten (§4.3) |
-| IdP | **Externe Abhängigkeit** — Authentik per OIDC (§4.5) |
-| Queue | **Valkey** statt Redis (BSD-Lizenz), `deploy`-Flag im Chart |
-| Registry | **GHCR**, Build und Push über GitHub Actions (§4.8) |
-| Erreichbarkeit | Über Internet, via Cloudflare Tunnel (kein offener Port) |
-| Sichtbarkeit | **Alle Assets für alle Nutzer sichtbar**, nach Autor filterbar. Keine privaten Assets. |
-| Taxonomie | Kontrolliertes Facetten-Vokabular **+** freie Tags — Vokabular in §6 **freigegeben** |
-| Volumen | Einige hundert Assets pro Jahr |
-| Vorgehen | **Phasen** (§11). Phase 1: Übersicht + Klassifizierung + Website-Capture |
-| Embeddings | **Nicht in Phase 1** — Begründung in §7.6 |
-| Boards | **Phase 3.** Zweck: Übergabepaket an die KI (§5.4, §10.1) |
-| LLM | Claude als Default, Provider austauschbar |
+| Hosting | Linux server running k3s. Target: 16 GB of available RAM |
+| Deployment | **k3s** via **ArgoCD**, generic Helm chart, **HostPath volumes** (§4.2) |
+| Ingress | **Traefik `IngressRoute`** by default, `Ingress` as an option (§4.4) |
+| Domain | set via chart value, e.g. `moodboard.example.com` |
+| Postgres | **External dependency** — wired up via values, not bundled in the chart (§4.3) |
+| IdP | **External dependency** — Authentik via OIDC (§4.5) |
+| Queue | **Valkey** instead of Redis (BSD licence), `deploy` flag in the chart |
+| Registry | **GHCR**, built and pushed by GitHub Actions (§4.8) |
+| Reachability | Over the internet, via Cloudflare Tunnel (no open ports) |
+| Visibility | **All assets visible to all users**, filterable by author. No private assets. |
+| Taxonomy | Controlled facet vocabulary **plus** free-form tags — vocabulary in §6 is **approved** |
+| Volume | A few hundred assets per year |
+| Approach | **Phased** (§11). Phase 1: overview, classification and website capture |
+| Languages | UI in English (default) and German, switchable at runtime (§13) |
+| Embeddings | **Not in phase 1** — reasoning in §7.6 |
+| Boards | **Phase 3.** Purpose: the briefing package handed to the AI (§5.4, §10.1) |
+| LLM | Claude by default, provider replaceable |
 
-### Volumen-Konsequenz
+### What the Volume Implies
 
-Einige hundert Assets pro Jahr ist nach Datenbank-Maßstäben **nichts**. Das erlaubt bewusst
-einfache Entscheidungen, die bei Millionen Assets falsch wären:
+A few hundred assets per year is **nothing** by database standards. That permits deliberately
+simple decisions which would be wrong at a scale of millions:
 
-- Keine Sharding-, Caching- oder CDN-Komplexität.
-- Filter-Performance ist irrelevant. Das Schema wird nach **Korrektheit und Pflegbarkeit**
-  entworfen, nicht nach Query-Geschwindigkeit.
-- Semantische Suche ist verzichtbar (§7.6).
-- Pro Asset darf die Klassifizierung ruhig teuer sein (§7.4). Qualität vor Durchsatz.
-- Horizontale Skalierung ist kein Entwurfsziel. k3s wird hier als *Betriebsmodell* genutzt
-  (deklaratives Deployment, Secrets, Rollouts, Neustart-Verhalten), nicht als Skalierungswerkzeug.
+- No sharding, caching or CDN complexity.
+- Filter performance is irrelevant. The schema is designed for **correctness and
+  maintainability**, not query speed.
+- Semantic search is dispensable (§7.6).
+- Classification may be expensive per asset (§7.4). Quality over throughput.
+- Horizontal scaling is not a design goal. k3s is used here as an *operating model*
+  (declarative deployment, secrets, rollouts, restart behaviour), not as a scaling tool.
 
-### Was von Anfang an stehen muss
+### What Has to Be Right From the Start
 
-Die meisten Features sind **additiv** und jederzeit nachrüstbar — Boards etwa sind drei Tabellen
-mit Fremdschlüsseln auf `asset`. Nur drei Dinge sind es nicht und gehören deshalb in Phase 1,
-obwohl sie dort noch keinen sichtbaren Nutzen haben:
+Most features are **additive** and can be retrofitted at any time — boards, for instance, are
+three tables with foreign keys onto `asset`. Only four things cannot, which is why they belong
+in phase 1 even though they deliver no visible benefit there:
 
-| Was | Warum nicht nachrüstbar |
+| What | Why it cannot be retrofitted |
 |---|---|
-| `origin`-Spalte (`ai` / `human`) auf allen Metadaten | Wird sie später eingeführt, lässt sich für Bestandsdaten nicht mehr rekonstruieren, was ein Mensch korrigiert hat — die erste Reanalyse überschreibt dann alles (§5.6) |
-| `analysis_run` mit `prompt_version` | Ohne Protokoll von Anfang an ist später unbekannt, welches Asset mit welchem Modell und welcher Prompt-Version klassifiziert wurde. Gezielte Reanalyse wird damit unmöglich |
-| `StorageService`-Interface | Nachträglich eingezogen heißt: jeden Dateizugriff im Code anfassen |
+| `origin` column (`ai` / `human`) on all metadata | Introduced later, it becomes impossible to reconstruct for existing rows what a human corrected — and the first re-analysis then silently overwrites all of it (§5.6) |
+| `analysis_run` with `prompt_version` | Without a record from day one, there is no way to know later which asset was classified by which model and prompt version. Targeted re-analysis becomes impossible |
+| `jsonb` labels on the vocabulary | Built as a single text column and split later, this means a migration that moves data (§13) |
+| The `StorageService` interface | Retrofitting it means touching every file access in the codebase |
 
-Alles andere darf warten.
+Everything else can wait.
 
-## 3. Technologie-Stack
+## 3. Technology Stack
 
 ```
-Nx-Monorepo
-├── apps/api        NestJS    REST-API, Auth (OIDC/BFF), Suche, MCP-Endpoint
-├── apps/worker     NestJS    BullMQ-Consumer: Thumbnails, Capture, Klassifizierung
-├── apps/web        Angular   Signals, Standalone Components, Tailwind
-├── libs/shared     —         Zod-Schemas, Facetten-Vokabular, DTOs (von allen geteilt)
-├── libs/classify   —         Provider-Interface + Adapter (Anthropic, später weitere)
-└── deploy/chart    —         Helm-Chart für k3s
+Nx monorepo
+├── apps/api        NestJS    REST API, auth (OIDC/BFF), search, MCP endpoint
+├── apps/worker     NestJS    BullMQ consumer: thumbnails, capture, classification
+├── apps/web        Angular   Signals, standalone components, Tailwind, Transloco
+├── libs/shared     —         Zod schemas, facet vocabulary, DTOs (shared by all)
+├── libs/classify   —         Provider interface + adapters (Anthropic, others later)
+└── deploy/chart    —         Helm chart for k3s
 ```
 
-| Baustein | Wahl | Begründung |
+| Component | Choice | Reasoning |
 |---|---|---|
-| Monorepo | Nx | Erstklassige Angular+Nest-Integration; `libs/shared` erlaubt **ein** Zod-Schema für Backend-Validierung, Frontend-Formulare und LLM-Structured-Output. Eine Taxonomie-Änderung bricht dann zur Compile-Zeit auf, nicht zur Laufzeit. |
-| Backend | NestJS | Das Backend ist der Hauptteil: Queues, langlaufende Capture- und Analyse-Jobs, MCP-Server. `@nestjs/bullmq` deckt das direkt ab. |
-| Frontend | Angular + Tailwind | Vorhandene Expertise. Tailwind statt Material/PrimeNG, weil eine Bildgalerie eigenes Layout braucht und Komponentenbibliotheken hier mehr im Weg stehen als helfen. |
-| ORM | **Drizzle** | SQL-Nähe für die kombinierten Facetten-Abfragen. Prisma und TypeORM sind bei handgeschriebenem SQL und pgvector (später) beide schwächer. |
-| DB | PostgreSQL (extern) | Volltext per `tsvector`. pgvector wird erst ab Phase 4 gebraucht (§7.6) |
-| Queue | **Valkey** + BullMQ | Valkey ist der BSD-lizenzierte Fork unter der Linux Foundation, nachdem Redis 2024 auf RSALv2/SSPL gewechselt ist. Protokollkompatibel zu Redis 7.2 — BullMQ spricht über ioredis mit Lua-Skripten, die unverändert laufen. |
-| Bilder | sharp | Thumbnails, Farbextraktion, Normalisierung. |
-| Capture | Playwright + ffmpeg | Screenshot, Scroll-Video, Keyframes, DOM/CSS-Extraktion (§8) |
-| MCP | `@modelcontextprotocol/sdk` | Streamable-HTTP-Transport, als NestJS-Controller gemountet. |
-| Auth | Authentik (OIDC) | Extern angebunden. OIDC in der App statt Traefik-ForwardAuth, weil die Identität als Datensatz gebraucht wird (§4.5) |
-| Deployment | Helm-Chart, Sync über **ArgoCD** | Generische Defaults im Repo, Umgebungswerte in der ArgoCD Application (§4.3) |
+| Monorepo | Nx | First-class Angular + Nest integration; `libs/shared` allows **one** Zod schema to serve backend validation, frontend forms and LLM structured output. A taxonomy change then breaks at compile time, not at runtime. |
+| Backend | NestJS | The backend is the bulk of this system: queues, long-running capture and analysis jobs, MCP server. `@nestjs/bullmq` covers that directly. |
+| Frontend | Angular + Tailwind | Existing expertise. Tailwind rather than Material/PrimeNG because an image gallery needs custom layout, where component libraries get in the way more than they help. |
+| i18n | **Transloco** | Runtime language switching, which Angular's built-in i18n cannot do (§13) |
+| ORM | **Drizzle** | Close to SQL for the combined facet queries. Prisma and TypeORM are both weaker at hand-written SQL and at pgvector (needed later). |
+| DB | PostgreSQL (external) | Full-text search via `tsvector`. pgvector is only needed from phase 4 onwards (§7.6) |
+| Queue | **Valkey** + BullMQ | Valkey is the BSD-licensed fork under the Linux Foundation, created after Redis moved to RSALv2/SSPL in 2024. Wire-compatible with Redis 7.2 — BullMQ talks to it through ioredis with Lua scripts that run unchanged. |
+| Images | sharp | Thumbnails, colour extraction, normalisation. |
+| Capture | Playwright + ffmpeg | Screenshot, scroll video, keyframes, DOM/CSS extraction (§8) |
+| MCP | `@modelcontextprotocol/sdk` | Streamable HTTP transport, mounted as a NestJS controller. |
+| Auth | Authentik (OIDC) | External. OIDC inside the application rather than Traefik ForwardAuth, because identity is needed as a record (§4.5) |
+| Deployment | Helm chart, synced by **ArgoCD** | Generic defaults in the repo, environment values in the ArgoCD Application (§4.3) |
 
-## 4. Deployment-Architektur (k3s)
+## 4. Deployment Architecture (k3s)
 
 ```
                          Internet
@@ -104,7 +107,7 @@ Nx-Monorepo
                    Cloudflare Tunnel
                             │
                    ┌────────▼─────────┐
-                   │   cloudflared    │  Deployment, keine offenen Ports
+                   │   cloudflared    │  Deployment, no open ports
                    └────────┬─────────┘
                             │
                    ┌────────▼─────────┐
@@ -114,17 +117,17 @@ Nx-Monorepo
                    └────────┬─────────┘
                             │
                      ┌──────▼──────┐
-                     │     web     │  nginx, statisches Angular-Bundle
+                     │     web     │  nginx, static Angular bundle
                      └──────┬──────┘
                             │
                      ┌──────▼──────┐          ┌─ ─ ─ ─ ─ ─ ─ ─ ┐
                      │     api     │◄────────►│   authentik    │
-                     │ REST + MCP  │  OIDC    │    (extern)    │
+                     │ REST + MCP  │  OIDC    │   (external)   │
                      └──┬───────┬──┘          └─ ─ ─ ─ ─ ─ ─ ─ ┘
                         │       │
           ┌─ ─ ─ ─ ─ ─ ─▼─┐  ┌──▼────────┐
           │   postgres    │  │  valkey   │
-          │   (extern)    │  │  (queue)  │
+          │  (external)   │  │  (queue)  │
           │               │  └──▲────────┘
           └─ ─ ─ ─ ─ ─ ▲─ ┘     │
                        │        │
@@ -138,79 +141,78 @@ Nx-Monorepo
                       │ /srv/moodboard/…    │
                       └─────────────────────┘
 
-   ┌─ ─ ┐  gestrichelt = externe Dienste, per Values angebunden
+   ┌─ ─ ┐  dashed = external services, wired up via values
 ```
 
-### 4.1 Was k3s gegenüber Docker Compose ändert
+### 4.1 What k3s Changes Compared to Docker Compose
 
-| Compose-Annahme | k3s-Realität |
+| Compose assumption | k3s reality |
 |---|---|
-| Caddy als Reverse Proxy | **Traefik `IngressRoute`** (§4.4) |
-| Bind-Mount `/data` | **HostPath-Volume** (§4.2) |
-| `.env`-Datei | **k8s Secrets**, per `existingSecret` in den Values referenziert |
-| `docker compose up` | **Helm-Release**, versioniert und über `helm rollback` rückrollbar |
+| Caddy as reverse proxy | **Traefik `IngressRoute`** (§4.4) |
+| Bind mount `/data` | **HostPath volume** (§4.2) |
+| `.env` file | **Kubernetes secrets**, referenced through `existingSecret` in the values |
+| `docker compose up` | **Helm release**, versioned and revertible via `helm rollback` |
 
 ### 4.2 Storage: HostPath
 
-Entscheidung: **HostPath**. Chart-Default: `/srv/moodboard/assets`, per Value überschreibbar.
+Decision: **HostPath**. Chart default `/srv/moodboard/assets`, overridable per value.
 
-Vorteile: kein Provisioner, kein PVC-Lebenszyklus, und die Dateien liegen offen im
-Node-Dateisystem — unmittelbar inspizierbar und mit vorhandenen Mitteln (rsync, Snapshots, Borg)
-backupfähig.
+Advantages: no provisioner, no PVC lifecycle, and the files sit in plain sight on the node's
+filesystem — directly inspectable and backed up with existing tooling (rsync, snapshots, Borg).
 
-**`nodeAffinity` für `api` und `worker` auf denselben Node.** Beide brauchen Zugriff auf
-dieselben Dateien: der Worker schreibt Thumbnails und Captures, die API liest sie aus. Bei einem
-Node ist das trivial — aber explizit, damit es bei einer späteren Cluster-Erweiterung nicht
-stillschweigend bricht, sondern der Pod sichtbar nicht mehr schedulebar ist.
+**`nodeAffinity` pinning `api` and `worker` to the same node.** Both need access to the same
+files: the worker writes thumbnails and captures, the API serves them. With a single node this
+is trivial — but stating it explicitly means that a later cluster expansion does not break
+things silently; instead the pod visibly fails to schedule.
 
-#### Dateirechte: UID 1000, nicht root
+#### File Ownership: UID 1000, Not Root
 
-Der Kernel prüft Rechte anhand **numerischer UID/GID**; Benutzernamen existieren im
-Container-Namespace unabhängig vom Host. Gehört das Verzeichnis `root:root` mit `755` und läuft
-der Container als UID 1000, scheitert jeder Schreibzugriff mit `EACCES`.
+The kernel checks permissions by **numeric UID/GID**; usernames inside the container namespace
+are unrelated to those on the host. If the directory is owned by `root:root` with `755` and the
+container runs as UID 1000, every write fails with `EACCES`.
 
-Das Fehlerbild ist heimtückisch: **Der Pod startet völlig sauber.** Beim Mounten werden keine
-Rechte geprüft — erst der erste Upload schlägt fehl, möglicherweise Tage später, und sieht dann
-wie ein Anwendungsfehler aus.
+The failure mode is insidious: **the pod starts up perfectly cleanly.** Mounting does not check
+permissions — only the first upload fails, possibly days later, and it then looks like an
+application bug.
 
-Der Fallstrick: **`fsGroup` im `securityContext` wirkt bei HostPath nicht.** Kubernetes übernimmt
-Ownership-Management nur für Volume-Typen, die es unterstützen; `hostPath` gehört nicht dazu. Die
-Einstellung wird akzeptiert und ignoriert.
+The pitfall: **`fsGroup` in `securityContext` has no effect on HostPath.** Kubernetes only
+performs ownership management for volume types that support it, and `hostPath` is not among
+them. The setting is accepted and ignored.
 
-**Warum nicht einfach als root laufen?** Technisch möglich und spart das `chown`. Dagegen spricht
-ein konkreter Grund, nicht allgemeine Hygiene: Der Worker lädt **per Design beliebige fremde
-Websites** in Chromium. Browser sind die am häufigsten angegriffene Software überhaupt, und in
-Containern läuft Chromium üblicherweise mit `--no-sandbox`, weil die browsereigene Sandbox
-Capabilities benötigt, die im Pod nicht verfügbar sind. Damit ist der Container die einzige
-verbleibende Isolationsschicht — und ein HostPath-Mount durchbricht sie an einer definierten
-Stelle. Root + HostPath + `--no-sandbox` + Code von fremden Servern ist die Kombination, bei der
-ein Browser-Exploit unmittelbar Schreibzugriff als root auf das Host-Dateisystem erhält.
+**Why not simply run as root?** Technically possible, and it saves the `chown`. What argues
+against it is specific, not general hygiene: the worker loads **arbitrary third-party websites**
+into Chromium by design. Browsers are the most heavily attacked software there is, and inside
+containers Chromium usually runs with `--no-sandbox`, because its own sandbox needs capabilities
+unavailable in the pod. That makes the container the only remaining isolation layer — and a
+HostPath mount punches through it at a defined point. Root plus HostPath plus `--no-sandbox`
+plus code from foreign servers is precisely the combination where a browser exploit gains
+immediate root write access to the host filesystem.
 
-Der Aufwand für die Alternative ist ein einmaliger Befehl:
+The alternative costs one command, once:
 
 ```bash
 sudo mkdir -p /srv/moodboard/assets
 sudo chown -R 1000:1000 /srv/moodboard
 ```
 
-dazu im Chart `runAsUser: 1000`, `runAsGroup: 1000` als Default. Wer andere HostPath-Dienste
-betreibt, überschreibt die UID passend per Value.
+plus `runAsUser: 1000` and `runAsGroup: 1000` as chart defaults. Anyone running other HostPath
+services overrides the UID accordingly via values.
 
-Der Umstieg auf S3/MinIO bleibt über das `StorageService`-Interface offen, falls später mehrere
-Nodes dazukommen — dann ist es ein Adapter-Tausch plus Datenmigration, kein Umbau.
+Moving to S3/MinIO stays open through the `StorageService` interface, should additional nodes
+appear later — that would be an adapter swap plus a data migration, not a redesign.
 
 Layout: `/srv/moodboard/assets/<asset-id>/original.<ext>`, `thumb-{sm,md,lg}.webp`,
 `capture.webm`, `poster.webp`, `frames/NN.webp`.
 
-### 4.3 Chart-Values und ArgoCD
+### 4.3 Chart Values and ArgoCD
 
-Das Chart liefert keine eigenen Postgres- oder Authentik-Instanzen, sondern erwartet sie als
-Konfiguration. Valkey ist optional mitgeliefert.
+The chart ships no Postgres or Authentik instances of its own; it expects them as configuration.
+Valkey is bundled optionally.
 
-Die `values.yaml` im Repository enthält ausschließlich **generische Defaults**. Die
-umgebungsspezifischen Werte — Domain, Issuer-URL, Secret-Namen, UID — werden beim Deployment
-über die **ArgoCD Application** überschrieben und liegen damit außerhalb dieses Repositorys.
-Eine `values.local.yaml` gibt es deshalb nicht.
+The `values.yaml` in this repository contains **generic defaults only**. Environment-specific
+values — domain, issuer URL, secret names, UID — are overridden at deployment time through the
+**ArgoCD Application** and therefore live outside this repository. There is deliberately no
+`values.local.yaml`.
 
 ```yaml
 image:
@@ -222,9 +224,9 @@ ingress:
   kind: IngressRoute                 # IngressRoute | Ingress
   host: moodboard.example.com
   entryPoints: [websecure]
-  middlewares: []                    # z. B. compress, security-headers
+  middlewares: []                    # e.g. compress, security-headers
   tls:
-    certResolver: ""                 # oder:
+    certResolver: ""                 # or:
     secretName: ""
 
 postgres:
@@ -236,8 +238,8 @@ oidc:
   existingSecret: moodboard-oidc     # clientSecret
 
 valkey:
-  deploy: true                       # false → externe Instanz nutzen
-  host: ""                           # nur bei deploy: false
+  deploy: true                       # false → use an external instance
+  host: ""                           # only when deploy: false
   port: 6379
 
 storage:
@@ -248,8 +250,12 @@ storage:
 llm:
   provider: anthropic
   model: claude-opus-5
-  existingSecret: moodboard-llm      # API-Key
+  existingSecret: moodboard-llm      # API key
   monthlyCostLimitUsd: 25
+
+i18n:
+  defaultLocale: en                  # en | de
+  availableLocales: [en, de]
 
 worker:
   concurrency: 2
@@ -259,292 +265,304 @@ worker:
     limits:   { memory: 2.5Gi, cpu: "2" }
 ```
 
-**Backup bleibt außerhalb der App.** Bei einem Gedächtnis-System ist Datenverlust der einzige
-unumkehrbare Fehler, deshalb einmal explizit: Die Datenbank läuft unter CloudNativePG, das
-Backups und Point-in-Time-Recovery kann — entscheidend ist, dass der **Restore einmal
-durchgespielt** wurde. Ein nie getesteter Restore-Pfad ist kein Backup. Für die Asset-Dateien auf
-dem HostPath gilt dasselbe; sie sind nicht aus der Datenbank rekonstruierbar.
+**Backups stay outside the application.** For a memory system, data loss is the one
+irreversible failure, so to state it explicitly: what matters is not that backups are
+configured but that a **restore has been rehearsed at least once**. An untested restore path is
+not a backup. The same applies to the asset files on the HostPath; they cannot be reconstructed
+from the database.
 
 ### 4.4 Ingress: IngressRoute
 
-`IngressRoute` ist der Standard im Zielcluster und damit Default im Chart; die generische
-`Ingress`-Variante bleibt per `ingress.kind` wählbar, damit das Chart nicht an Traefik gebunden
-ist.
+`IngressRoute` is the standard in the target cluster and therefore the chart default; the
+generic `Ingress` variant stays selectable via `ingress.kind` so the chart is not tied to
+Traefik.
 
-Praktischer Unterschied: `IngressRoute` erlaubt Middlewares und Router-Regeln als
-First-Class-Felder statt über Annotationen, was besonders bei TLS und Header-Manipulation
-übersichtlicher bleibt.
+The practical difference: `IngressRoute` exposes middlewares and router rules as first-class
+fields instead of annotations, which stays far more readable for TLS and header manipulation.
 
-### 4.5 Authentik: OIDC in der App, nicht ForwardAuth
+### 4.5 Authentik: OIDC in the Application, Not ForwardAuth
 
-Authentik wird **per OIDC in der Anwendung** angebunden (Authorization Code Flow mit PKCE,
-BFF-Pattern, HttpOnly-Cookie), nicht über die Traefik-ForwardAuth-Middleware.
+Authentik is wired up **via OIDC inside the application** (authorization code flow with PKCE,
+BFF pattern, HttpOnly cookie), not through the Traefik ForwardAuth middleware.
 
-Begründung: Die App braucht die Identität als **Datensatz**, nicht nur als Request-Header —
-`created_by` an jedem Asset, persönliche API-Tokens für den MCP-Zugriff, Audit-Log. Dazu kommt,
-dass MCP-Clients mit einem Bearer-Token statt einer Browser-Session kommen; eine
-ForwardAuth-Middleware davor würde sie abweisen.
+Reasoning: the application needs identity as a **record**, not merely as a request header —
+`created_by` on every asset, personal API tokens for MCP access, the audit log. On top of that,
+MCP clients arrive with a bearer token rather than a browser session; a ForwardAuth middleware
+in front would reject them.
 
-In Authentik werden dafür eine Application und ein OIDC-Provider `moodboard` mit den
-Redirect-URIs angelegt.
+An Application and an OIDC provider named `moodboard`, with the matching redirect URIs, are
+created in Authentik for this.
 
-### 4.6 Playwright in Kubernetes
+### 4.6 Playwright on Kubernetes
 
-Drei Punkte, die im Manifest stehen müssen, sonst scheitert Capture reproduzierbar:
+Three things must be in the manifest, or capture fails reproducibly:
 
-- **`/dev/shm` vergrößern.** Container liefern standardmäßig 64 MB; Chromium stürzt damit bei
-  größeren Seiten ab. Lösung: `emptyDir` mit `medium: Memory` und `sizeLimit: 1Gi` als
-  `/dev/shm` gemountet. Das ist der häufigste Grund für „läuft lokal, stirbt im Cluster".
-- **Resource Limits.** `requests: 512Mi`, `limits: 2.5Gi`. Ein OOM-Kill des Workers darf die
-  API nicht mitnehmen — deshalb getrennte Deployments.
-- **Nebenläufigkeit auf 2 begrenzt**, damit zwei parallele Video-Captures die Speicherspitze
-  nicht verdoppeln.
+- **Enlarge `/dev/shm`.** Containers default to 64 MB; Chromium crashes on larger pages with
+  that. Solution: an `emptyDir` with `medium: Memory` and `sizeLimit: 1Gi` mounted at
+  `/dev/shm`. This is the single most common cause of "works locally, dies in the cluster".
+- **Resource limits.** `requests: 512Mi`, `limits: 2.5Gi`. An OOM kill of the worker must not
+  take the API down with it — hence separate deployments.
+- **Concurrency capped at 2**, so two parallel video captures do not double the memory peak.
 
-### 4.7 Speicherbudget (16 GB verfügbar)
+### 4.7 Memory Budget (16 GB available)
 
-Postgres und Authentik sind externe Dienste und hier nicht mitgerechnet.
+Postgres and Authentik are external services and are not counted here.
 
-| Workload | Regelbetrieb | Spitze |
+| Workload | Steady state | Peak |
 |---|---|---|
 | valkey | 100 MB | 200 MB |
 | api | 400 MB | 700 MB |
-| web (nginx, statisch) | 50 MB | 50 MB |
-| worker (Chromium + ffmpeg) | 500 MB | **2,5 GB** |
+| web (nginx, static) | 50 MB | 50 MB |
+| worker (Chromium + ffmpeg) | 500 MB | **2.5 GB** |
 | cloudflared | 50 MB | 100 MB |
-| **Summe** | **~1,1 GB** | **~3,5 GB** |
+| **Total** | **~1.1 GB** | **~3.5 GB** |
 
-### 4.8 Build & Registry: GHCR über GitHub Actions
+### 4.8 Build and Registry: GHCR via GitHub Actions
 
-Drei Images: `api`, `worker`, `web`. Build und Push über GitHub Actions nach **GHCR**.
+Three images: `api`, `worker`, `web`. Built and pushed to **GHCR** by GitHub Actions.
 
-Gegen Docker Hub spricht hier ein handfestes Limit: Der Free-Tier erlaubt genau **ein privates
-Repository** — wir brauchen drei. GHCR hat unbegrenzt private Pakete, und in Actions reicht der
-automatisch bereitgestellte `GITHUB_TOKEN` zum Pushen, also kein zusätzliches Secret und kein
-Rotationsthema. Dazu entfallen die Docker-Hub-Pull-Limits, die bei Image-Pulls im Cluster
-gelegentlich zuschlagen.
+A concrete limit rules out Docker Hub here: its free tier allows exactly **one private
+repository** — we need three. GHCR has unlimited private packages, and inside Actions the
+automatically provided `GITHUB_TOKEN` is enough to push, so there is no extra secret and no
+rotation concern. It also avoids the Docker Hub pull limits that occasionally bite on image
+pulls in the cluster.
 
-Tagging: `sha-<commit>` für jeden Build, dazu `v<semver>` bei Releases. Der eigentliche Gewinn
-ist der Rollback — `helm rollback` auf das vorige Image-Tag ist eine Sache von Sekunden.
+Tagging: `sha-<commit>` for every build, plus `v<semver>` on releases. The real gain is
+rollback — `helm rollback` to the previous image tag is a matter of seconds.
 
-Im Cluster ein `imagePullSecret` (`ghcr-pull`) mit einem Read-only-PAT, sofern die Packages
-privat bleiben.
+In the cluster, an `imagePullSecret` (`ghcr-pull`) holding a read-only PAT, as long as the
+packages stay private.
 
-### 4.9 Lokale Entwicklung
+### 4.9 Local Development
 
-Kein k3s auf dem Entwicklungsrechner. Statt Dev- und Prod-Manifeste doppelt zu pflegen:
+No k3s on the development machine. Rather than maintaining dev and prod manifests in parallel:
 
-- `api`, `worker`, `web` laufen über `nx serve` direkt auf dem Host: schnelles HMR, normales
-  Debugging, kein Image-Build pro Änderung.
-- Postgres und Valkey als Abhängigkeiten — per Docker Compose lokal oder per SSH-Tunnel gegen
-  eine bestehende Instanz.
-- Das Helm-Chart ist allein Deployment-Artefakt und wird in CI gegen `helm template` validiert.
+- `api`, `worker` and `web` run through `nx serve` directly on the host: fast HMR, ordinary
+  debugging, no image build per change.
+- Postgres and Valkey as dependencies — either via Docker Compose locally or through an SSH
+  tunnel to an existing instance.
+- The Helm chart is purely a deployment artefact and is validated in CI with `helm template`.
 
-### 4.10 Betriebsrisiko: IdP als Single Point of Failure
+### 4.10 Operational Risk: the IdP as a Single Point of Failure
 
-Authentik muss aus dem Internet erreichbar sein (der OIDC-Redirect läuft über den Browser des
-Nutzers) und ist damit kritischer Pfad. Fällt Authentik aus, kommt **niemand** mehr in die App,
-auch nicht der Admin.
+Authentik has to be reachable from the internet (the OIDC redirect goes through the user's
+browser) and is therefore on the critical path. If Authentik is down, **nobody** gets into the
+application — not even the admin.
 
-**Gegenmaßnahme:** ein lokaler Notfall-Admin-Zugang, der nicht über SSO läuft — Login nur aus dem
-LAN, separat gehashtes Passwort, per Konfigurationsflag abschaltbar, jede Nutzung im Audit-Log.
+**Mitigation:** a local emergency admin account that does not go through SSO — login restricted
+to the LAN, separately hashed password, disableable by configuration flag, every use recorded in
+the audit log.
 
-### 4.11 Datenbank-Migrationen unter GitOps
+### 4.11 Database Migrations Under GitOps
 
-Mit ArgoCD läuft kein `helm upgrade` von Hand, also brauchen Drizzle-Migrationen einen
-definierten Platz im Sync-Ablauf. Sonst startet die neue Anwendungsversion gegen ein altes
-Schema — ein Fehler, der sich als scheinbar zufälliger Laufzeitfehler äußert.
+With ArgoCD there is no manual `helm upgrade`, so Drizzle migrations need a defined place in the
+sync sequence. Otherwise the new application version starts against an old schema — a fault that
+surfaces as seemingly random runtime errors.
 
-Lösung: ein Migrations-`Job` mit `argocd.argoproj.io/hook: PreSync`. ArgoCD führt ihn vor dem
-eigentlichen Rollout aus und bricht den Sync ab, wenn er fehlschlägt. Helm-eigene
-`pre-upgrade`-Hooks sind hier das falsche Werkzeug, weil ArgoCD das Chart nur rendert und die
-Hook-Semantik von Helm nicht anwendet.
+Solution: a migration `Job` annotated `argocd.argoproj.io/hook: PreSync`. ArgoCD runs it before
+the actual rollout and aborts the sync if it fails. Helm's own `pre-upgrade` hooks are the wrong
+tool here, because ArgoCD only renders the chart and does not apply Helm's hook semantics.
 
-Daraus folgt eine Regel für alle Migrationen: Sie müssen **vorwärtskompatibel** sein. Zwischen
-PreSync-Job und fertigem Rollout läuft für kurze Zeit die alte Anwendungsversion gegen das neue
-Schema. Spalten werden also erst hinzugefügt und später in einem getrennten Release entfernt,
-nie beides in einem Schritt.
+From this follows a rule for every migration: it must be **forward compatible**. Between the
+PreSync job and the completed rollout, the old application version briefly runs against the new
+schema. Columns are therefore added first and removed later in a separate release, never both in
+one step.
 
-## 5. Datenmodell
+## 5. Data Model
 
-Phase-1-Umfang ist §5.1 bis §5.3 und §5.5. Boards (§5.4) kommen in Phase 3.
+Phase 1 covers §5.1 to §5.3 and §5.5. Boards (§5.4) arrive in phase 3.
 
-### 5.1 Kern
+### 5.1 Core
 
 ```
-user                 id, sub (OIDC), email, display_name, role (admin|member), created_at
+user                 id, sub (OIDC), email, display_name, role (admin|member),
+                     locale (en|de) default 'en',      -- UI language, see §13
+                     created_at
 asset                id, type, title, description, created_by, created_at, updated_at,
                      source_url, license, status (pending|ready|failed),
-                     deleted_at            -- Soft-Delete, 30-Tage-Papierkorb
+                     deleted_at            -- soft delete, 30-day trash
 asset_file           id, asset_id, kind (original|thumb_sm|...|capture|poster|frame),
                      path, mime, width, height, bytes, duration_ms
 ```
 
-### 5.2 Taxonomie
+### 5.2 Taxonomy
 
-Kontrolliertes Vokabular **normalisiert** (nicht als JSONB), damit Referenzintegrität gilt und
-ein Wert global umbenennbar ist, ohne alle Assets anzufassen:
+The controlled vocabulary is **normalised** (not JSONB rows), so referential integrity holds and
+a value can be renamed globally without touching any asset:
 
 ```
-facet                id, key, label, description, is_multi_value
-facet_value          id, facet_id, value, label, description, sort_order
+facet                id, key, is_multi_value,
+                     label jsonb,              -- {"en": "...", "de": "..."}  see §13
+                     description jsonb
+facet_value          id, facet_id, value, sort_order,
+                     label jsonb,              -- {"en": "Calm", "de": "Ruhig"}
+                     description jsonb
 asset_facet_value    asset_id, facet_value_id,
-                     origin (ai|human),        -- wer hat es gesetzt
-                     confidence,               -- nur bei origin=ai
+                     origin (ai|human),        -- who set it
+                     confidence,               -- only when origin=ai
                      set_by, set_at
-tag                  id, name, created_by      -- freie Tags, flach
+tag                  id, name, created_by      -- free-form tags, flat
 asset_tag            asset_id, tag_id, origin, set_by, set_at
 ```
 
-### 5.3 Farbe, Suche & Capture-Technik
+Note the split: `facet_value.value` is the machine-readable key and stays English and
+single-language; only `label` and `description` are translated (§13).
+
+### 5.3 Colour, Search and Capture Technique
 
 ```
 asset_color          asset_id, hex, lab_l, lab_a, lab_b, ratio, position
-                     -- Lab-Werte, damit Farbnähe perzeptuell statt im RGB-Raum gesucht wird
-asset_search         asset_id, tsv tsvector    -- Volltext, generated column
+                     -- Lab values, so colour proximity is perceptual rather than RGB-based
+asset_search         asset_id, tsv tsvector
+                     -- generated column, to_tsvector('english', title || description); see §13
 capture_tech         asset_id, fonts jsonb, css_properties jsonb,
                      libraries jsonb, viewport, captured_at
-                     -- Ergebnis der Technik-Extraktion aus §8
+                     -- result of the technique extraction from §8
 asset_embedding      asset_id, model, dim, embedding vector(N), created_at
-                     -- erst ab Phase 4 (§7.6), hier nur zur Vollständigkeit
+                     -- phase 4 only (§7.6), listed here for completeness
 ```
 
-### 5.4 Boards — das Übergabepaket an die KI (Phase 3)
+### 5.4 Boards — the Briefing Package for the AI (Phase 3)
 
-Zwei Dinge, die leicht verschmelzen, sind hier bewusst getrennt:
+Two things that blur together easily are kept deliberately separate here:
 
-- **Facetten/Tags** beschreiben, *was ein Asset ist*. Automatisch vergebbar, kontextunabhängig.
-- Ein **Board** ist eine *kuratierte Kombination für einen Zweck* — und laut Anforderung
-  ausdrücklich das **Paket, das der KI zur Bearbeitung übergeben wird**.
+- **Facets and tags** describe *what an asset is*. Assignable automatically,
+  context-independent.
+- A **board** is a *curated combination for a purpose* — and, per the requirement, explicitly
+  the **package handed to the AI to work from**.
 
-Das macht das Board zur wichtigsten Datenstruktur für den Hauptkonsumenten und verlangt mehr als
-eine Asset-Liste:
+That makes the board the most important data structure for the primary consumer, and it demands
+more than a list of assets:
 
 ```
 board            id, title, briefing, kind (manual|smart), created_by, created_at
-                 -- briefing: Freitext. Was soll daraus entstehen?
+                 -- briefing: free text. What should come out of this?
 board_item       board_id, asset_id, position,
                  role,     -- color | layout | typography | motion | imagery | copy | overall
                  weight,   -- primary | secondary | avoid
-                 note      -- "nur die Animation, nicht die Farben"
-board_filter     board_id, filter_json        -- nur kind=smart
+                 note      -- "the animation only, not the colours"
+board_filter     board_id, filter_json        -- kind=smart only
 ```
 
-**Warum `role` das entscheidende Feld ist:** Bekommt ein Modell sieben Bilder ohne Rollen, muss
-es raten, welcher Aspekt jedes Bildes gemeint ist — und produziert Mischmasch aus sieben
-Richtungen. Mit `role` ist die Aussage eindeutig: *dieses* Asset liefert die Palette, *jenes*
-das Layout, *dieses* nur die Bewegung. Dasselbe Asset kann in zwei Boards verschiedene Rollen
-haben.
+**Why `role` is the decisive field:** hand a model seven images without roles and it has to
+guess which aspect of each one is meant — producing a mash-up of seven directions. With `role`
+the statement is unambiguous: *this* asset supplies the palette, *that* one the layout, *this*
+one only the motion. The same asset can hold different roles in two different boards.
 
-**Warum `weight: avoid` existiert:** Negativbeispiele sind in Design-Briefings oft präziser als
-Positivbeispiele. „So ausdrücklich *nicht*" schließt einen ganzen Lösungsraum aus, den sonst
-niemand ausschließt.
+**Why `weight: avoid` exists:** in design briefs, counter-examples are often more precise than
+positive ones. "Explicitly *not* like this" rules out an entire region of the solution space
+that nothing else rules out.
 
-Diese drei Tabellen sind rein additiv — Fremdschlüssel auf `asset`, sonst nichts. Sie in Phase 1
-anzulegen hätte keinen Vorteil.
+These three tables are purely additive — foreign keys onto `asset`, nothing more. Creating them
+in phase 1 would gain nothing.
 
-### 5.5 Nachvollziehbarkeit
+### 5.5 Traceability
 
 ```
 analysis_run         id, asset_id, provider, model, prompt_version,
                      input_tokens, output_tokens, cost_usd,
-                     raw_response jsonb,       -- rohe LLM-Antwort als Audit-Trail
+                     raw_response jsonb,       -- raw LLM response as an audit trail
                      status, error, created_at
 audit_log            id, user_id, action, entity, entity_id, diff jsonb, created_at
 ```
 
-`analysis_run` erfüllt drei Zwecke und gehört deshalb in Phase 1: Reproduzierbarkeit (welches
-Modell mit welcher Prompt-Version hat das erzeugt?), gezielte Reanalyse (alles unter
-`prompt_version < N` neu laufen lassen) und Kostentransparenz.
+`analysis_run` serves three purposes and therefore belongs in phase 1: reproducibility (which
+model, at which prompt version, produced this?), targeted re-analysis (re-run everything below
+`prompt_version < N`) and cost transparency.
 
-### 5.6 Die zentrale Invariante
+### 5.6 The Central Invariant
 
-> `origin = 'human'` gewinnt **immer** gegen `origin = 'ai'`.
+> `origin = 'human'` **always** wins over `origin = 'ai'`.
 
-Eine Reanalyse darf menschliche Korrekturen niemals überschreiben. Ohne diese Regel wird die
-mühsam korrigierte Datenqualität beim nächsten Taxonomie-Update stillschweigend vernichtet — der
-häufigste Weg, auf dem solche Systeme das Vertrauen ihrer Nutzer verlieren. Sie wird auf
-Datenbankebene durchgesetzt, nicht in der Anwendungslogik.
+A re-analysis must never overwrite human corrections. Without this rule, the painstakingly
+curated data quality is silently destroyed by the next taxonomy update — the most common way
+systems like this lose their users' trust. It is enforced at the database level, not in
+application logic.
 
-## 6. Facetten-Vokabular
+## 6. Facet Vocabulary
 
-**Freigegeben.** `is_multi_value` bedeutet: mehrere Werte pro Asset erlaubt.
+**Approved.** `is_multi_value` means multiple values per asset are allowed.
 
-| Facette | Multi | Werte (Startmenge) |
+| Facet | Multi | Values (initial set) |
 |---|---|---|
-| `type` | nein | image, component, font, palette, website |
-| `ui_pattern` | ja | hero, nav, footer, pricing, card, form, table, dashboard, onboarding, auth, empty-state, modal, sidebar, gallery, testimonial, cta, blog-post, product-detail |
-| `style` | ja | minimal, brutalist, neo-brutal, glassmorphism, editorial, swiss, retro, memphis, corporate, playful, luxury, tech, organic, maximalist |
-| `mood` | ja | ruhig, energetisch, luxuriös, verspielt, technisch, warm, kühl, ernst, freundlich, dramatisch |
-| `theme` | nein | light, dark, both |
-| `density` | nein | airy, balanced, dense |
-| `typography` | ja | serif, sans, mono, display, script, mixed, oversized, condensed |
-| `layout` | ja | centered, split, asymmetric, grid, full-bleed, sidebar, stacked, overlapping |
-| `motion` | ja | none, fade, slide, parallax, scroll-reveal, hover-transform, 3d, morphing, marquee, sticky-scroll, cursor-follow, video-bg |
-| `industry` | ja | saas, fashion, finance, food, health, education, agency, ecommerce, media, gaming, nonprofit, real-estate |
-| `project` | ja | *(frei, vom Admin pro Kunde/Projekt gepflegt)* |
+| `type` | no | image, component, font, palette, website |
+| `ui_pattern` | yes | hero, nav, footer, pricing, card, form, table, dashboard, onboarding, auth, empty-state, modal, sidebar, gallery, testimonial, cta, blog-post, product-detail |
+| `style` | yes | minimal, brutalist, neo-brutal, glassmorphism, editorial, swiss, retro, memphis, corporate, playful, luxury, tech, organic, maximalist |
+| `mood` | yes | calm, energetic, luxurious, playful, technical, warm, cool, serious, friendly, dramatic |
+| `theme` | no | light, dark, both |
+| `density` | no | airy, balanced, dense |
+| `typography` | yes | serif, sans, mono, display, script, mixed, oversized, condensed |
+| `layout` | yes | centered, split, asymmetric, grid, full-bleed, sidebar, stacked, overlapping |
+| `motion` | yes | none, fade, slide, parallax, scroll-reveal, hover-transform, 3d, morphing, marquee, sticky-scroll, cursor-follow, video-bg |
+| `industry` | yes | saas, fashion, finance, food, health, education, agency, ecommerce, media, gaming, nonprofit, real-estate |
+| `project` | yes | *(free-form, curated per client or project by an admin)* |
 
-Erweiterungen innerhalb einer Facette sind jederzeit billig. Eine **neue Facette** kostet
-Prompt-Platz und damit Genauigkeit bei den übrigen — und für Bestandsassets eine Reanalyse.
+Note that `playful` appears in both `style` and `mood`. This is intentional, not an oversight:
+in `style` it describes the visual language, in `mood` the effect on the viewer. An asset can be
+playful in effect without using a playful visual language, and vice versa. Do not "clean this
+up" as a duplicate.
 
-## 7. Klassifizierungs-Pipeline
+Extending an existing facet is cheap at any time. Adding a **new facet** costs prompt space, and
+therefore accuracy on the remaining ones — plus a re-analysis for all existing assets.
 
-### 7.1 Ablauf
+## 7. Classification Pipeline
+
+### 7.1 Flow
 
 ```
-Upload / Paste / URL / MCP
+upload / paste / URL / MCP
         │
         ▼
-  asset (status=pending)      ◄── sofortige Antwort an den Client
+  asset (status=pending)      ◄── immediate response to the client
         │
         ▼  BullMQ
   ┌──────────────────────────────┐
-  │ 1. normalize                │  EXIF strippen, Format prüfen, Maße lesen
-  │ 2. thumbnails               │  sharp → webp sm/md/lg
-  │ 3. colors                   │  Palette extrahieren → Lab
-  │ 4. capture      (nur URLs)  │  Screenshot, Scroll-Video, Keyframes, Technik  (§8)
-  │ 5. classify                 │  LLM-Vision → Facetten + Beschreibung + Tags
-  │ 6. index                    │  tsvector aktualisieren
+  │ 1. normalize                 │  strip EXIF, verify format, read dimensions
+  │ 2. thumbnails                │  sharp → webp sm/md/lg
+  │ 3. colors                    │  extract palette → Lab
+  │ 4. capture      (URLs only)  │  screenshot, scroll video, keyframes, tech (§8)
+  │ 5. classify                  │  LLM vision → facets + description + tags
+  │ 6. index                     │  update tsvector
   └──────────────────────────────┘
         │
         ▼
   asset (status=ready)
 ```
 
-Die Schritte sind getrennte Jobs mit eigenem Retry. Scheitert `classify` (API down,
-Rate-Limit), bleiben Thumbnails, Farben und Capture erhalten; das Asset ist nutzbar und wird
-nachklassifiziert. Ein Fehler in einem teuren Spätschritt macht nie die billigen Frühschritte
-zunichte.
+The steps are separate jobs with their own retry. If `classify` fails (API down, rate limit),
+thumbnails, colours and capture survive; the asset is usable and gets classified later. A
+failure in an expensive late step never destroys the cheap early ones.
 
-### 7.2 Provider-Austauschbarkeit — das Schema ist der Vertrag
+### 7.2 Provider Replaceability — the Schema Is the Contract
 
-Anforderung: Claude als Default, andere APIs später möglich.
+Requirement: Claude by default, other APIs possible later.
 
-**Nicht gewählt:** ein generischer Multi-Provider-Wrapper (Vercel AI SDK o. ä.) als
-Grundarchitektur. Der Preis wäre der kleinste gemeinsame Nenner — und verloren gingen genau die
-Features, die hier den Unterschied machen: garantiert schema-valides JSON, Batch-Verarbeitung zum
-halben Preis, Prompt-Caching.
+**Not chosen:** a generic multi-provider wrapper (Vercel AI SDK or similar) as the foundation.
+The price would be the lowest common denominator — and what would be lost is exactly the
+features that matter here: guaranteed schema-valid JSON, batch processing at half price, prompt
+caching.
 
-**Gewählt:** Abstrahiert wird nicht die API, sondern das **Ergebnis**. Das Zod-Schema in
-`libs/shared` ist der Vertrag; jeder Adapter benutzt das **native SDK seines Providers** und darf
-dessen Stärken voll ausspielen.
+**Chosen:** what gets abstracted is not the API but the **result**. The Zod schema in
+`libs/shared` is the contract; each adapter uses the **native SDK of its provider** and is free
+to exploit its strengths fully.
 
 ```typescript
-// libs/shared — der Vertrag. Einzige Quelle der Wahrheit für Facetten.
+// libs/shared — the contract. Single source of truth for facets.
 export const AnalysisResultSchema = z.object({
-  description: z.string().describe('2–4 Sätze, sachlich, für die Volltextsuche'),
+  description: z.string().describe('2-4 sentences, factual, English, for full-text search'),
   facets: z.object({
     ui_pattern: z.array(UiPatternEnum),
     style:      z.array(StyleEnum),
     theme:      ThemeEnum,
     motion:     z.array(MotionEnum),
-    // … aus dem Vokabular generiert
+    // … generated from the vocabulary
   }),
   free_tags:   z.array(z.string()).max(10),
   ocr_text:    z.string().nullable(),
   confidence:  z.number().min(0).max(1),
 });
 
-// libs/classify — das Port-Interface
+// libs/classify — the port interface
 export interface AssetClassifier {
   readonly providerId: string;
   readonly modelId: string;
@@ -552,317 +570,381 @@ export interface AssetClassifier {
 }
 ```
 
-`ClassifyInput` trägt ein oder mehrere Bilder (Screenshot, Keyframes) plus optionalen
-Textkontext (URL, Titel, extrahierte Capture-Technik). Die Provider-Wahl erfolgt per Chart-Value
-(`llm.provider`) über ein NestJS-DI-Token.
+`ClassifyInput` carries one or more images (screenshot, keyframes) plus optional textual context
+(URL, title, extracted capture technique). The provider is selected via chart value
+(`llm.provider`) through a NestJS DI token.
 
-Der Anthropic-Adapter nutzt `@anthropic-ai/sdk` mit `client.messages.parse()` und
-`zodOutputFormat(AnalysisResultSchema)` — das Ergebnis ist damit schema-validiert, ohne eigenen
-Parsing-Code. Adapter für Provider ohne echten Structured-Output-Modus validieren nach dem
-Aufruf gegen dasselbe Zod-Schema und werfen bei Verstoß; der Vertrag gilt für alle gleich.
+The Anthropic adapter uses `@anthropic-ai/sdk` with `client.messages.parse()` and
+`zodOutputFormat(AnalysisResultSchema)`, which makes the result schema-validated without any
+parsing code of our own. Adapters for providers without a real structured-output mode validate
+against the same Zod schema after the call and throw on violation; the contract is identical for
+all of them.
 
-### 7.3 Modellwahl
+### 7.3 Model Choice
 
-**Default: `claude-opus-5`** mit `output_config: { effort: 'low' }`.
+**Default: `claude-opus-5`** with `output_config: { effort: 'low' }`.
 
-- Niedriges Effort-Level, weil Klassifizierung zu den Aufgaben gehört, bei denen höherer
-  Denkaufwand die Qualität kaum verbessert — im Gegensatz zu Coding- oder Agenten-Aufgaben.
-- Zusätzlich aktiviert: serverseitige **Refusal-Fallbacks**
-  (`betas: ['server-side-fallback-2026-07-01']`, `fallbacks: 'default'`). Bei fremden
-  Screenshots kann ein Safety-Classifier gelegentlich ablehnen; ohne Fallback bliebe das Asset
-  unklassifiziert liegen. Mit Fallback läuft derselbe Request automatisch auf einem anderen
-  Modell weiter.
-- **Prompt-Caching** lohnt beim Einzel-Upload nicht (Cache-TTL 5 Minuten), wohl aber bei
-  Batch-Reanalyse — dort wird es gesetzt.
+- Low effort, because classification is one of those tasks where more deliberation barely
+  improves quality — unlike coding or agentic work.
+- Also enabled: server-side **refusal fallbacks**
+  (`betas: ['server-side-fallback-2026-07-01']`, `fallbacks: 'default'`). With third-party
+  screenshots a safety classifier may occasionally decline; without a fallback the asset would
+  simply stay unclassified. With it, the same request continues automatically on another model.
+- **Prompt caching** does not pay off for single uploads (5-minute cache TTL), but it does for
+  batch re-analysis, where it is enabled.
 
-### 7.4 Kosten
+### 7.4 Cost
 
-Annahme pro Bild-Asset: ~1.500 Input-Tokens Bild, ~2.000 Tokens System-Prompt mit Vokabular,
-~1.000 Output-Tokens.
+Assumption per image asset: ~1,500 input tokens for the image, ~2,000 tokens of system prompt
+including the vocabulary, ~1,000 output tokens.
 
-| | Input | Output | pro Asset |
+| | Input | Output | Per asset |
 |---|---|---|---|
-| Opus 5 ($5 / $25 pro MTok) | 3.500 → $0,018 | 1.000 → $0,025 | **~$0,04** |
-| Website-Capture, 8 Keyframes | ~14.000 → $0,070 | 1.000 → $0,025 | **~$0,10** |
+| Opus 5 ($5 / $25 per MTok) | 3,500 → $0.018 | 1,000 → $0.025 | **~$0.04** |
+| Website capture, 8 keyframes | ~14,000 → $0.070 | 1,000 → $0.025 | **~$0.10** |
 
-Bei 500 Assets im Jahr: **etwa 20–30 USD jährlich.** Kostenoptimierung über die Modellwahl wäre
-bei dieser Menge Mikromanagement an der falschen Stelle — die Metadatenqualität ist das Produkt,
-und sie entsteht genau hier. Das stärkste Modell ist die richtige Wahl.
+At 500 assets per year that is **roughly 20-30 USD annually.** Optimising cost through model
+choice at this volume would be micro-management in the wrong place — metadata quality is the
+product, and this is exactly where it is created. The strongest model is the right call.
 
-Das Monatslimit (`llm.monthlyCostLimitUsd`) ist als Schutz gegen Fehler in Schleifen gedacht,
-nicht gegen den Normalbetrieb.
+The monthly limit (`llm.monthlyCostLimitUsd`) exists as a guard against runaway loops, not
+against normal operation.
 
-### 7.5 Reanalyse
+### 7.5 Re-analysis
 
-Erweitert sich das Vokabular, lässt sich über die **Batch-API** (50 % Rabatt, bis 24 h Laufzeit)
-alles mit `prompt_version < N` neu klassifizieren. Der eigentliche Vorteil ist hier nicht der
-Preis, sondern dass Rate-Limits kein Thema sind. `origin = 'human'` bleibt nach §5.6 unangetastet.
+When the vocabulary grows, everything with `prompt_version < N` can be reclassified through the
+**Batch API** (50% discount, up to 24 hours runtime). The real advantage here is not the price
+but that rate limits stop being a concern. `origin = 'human'` remains untouched per §5.6.
 
-### 7.6 Warum keine Embeddings in Phase 1
+### 7.6 Why No Embeddings in Phase 1
 
-Embeddings leisten zwei Dinge: semantische Suche („alles, was warm und erdig wirkt", auch ohne
-diese Worte im Text) und „ähnliche Assets". Beides ist hier **verzichtbar**:
+Embeddings deliver two things: semantic search ("everything that feels warm and earthy", even
+without those words in the text) and "similar assets". Both are **dispensable** here:
 
-- Ein **kontrolliertes Facetten-Vokabular ist bei dieser Datenmenge präziser.**
-  `style=editorial AND theme=dark` trifft exakt; ein Embedding liefert eine
-  Ähnlichkeitsrangfolge mit unscharfem Rand.
-- Die **Volltextsuche über die LLM-Beschreibung** deckt den Rest ab. Schreibt das Modell
-  „warme, erdige Töne", findet `tsvector` das. Embeddings helfen nur bei Umschreibungen, die
-  nirgends wörtlich vorkommen.
-- Der Nutzen semantischer Suche **skaliert mit der Menge**. Bei 50.000 Assets unverzichtbar, bei
-  einigen hundert ist alles durchscrollbar.
+- A **controlled facet vocabulary is more precise at this data volume.**
+  `style=editorial AND theme=dark` hits exactly; an embedding returns a similarity ranking with
+  a fuzzy edge.
+- **Full-text search over the LLM description** covers the rest. If the model wrote "warm,
+  earthy tones", `tsvector` finds it. Embeddings only help with paraphrases that appear nowhere
+  literally.
+- The value of semantic search **scales with volume**. Indispensable at 50,000 assets; at a few
+  hundred, everything is scrollable.
 
-Entscheidend: **Es gibt keinen Lock-in.** Embeddings werden aus der gespeicherten Beschreibung
-berechnet, und die liegt ohnehin in der Datenbank. Sie sind jederzeit über den Bestand
-nachrüstbar, ohne Verlust — anders als die Punkte in §2 „Was von Anfang an stehen muss".
+The decisive point: **there is no lock-in.** Embeddings are computed from the stored
+description, which is in the database anyway. They can be backfilled across the entire corpus at
+any time without loss — unlike the items in §2, "What has to be right from the start".
 
-Die Infrastruktur wäre auch kein Hindernis: Ein lokales Modell wie bge-m3 braucht auf einer
-aktuellen Desktop-CPU rund 100–300 ms pro Text-Embedding bei ~2,5 GB RAM; selbst
-Bild-Embeddings per CLIP (~0,5–1 s pro Bild auf CPU) wären bei dieser Menge belanglos. Die
-Entscheidung ist also rein inhaltlich, nicht technisch bedingt.
+Infrastructure would not be an obstacle either: a local model such as bge-m3 needs roughly
+100-300 ms per text embedding on a current desktop CPU, at ~2.5 GB RAM; even image embeddings
+via CLIP (~0.5-1 s per image on CPU) would be inconsequential at this volume. The decision is
+purely about value, not about technical feasibility.
 
-## 8. Website-Capture
+## 8. Website Capture
 
-### 8.1 Warum ein Job und kein Agent
+### 8.1 Why a Job and Not an Agent
 
-Es ist dieselbe Bibliothek, die ein Agent über ein Playwright-Werkzeug benutzt — aber ein
-grundlegend anderer Nutzungsmodus:
+It is the same library an agent would drive through a Playwright tool — but a fundamentally
+different mode of use:
 
-> Ein **Agent ist im Loop**: Seite laden, Ergebnis ansehen, „der Cookie-Banner verdeckt alles"
-> erkennen, wegklicken, neu bewerten. Jeder Schritt ist eine Entscheidung auf Basis des
-> vorherigen.
+> An **agent is in the loop**: load the page, look at the result, notice "the cookie banner
+> covers everything", dismiss it, reassess. Every step is a decision based on the previous one.
 >
-> Der **Capture-Job hat diesen Luxus nicht.** Er läuft unbeaufsichtigt in einer Queue, muss bei
-> derselben URL dasselbe Ergebnis liefern und bei Fehlschlag automatisch sinnvoll wiederholen.
-> Das ist ein Programm, kein Werkzeuggebrauch.
+> The **capture job has no such luxury.** It runs unattended in a queue, has to produce the same
+> result for the same URL, and has to retry sensibly on failure without supervision. That is a
+> program, not tool use.
 
-Deshalb ist der deterministische Job der Grundpfad. Der Agenten-Ansatz hat trotzdem einen Platz
-— siehe §8.4.
+Hence the deterministic job is the main path. The agent approach still has a place — see §8.4.
 
-### 8.2 Ablauf
+### 8.2 Flow
 
 ```
- 1. chromium.launch(headless), Context mit festem Viewport 1440×900,
-    deviceScaleFactor 2, recordVideo aktiv
- 2. page.goto(url), warten bis Netzwerk ruhig
- 3. Cookie-Banner wegklicken          ← Hauptproblem, §8.3
- 4. Langsam komplett durchscrollen    ← triggert Lazy-Loading aller Bilder
- 5. Zurück nach oben, kurz warten
- 6. Vollseiten-Screenshot + Viewport-Screenshot (Poster)
- 7. Scroll-Video: skriptgesteuertes gleichmäßiges Scrollen über 8–12 s
- 8. page.evaluate(): Technik-Extraktion im Seitenkontext
- 9. context.close()  → erst jetzt schreibt Playwright die Videodatei
-10. ffmpeg: 8 Keyframes extrahieren, nach MP4 transkodieren
-11. Keyframes + Screenshot + Technik-Kontext → LLM-Analyse
+ 1. chromium.launch(headless), context with fixed viewport 1440×900,
+    deviceScaleFactor 2, recordVideo enabled
+ 2. page.goto(url), wait for the network to go quiet
+ 3. dismiss the cookie banner          ← the main problem, §8.3
+ 4. scroll slowly all the way down     ← triggers lazy loading of all images
+ 5. back to the top, brief wait
+ 6. full-page screenshot + viewport screenshot (poster)
+ 7. scroll video: scripted, even scrolling over 8-12 s
+ 8. page.evaluate(): technique extraction in the page context
+ 9. context.close()  → only now does Playwright write the video file
+10. ffmpeg: extract 8 keyframes, transcode to MP4
+11. keyframes + screenshot + technique context → LLM analysis
 ```
 
-**WebM/MP4 statt GIF** — ein GIF derselben Länge ist bei schlechterer Qualität ein Vielfaches
-groß.
+**WebM/MP4 rather than GIF** — a GIF of the same length is several times the size at worse
+quality.
 
-Zwei Schritte machen den Wert dieses Teils aus:
+Two steps are what make this part valuable:
 
-- **Schritt 11: Keyframes statt Einzelbild an die Analyse.** Aus einer Bildserie kann das Modell
-  die Bewegung beschreiben und die `motion`-Facette füllen. Ein einzelner Screenshot kann das
-  prinzipiell nicht — Animation ist genau das, was auf einem Standbild fehlt.
-- **Schritt 8: Technik-Extraktion.** Im Seitenkontext läuft JavaScript, das Dinge sammelt, die
-  auf keinem Screenshot sichtbar sind: tatsächlich verwendete `font-family`-Werte, alle
-  `transition`- und `animation`-Properties sichtbarer Elemente, Transform-Typen, und Signaturen
-  bekannter Bibliotheken (`window.gsap`, `window.ScrollTrigger`, `data-aos`-Attribute, Lenis,
-  Framer Motion). Das ist der Unterschied zwischen „sieht weich aus" und
+- **Step 11: keyframes instead of a single image for the analysis.** From a sequence of frames
+  the model can describe the movement and fill the `motion` facet. A single screenshot cannot do
+  this in principle — animation is precisely what a still frame lacks.
+- **Step 8: technique extraction.** JavaScript running in the page context collects things no
+  screenshot shows: the `font-family` values actually in use, every `transition` and `animation`
+  property on visible elements, transform types, and the signatures of known libraries
+  (`window.gsap`, `window.ScrollTrigger`, `data-aos` attributes, Lenis, Framer Motion). That is
+  the difference between "looks smooth" and
   `scroll-reveal via GSAP ScrollTrigger, 0.6s cubic-bezier(0.16,1,0.3,1)`.
 
-Ergebnis landet in `capture_tech` (§5.3) und geht als Textkontext in die Klassifizierung ein.
+The result lands in `capture_tech` (§5.3) and feeds into classification as textual context.
 
-### 8.3 Bekannte Grenzen
+### 8.3 Known Limits
 
-Diese Punkte sind keine Bugs, sondern Eigenschaften des Verfahrens:
+These are properties of the approach, not bugs:
 
-- **Cookie-Banner** sind der häufigste Grund für ein nutzloses Capture — sie verdecken genau den
-  Hero. Es gibt keine perfekte Lösung: Heuristiken über bekannte Selektoren und Accept-Buttons,
-  optional Consent-o-Matic-Regelsätze. Mit einer Restquote manueller Nacharbeit ist zu rechnen.
-- **Zielkonflikt bei Scroll-Animationen:** Für den Screenshot sollen sie *abgeschlossen* sein
-  (sonst fotografiert man halb eingeblendete Elemente), für das Video müssen sie *frisch
-  getriggert* werden. Daher die Reihenfolge in §8.2: erst durchscrollen und Screenshot, dann
-  Seite zurücksetzen und filmen.
-- **Sticky Header** erscheinen in Vollseiten-Screenshots je nach Implementierung mehrfach oder
-  verdecken Abschnitte.
-- **Bot-Erkennung** (Cloudflare, DataDome) blockt headless Chromium teilweise vollständig.
-  Stealth-Plugins helfen, aber nicht überall — manche Seiten werden sich nicht erfassen lassen.
-  Fehlerfall sauber melden statt stillschweigend ein leeres Bild speichern.
-- **Dauer:** 20–60 s pro Capture. Gehört zwingend in die Queue, niemals an den HTTP-Request.
+- **Cookie banners** are the most common reason for a useless capture — they cover exactly the
+  hero you were after. There is no perfect solution: heuristics over known selectors and accept
+  buttons, optionally Consent-O-Matic rule sets. Expect a residual share needing manual rework.
+- **A tension around scroll animations:** for the screenshot they should be *finished*
+  (otherwise you photograph half-faded elements), for the video they have to be *freshly
+  triggered*. Hence the ordering in §8.2: scroll through and screenshot first, then reset the
+  page and record.
+- **Sticky headers** appear multiple times in full-page screenshots, or cover sections,
+  depending on the implementation.
+- **Bot detection** (Cloudflare, DataDome) blocks headless Chromium outright on some sites.
+  Stealth plugins help, but not everywhere — some pages will not be capturable. Report the
+  failure properly instead of silently storing a blank image.
+- **Duration:** 20-60 s per capture. This belongs in the queue, never on the HTTP request.
 
-Da Websites sich ändern, werden alle Captures **dauerhaft lokal archiviert**; die Referenz bleibt
-gültig, auch wenn die Seite umgebaut wird.
+Because websites change, every capture is **archived permanently and locally**; the reference
+stays valid even after the site is rebuilt.
 
-### 8.4 Ausbaustufe: Tiefenanalyse per Agent (Phase 4)
+### 8.4 Later Stage: Deep Analysis by an Agent (Phase 4)
 
-Der deterministische Job kann nur scrollen. Ein Agent mit Browser-Zugriff könnte hovern, Menüs
-öffnen und Interaktionen auslösen — und damit Animationen sehen, die beim reinen Scrollen
-unsichtbar bleiben. Das ist mächtiger, aber langsam, teuer und nicht reproduzierbar.
+The deterministic job can only scroll. An agent with browser access could hover, open menus and
+trigger interactions — and thus see animations that remain invisible to plain scrolling. That is
+more powerful, but slow, expensive and not reproducible.
 
-Sinnvolle Aufteilung: deterministischer Job als Standard für jedes Capture, dazu später ein
-optionaler Knopf „Tiefenanalyse" für einzelne Seiten, die es wert sind.
+A sensible division: the deterministic job as the standard for every capture, plus an optional
+"deep analysis" button later for individual pages worth it.
 
-Bereichsmarkierung („nur der Hero") ebenfalls Phase 4: CSS-Selektor oder Bildausschnitt.
+Region selection ("the hero only") is also phase 4: CSS selector or image crop.
 
-## 9. Rechte & Sichtbarkeit
+## 9. Permissions and Visibility
 
-Rollen: `admin`, `member`.
+Roles: `admin`, `member`.
 
-| Aktion | Regel |
+| Action | Rule |
 |---|---|
-| Sehen | alle sehen alles |
-| Anlegen | jeder |
-| Metadaten/Tags ändern, auch fremde | **jeder** |
-| Löschen | nur eigene; Admin alles. Soft-Delete, 30 Tage Papierkorb |
-| Kontrolliertes Vokabular erweitern | nur Admin |
-| Freie Tags anlegen | jeder |
-| Nutzer verwalten | Admin (in Authentik) |
+| View | everyone sees everything |
+| Create | anyone |
+| Edit metadata and tags, including other people's | **anyone** |
+| Delete | own assets only; admins everything. Soft delete, 30-day trash |
+| Extend the controlled vocabulary | admins only |
+| Create free-form tags | anyone |
+| Manage users | admins (in Authentik) |
 
-**Begründung der beiden unsymmetrischen Zeilen:** Gemeinsames Taggen ist bewusst offen, weil
-Reibung bei der Taxonomiepflege der häufigste Grund ist, warum solche Systeme verwahrlosen — das
-Audit-Log stellt Nachvollziehbarkeit her, ohne zu bremsen. Löschen ist dagegen destruktiv und
-bekommt die engere Grenze; der Papierkorb hält das Restrisiko klein.
+**Why those two rows are asymmetric:** shared tagging is deliberately open, because friction in
+taxonomy maintenance is the most common reason systems like this fall into disrepair — the audit
+log provides traceability without slowing anyone down. Deletion, by contrast, is destructive and
+gets the tighter boundary; the trash keeps the residual risk small.
 
-Zugang: Invite-only über Authentik. Keine Selbstregistrierung, da die App im Internet steht.
+Access: invite-only through Authentik. No self-registration, since the application is exposed to
+the internet.
 
-## 10. MCP-Interface
+## 10. MCP Interface
 
-Der Zugang für Claude Code und Claude Design. Remote-MCP-Server über Streamable HTTP, als Route
-in `apps/api`, authentifiziert über ein persönliches API-Token pro Nutzer.
+The entry point for Claude Code and Claude Design. A remote MCP server over streamable HTTP,
+mounted as a route in `apps/api`, authenticated by a personal API token per user.
 
-| Tool | Phase | Zweck |
+| Tool | Phase | Purpose |
 |---|---|---|
-| `search_assets` | 1 | Facetten-Filter + Volltextsuche. Liefert Metadaten und Bild-URLs |
-| `get_asset` | 1 | Ein Asset mit allen Metadaten, Farben, Dateien, Capture-Technik |
-| `list_vocabulary` | 1 | Das kontrollierte Vokabular — **damit gültige Filterwerte bekannt sind, statt geraten zu werden** |
-| `add_asset` | 1 | Asset anlegen, auch per URL — Einwerfen direkt aus einer Session |
-| `get_board` | 3 | **Das Briefing-Paket** (§10.1) |
-| `get_design_tokens` | 3 | Palette/Typografie als Design Tokens |
+| `search_assets` | 1 | Facet filters plus full-text search. Returns metadata and image URLs |
+| `get_asset` | 1 | One asset with all metadata, colours, files, capture technique |
+| `list_vocabulary` | 1 | The controlled vocabulary — **so valid filter values are known rather than guessed** |
+| `add_asset` | 1 | Create an asset, including from a URL — dropping something in mid-session |
+| `get_board` | 3 | **The briefing package** (§10.1) |
+| `get_design_tokens` | 3 | Palette and typography as design tokens |
 
-**Bilder und Captures sind als Vision-Input abrufbar**, nicht nur als Beschreibung — bei
-Design-Referenzen ist das Ansehen der Referenz der halbe Wert.
+**Images and captures are retrievable as vision input**, not only as descriptions — with design
+references, looking at the reference is half the value.
 
-`list_vocabulary` ist kein Komfort-Tool: Ohne es würde ein Agent Filterwerte erfinden und leere
-Ergebnismengen erhalten, ohne zu verstehen, warum.
+`list_vocabulary` is not a convenience tool: without it an agent would invent filter values and
+receive empty result sets without understanding why.
 
-### 10.1 `get_board` — die Kernschnittstelle (Phase 3)
+### 10.1 `get_board` — the Key Interface (Phase 3)
 
-Laut Anforderung ist das Board das Paket, das der KI zur Bearbeitung übergeben wird. `get_board`
-liefert deshalb kein Suchergebnis, sondern ein **fertiges Briefing**:
+Per the requirement, the board is the package handed to the AI to work from. `get_board`
+therefore returns not a search result but a **finished briefing**:
 
 ```
 {
-  title, briefing,                      // was daraus entstehen soll
+  title, briefing,                      // what should come out of this
   items: [{
     role,        // color | layout | typography | motion | imagery | copy | overall
     weight,      // primary | secondary | avoid
-    note,        // "nur die Animation, nicht die Farben"
+    note,        // "the animation only, not the colours"
     asset: { facets, colors, description, image_url, capture_url, capture_tech }
   }],
   derived: {
-    palette,          // konsolidiert aus den Items mit role=color
-    type_pairings,    // aus role=typography
-    motion_summary,   // aus role=motion, inkl. erkannter Bibliotheken
-    common_facets,    // was alle primary-Items teilen → die eigentliche Richtung
-    conflicts         // widersprüchliche Signale, explizit benannt
+    palette,          // consolidated from the items with role=color
+    type_pairings,    // from role=typography
+    motion_summary,   // from role=motion, including detected libraries
+    common_facets,    // what all primary items share → the actual direction
+    conflicts         // contradictory signals, named explicitly
   },
   tokens: { json, w3c_design_tokens, css_custom_properties, tailwind_fragment }
 }
 ```
 
-Drei Entwurfsentscheidungen darin:
+Three design decisions in there:
 
-- **`derived` wird serverseitig berechnet, nicht vom Modell abgeleitet.** Eine konsolidierte
-  Palette aus fünf Bildern ist Rechenarbeit, kein Interpretationsspielraum — serverseitig ist
-  sie deterministisch und für jeden Konsumenten identisch.
-- **`conflicts` benennt Widersprüche statt sie zu glätten.** Enthält ein Board ein `airy`- und
-  ein `dense`-Primary, ist das eine Information für den Bearbeiter, kein Mittelwert, der gebildet
-  werden sollte.
-- **Vier Token-Formate**, damit direkt loscodiert werden kann, statt eine Prosa-Beschreibung zu
-  interpretieren.
+- **`derived` is computed server-side, not inferred by the model.** Consolidating a palette from
+  five images is arithmetic, not a matter of interpretation — server-side it is deterministic
+  and identical for every consumer.
+- **`conflicts` names contradictions instead of smoothing them over.** If a board contains both
+  an `airy` and a `dense` primary, that is information for whoever works from it, not an average
+  to be computed.
+- **Four token formats**, so work can start immediately instead of interpreting a prose
+  description.
 
-## 11. Phasen
+## 11. Phases
 
-### Phase 1 — Übersicht, Klassifizierung & Website-Capture
+### Phase 1 — Overview, Classification and Website Capture
 
-Ziel: Ein Bild oder eine URL landet in der App, wird automatisch erfasst und klassifiziert und
-ist über Facetten wiederfindbar. Am Ende dieser Phase ist die App täglich nutzbar und für
-Claude Code lesbar.
+Goal: an image or a URL lands in the application, gets captured and classified automatically,
+and is findable through facets. By the end of this phase the application is usable daily and
+readable by Claude Code.
 
-**Fundament**
-- [ ] Nx-Monorepo, Dockerfiles, GitHub Actions → GHCR (§4.8)
-- [ ] Helm-Chart mit `IngressRoute`/`Ingress`-Umschalter, cloudflared
-- [ ] Anbindung an externes Postgres und Authentik per Values (§4.3)
-- [ ] Valkey mit `deploy`-Flag
-- [ ] HostPath-Volume + nodeAffinity + UID 1000 (§4.2)
-- [ ] OIDC-Login (BFF-Pattern, HttpOnly-Cookie) + Notfall-Admin
-- [ ] `StorageService`-Interface (HostPath-Adapter)
+**Foundation**
+- [ ] Nx monorepo, Dockerfiles, GitHub Actions → GHCR (§4.8)
+- [ ] Helm chart with the `IngressRoute`/`Ingress` switch, cloudflared
+- [ ] Wiring to external Postgres and Authentik via values (§4.3)
+- [ ] Valkey with its `deploy` flag
+- [ ] HostPath volume + nodeAffinity + UID 1000 (§4.2)
+- [ ] OIDC login (BFF pattern, HttpOnly cookie) + emergency admin
+- [ ] `StorageService` interface (HostPath adapter)
 
-**Daten**
-- [ ] Datenmodell §5.1–5.3, §5.5 — inkl. `origin` und `analysis_run` von Anfang an
-- [ ] Migrations-Job als `argocd.argoproj.io/hook: PreSync` (§4.11)
-- [ ] Facetten-Vokabular als Seed + Admin-Pflege
+**Data**
+- [ ] Data model §5.1-5.3, §5.5 — including `origin` and `analysis_run` from day one
+- [ ] Migration job as `argocd.argoproj.io/hook: PreSync` (§4.11)
+- [ ] Facet vocabulary as a seed, with English and German labels (§13)
+- [ ] Admin maintenance for the vocabulary
 
-**Einpflegen & Klassifizieren**
-- [ ] Upload: Drag&Drop, Clipboard-Paste, Multi-Upload
-- [ ] Job-Pipeline: normalize → thumbnails → colors → capture → classify → index
-- [ ] Anthropic-Adapter + Provider-Interface
+**Ingest and Classification**
+- [ ] Upload: drag & drop, clipboard paste, multi-upload
+- [ ] Job pipeline: normalize → thumbnails → colors → capture → classify → index
+- [ ] Anthropic adapter + provider interface
 
-**Website-Capture**
-- [ ] Playwright im Worker-Image, `/dev/shm`-Mount, Resource Limits (§4.6)
-- [ ] URL einwerfen → Screenshot, Scroll-Video, Keyframes, Technik-Extraktion (§8.2)
-- [ ] Cookie-Banner-Heuristik, Fehlerfälle sauber melden (§8.3)
-- [ ] Multi-Image-Analyse: Keyframes an die Klassifizierung → `motion` wird echt gefüllt
-- [ ] Video-Player in der Detailansicht
+**Website Capture**
+- [ ] Playwright in the worker image, `/dev/shm` mount, resource limits (§4.6)
+- [ ] Drop in a URL → screenshot, scroll video, keyframes, technique extraction (§8.2)
+- [ ] Cookie banner heuristics, proper error reporting (§8.3)
+- [ ] Multi-image analysis: keyframes into classification → `motion` gets genuinely filled
+- [ ] Video player in the detail view
 
-**Übersicht**
-- [ ] Masonry-Grid, Facetten-Filter, Volltextsuche, Autoren-Filter
-- [ ] Detailansicht: Metadaten editierbar, Farben, Capture-Technik
-- [ ] Mehrfachauswahl + Bulk-Tagging
+**Overview**
+- [ ] Masonry grid, facet filters, full-text search, author filter
+- [ ] Detail view: editable metadata, colours, capture technique
+- [ ] Multi-select + bulk tagging
 
-**Zugriff & Betrieb**
-- [ ] MCP-Server: `search_assets`, `get_asset`, `list_vocabulary`, `add_asset`
-- [ ] Restore des Datenbank-Backups einmal durchgespielt (§4.3)
+**Internationalisation**
+- [ ] Transloco setup, `en.json` and `de.json`, language switcher, `user.locale` persisted (§13)
 
-### Phase 2 — Schärfung
+**Access and Operations**
+- [ ] MCP server: `search_assets`, `get_asset`, `list_vocabulary`, `add_asset`
+- [ ] Database restore rehearsed once (§4.3)
 
-- [ ] Komponenten mit echtem Code + Live-Preview
-- [ ] Fonts mit Datei-Upload und Live-Rendering
-- [ ] Command Palette (Cmd+K)
-- [ ] Batch-Reanalyse-UI
+### Phase 2 — Sharpening
+
+- [ ] Components with real code + live preview
+- [ ] Fonts with file upload and live rendering
+- [ ] Command palette (Cmd+K)
+- [ ] Batch re-analysis UI
 
 ### Phase 3 — Boards
 
-- [ ] Board-Tabellen (§5.4) als Migration
-- [ ] Board-UI: anlegen, Assets kombinieren, Rollen und Gewichte zuweisen, sortieren, Notizen
-- [ ] `briefing`-Feld, Smart Boards
-- [ ] `get_board` inkl. `derived` und Token-Export, `get_design_tokens`
+- [ ] Board tables (§5.4) as a migration
+- [ ] Board UI: create, combine assets, assign roles and weights, reorder, add notes
+- [ ] The `briefing` field, smart boards
+- [ ] `get_board` including `derived` and token export, `get_design_tokens`
 
-### Phase 4 — Ausbau
+### Phase 4 — Expansion
 
-- [ ] Tiefenanalyse per Agent (§8.4)
-- [ ] Bereichsmarkierung bei Website-Captures
-- [ ] Semantische Suche + „ähnliche Assets" (§7.6) — **nur wenn die Suche sich als zu eng erweist**
-- [ ] Kommentare, Favoriten, Aktivitätsfeed
+- [ ] Deep analysis by an agent (§8.4)
+- [ ] Region selection for website captures
+- [ ] Semantic search + "similar assets" (§7.6) — **only if search proves too narrow**
+- [ ] Comments, favourites, activity feed
 
-### Später / offen
+### Later / Open
 
-- [ ] Öffentliche Read-Only-Board-Links für Kunden
-- [ ] Browser-Extension zum Clippen
-- [ ] Watch-Folder-Import
-- [ ] Weitere LLM-Adapter
-- [ ] Mehrere Workspaces
+- [ ] Public read-only board links for clients
+- [ ] Browser extension for clipping
+- [ ] Watch-folder import
+- [ ] Further LLM adapters
+- [ ] Multiple workspaces
 
-## 12. Offene Punkte
+## 12. Open Points
 
-1. **Migrations-Strategie ausarbeiten** (§4.11) — Reihenfolge, Idempotenz, Verhalten bei
-   fehlgeschlagener Migration, Rollback.
-2. **Authentik-Application** — Application plus OIDC-Provider `moodboard` mit Redirect-URIs
-   müssen in der jeweiligen Instanz angelegt werden.
-3. **Lokale Entwicklungsumgebung** — Docker Compose für Postgres und Valkey oder SSH-Tunnel auf
-   bestehende Instanzen (§4.9).
+1. **Work out the migration strategy** (§4.11) — ordering, idempotency, behaviour on a failed
+   migration, rollback.
+2. **Authentik application** — an Application plus an OIDC provider named `moodboard`, with
+   redirect URIs, must be created in the respective instance.
+3. **Local development environment** — Docker Compose for Postgres and Valkey, or an SSH tunnel
+   to existing instances (§4.9).
 
-> Umgebungsspezifische Werte (Domain, Issuer-URL, HostPath, UID, Registry-Owner) sind bewusst
-> **nicht** Teil dieses Dokuments. Sie werden über die ArgoCD Application gesetzt; für die
-> lokale Arbeit stehen sie in `infra.local.md`, die nicht versioniert wird.
+> Environment-specific values (domain, issuer URL, HostPath, UID, registry owner) are
+> deliberately **not** part of this document. They are set through the ArgoCD Application; for
+> local work they live in `infra.local.md`, which is not versioned.
+
+## 13. Internationalisation
+
+The UI supports **English (default) and German**, switchable at runtime. Exactly these two
+languages. Everything else — code, database identifiers, documentation, commit messages — is
+English only.
+
+### 13.1 Transloco, Not `@angular/localize`
+
+Angular's built-in i18n works at build time and produces one bundle per language; switching
+language means a different deployment path and a page reload. The requirement "users can switch"
+calls for runtime i18n, so **Transloco**: translations as JSON, a single bundle, switching
+without a reload.
+
+The price of this choice: translation keys are not checked at compile time, unlike the template
+extraction `@angular/localize` performs. Mitigation is a lint step in CI comparing the key sets
+of `en.json` and `de.json`.
+
+### 13.2 What Is Translated
+
+| Content | Where |
+|---|---|
+| UI strings | Transloco JSON (`en.json`, `de.json`) |
+| Facet labels and descriptions | Database, `jsonb` (§5.2) |
+| User-facing error messages | Transloco JSON |
+
+The user's choice is persisted in `user.locale` (§5.1) so it survives across devices. The
+initial value comes from the `Accept-Language` header, falling back to English.
+
+### 13.3 What Is Deliberately Not Translated
+
+| Content | Why |
+|---|---|
+| Facet `value` (`calm`, `hero`, `dark`) | The machine-readable key. It feeds the Zod enum, the LLM prompt and MCP filters, so it has to be stable and single-language |
+| Asset descriptions (LLM-generated) | English only, by decision. They are primarily search material and context for Claude Code |
+| Free-form tags | User input in whatever language they choose — this is the taxonomy's escape valve, and controlling it here would be wrong |
+| `ocr_text` | It reproduces whatever the image says |
+| Audit log actions | Technical keys, translated only at display time |
+
+### 13.4 Consequence for Full-Text Search
+
+`asset_search.tsv` is built with `to_tsvector('english', …)` from title and description — one
+fixed stemming configuration, which is possible precisely because descriptions are English.
+
+Free-form tags do **not** feed into the `tsvector`. They may well be German, and English
+stemming would mangle them; they are matched separately and exactly. This is worth knowing
+before someone "improves" search by folding tags into the vector.
+
+### 13.5 Why `jsonb` and Not Two Columns
+
+Facet labels live in `jsonb` as `{"en": "Calm", "de": "Ruhig"}` rather than in `label_en` /
+`label_de` columns or a separate translation table.
+
+- No join on every vocabulary fetch, and the vocabulary is fetched on every filter render.
+- A third language would need no migration, even though none is planned.
+- The structure is validated by Zod, in the same place as the rest of the contract.
+
+With roughly 120 vocabulary values that change rarely, this is the simplest form that holds up.
+Note that this has to be decided **now**: built as a plain text column and split later, it would
+be a migration that moves data — which is why it appears in §2 among the things that cannot be
+retrofitted.
