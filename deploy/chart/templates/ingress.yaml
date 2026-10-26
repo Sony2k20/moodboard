@@ -1,0 +1,89 @@
+{{- $fullName := include "moodboard.fullname" . -}}
+{{- if eq .Values.ingress.kind "IngressRoute" }}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "moodboard.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    {{- toYaml .Values.ingress.entryPoints | nindent 4 }}
+  routes:
+    # The api first: a more specific rule has to win over the catch-all, and Traefik decides by
+    # rule priority rather than by order, so the longer PathPrefix wins on its own.
+    - match: Host(`{{ .Values.ingress.host }}`) && (PathPrefix(`/api`) || PathPrefix(`/mcp`) || PathPrefix(`/files`))
+      kind: Rule
+      services:
+        - name: {{ $fullName }}-api
+          port: {{ .Values.api.port }}
+      {{- with .Values.ingress.middlewares }}
+      middlewares:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+    - match: Host(`{{ .Values.ingress.host }}`)
+      kind: Rule
+      services:
+        - name: {{ $fullName }}-web
+          port: {{ .Values.web.port }}
+      {{- with .Values.ingress.middlewares }}
+      middlewares:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+  {{- if or .Values.ingress.tls.certResolver .Values.ingress.tls.secretName }}
+  tls:
+    {{- with .Values.ingress.tls.certResolver }}
+    certResolver: {{ . }}
+    {{- end }}
+    {{- with .Values.ingress.tls.secretName }}
+    secretName: {{ . }}
+    {{- end }}
+  {{- end }}
+{{- else if eq .Values.ingress.kind "Ingress" }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "moodboard.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.ingress.tls.secretName }}
+  tls:
+    - hosts:
+        - {{ $.Values.ingress.host }}
+      secretName: {{ . }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          {{- range $path := list "/api" "/mcp" "/files" }}
+          - path: {{ $path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}-api
+                port:
+                  number: {{ $.Values.api.port }}
+          {{- end }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}-web
+                port:
+                  number: {{ .Values.web.port }}
+{{- else }}
+{{- fail (printf "ingress.kind must be IngressRoute or Ingress, got %q" .Values.ingress.kind) }}
+{{- end }}

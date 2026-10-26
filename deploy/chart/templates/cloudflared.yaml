@@ -1,0 +1,37 @@
+{{- if .Values.cloudflared.deploy }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "moodboard.fullname" . }}-cloudflared
+  labels:
+    {{- include "moodboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cloudflared
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: cloudflared
+  template:
+    metadata:
+      labels:
+        {{- include "moodboard.labels" . | nindent 8 }}
+        app.kubernetes.io/component: cloudflared
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      containers:
+        - name: cloudflared
+          image: {{ .Values.cloudflared.image }}
+          # No inbound ports: the tunnel dials out, which is the entire point (§4).
+          args: ["tunnel", "--no-autoupdate", "run"]
+          env:
+            - name: TUNNEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cloudflared.existingSecret }}
+                  key: token
+          resources:
+            {{- toYaml .Values.cloudflared.resources | nindent 12 }}
+{{- end }}

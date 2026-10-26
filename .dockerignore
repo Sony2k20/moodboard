@@ -1,0 +1,17 @@
+# Keeping node_modules out is not optional: the build stage runs `npm ci` itself, and a host
+# node_modules built on Windows would break the Linux build in confusing ways.
+node_modules
+dist
+tmp
+.nx
+.git
+.angular
+coverage
+
+.env
+*.local.md
+*.local.yaml
+
+docs
+*.md
+!README.md

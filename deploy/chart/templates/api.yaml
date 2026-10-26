@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "moodboard.fullname" . }}-api
+  labels:
+    {{- include "moodboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        {{- include "moodboard.labels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+    spec:
+      {{- include "moodboard.imagePullSecrets" . | nindent 6 }}
+      securityContext:
+        {{- include "moodboard.securityContext" . | nindent 8 }}
+      {{- include "moodboard.nodeAffinity" . | nindent 6 }}
+      containers:
+        - name: api
+          image: {{ include "moodboard.image" (dict "root" . "component" "api") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.api.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.api.port | quote }}
+            {{- include "moodboard.databaseEnv" . | nindent 12 }}
+            {{- include "moodboard.queueEnv" . | nindent 12 }}
+            - name: OIDC_ISSUER_URL
+              value: {{ .Values.oidc.issuerUrl | quote }}
+            - name: OIDC_CLIENT_ID
+              value: {{ .Values.oidc.clientId | quote }}
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oidc.existingSecret }}
+                  key: clientSecret
+            - name: PUBLIC_URL
+              value: {{ printf "https://%s" .Values.ingress.host | quote }}
+            - name: STORAGE_ROOT
+              value: {{ .Values.storage.hostPath | quote }}
+            - name: DEFAULT_LOCALE
+              value: {{ .Values.i18n.defaultLocale | quote }}
+            - name: AVAILABLE_LOCALES
+              value: {{ join "," .Values.i18n.availableLocales | quote }}
+          volumeMounts:
+            # The api serves what the worker writes, which is why both are pinned to one node.
+            - name: assets
+              mountPath: {{ .Values.storage.hostPath }}
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+      volumes:
+        - name: assets
+          hostPath:
+            path: {{ .Values.storage.hostPath }}
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "moodboard.fullname" . }}-api
+  labels:
+    {{- include "moodboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: api
+  ports:
+    - name: http
+      port: {{ .Values.api.port }}
+      targetPort: http

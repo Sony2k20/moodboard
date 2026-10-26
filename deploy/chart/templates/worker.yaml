@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "moodboard.fullname" . }}-worker
+  labels:
+    {{- include "moodboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        {{- include "moodboard.labels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      {{- include "moodboard.imagePullSecrets" . | nindent 6 }}
+      securityContext:
+        {{- include "moodboard.securityContext" . | nindent 8 }}
+      {{- include "moodboard.nodeAffinity" . | nindent 6 }}
+      containers:
+        - name: worker
+          image: {{ include "moodboard.image" (dict "root" . "component" "worker") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- include "moodboard.databaseEnv" . | nindent 12 }}
+            {{- include "moodboard.queueEnv" . | nindent 12 }}
+            - name: STORAGE_ROOT
+              value: {{ .Values.storage.hostPath | quote }}
+            # Capped so two parallel video captures do not double the memory peak (§4.6).
+            - name: WORKER_CONCURRENCY
+              value: {{ .Values.worker.concurrency | quote }}
+            - name: LLM_PROVIDER
+              value: {{ .Values.llm.provider | quote }}
+            - name: LLM_MODEL
+              value: {{ .Values.llm.model | quote }}
+            - name: LLM_MONTHLY_COST_LIMIT_USD
+              value: {{ .Values.llm.monthlyCostLimitUsd | quote }}
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.llm.existingSecret }}
+                  key: apiKey
+          volumeMounts:
+            - name: assets
+              mountPath: {{ .Values.storage.hostPath }}
+            # Containers default to 64 MB here and Chromium crashes on larger pages with that.
+            # Present before Playwright is, because it costs nothing and forgetting it later
+            # produces the classic "works locally, dies in the cluster" (§4.6).
+            - name: dshm
+              mountPath: /dev/shm
+          resources:
+            # An OOM kill of the worker must not take the api down with it, hence separate
+            # deployments with separate limits (§4.6).
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+      volumes:
+        - name: assets
+          hostPath:
+            path: {{ .Values.storage.hostPath }}
+            type: DirectoryOrCreate
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.worker.shmSize }}

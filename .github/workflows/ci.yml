@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Nx needs the base commit to work out what changed.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint, test, build
+        run: npx nx run-many -t lint,test,build
+
+      - name: Schema matches the committed migrations
+        # `drizzle-kit generate` needs no database: it diffs the schema against the migration
+        # snapshots. A non-empty diff means someone changed the schema without generating the
+        # migration, which would only surface at deploy time otherwise.
+        run: |
+          npx drizzle-kit generate
+          if ! git diff --quiet -- libs/db/migrations; then
+            echo "::error::The schema and the committed migrations disagree. Run 'npm run db:generate' and commit the result."
+            git diff --stat -- libs/db/migrations
+            exit 1
+          fi
+
+  translations:
+    name: Translation keys
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: en.json and de.json have the same keys
+        # Transloco cannot check translation keys at compile time, unlike the template extraction
+        # @angular/localize performs. This check is the mitigation the concept names for that
+        # trade-off (§13.1). It is set up before the files exist, because a check added afterwards
+        # tends to arrive after the files have already drifted.
+        run: node tools/check-translations.mjs
+
+  chart:
+    name: Helm chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/setup-helm@v4
+
+      - run: helm lint deploy/chart
+
+      - name: Renders with the defaults
+        run: helm template moodboard deploy/chart > /dev/null
+
+      - name: Renders both ingress variants and without Valkey
+        run: |
+          helm template moodboard deploy/chart --set ingress.kind=Ingress > /dev/null
+          helm template moodboard deploy/chart --set valkey.deploy=false > /dev/null
+
+      - name: The migration job is a PreSync hook
+        # Getting this wrong means the new version starts against the old schema, which shows up
+        # as seemingly random runtime errors rather than as a failed deploy (§4.11).
+        run: |
+          helm template moodboard deploy/chart \
+            | grep -q 'argocd.argoproj.io/hook: PreSync'
+
+      - name: The worker has an enlarged /dev/shm
+        # Chromium crashes on larger pages with the 64 MB default. The single most common cause
+        # of "works locally, dies in the cluster" (§4.6).
+        run: |
+          helm template moodboard deploy/chart \
+            | grep -q 'medium: Memory'

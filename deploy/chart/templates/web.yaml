@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "moodboard.fullname" . }}-web
+  labels:
+    {{- include "moodboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        {{- include "moodboard.labels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      {{- include "moodboard.imagePullSecrets" . | nindent 6 }}
+      # Static nginx, no HostPath: this pod may live on any node, so it is not pinned.
+      securityContext:
+        runAsNonRoot: true
+        # The unprivileged nginx image's own user.
+        runAsUser: 101
+        runAsGroup: 101
+      containers:
+        - name: web
+          image: {{ include "moodboard.image" (dict "root" . "component" "web") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.web.port }}
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: http
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "moodboard.fullname" . }}-web
+  labels:
+    {{- include "moodboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: {{ .Values.web.port }}
+      targetPort: http

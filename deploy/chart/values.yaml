@@ -1,0 +1,111 @@
+# Generic defaults only. Environment-specific values — domain, issuer URL, secret names, UID,
+# HostPath — are set in the ArgoCD Application and therefore live outside this repository
+# (concept §4.3). There is deliberately no values.local.yaml.
+
+image:
+  registry: ghcr.io/owner
+  # Empty means Chart.AppVersion. Set to sha-<commit> to deploy a specific build, which is also
+  # how a rollback works.
+  tag: ""
+  pullPolicy: IfNotPresent
+  pullSecret: ghcr-pull
+  names:
+    api: moodboard-api
+    worker: moodboard-worker
+    web: moodboard-web
+
+ingress:
+  kind: IngressRoute # IngressRoute | Ingress
+  host: moodboard.example.com
+  entryPoints: [websecure]
+  middlewares: [] # e.g. compress, security-headers
+  className: "" # Ingress only
+  annotations: {}
+  tls:
+    certResolver: "" # or:
+    secretName: ""
+
+postgres:
+  # Created by CloudNativePG when it bootstraps the database cluster, not by this chart
+  # (§4.3.1). Its keys are the operator's: uri, host, port, dbname, username, password.
+  existingSecret: moodboard-database-app
+
+oidc:
+  issuerUrl: https://auth.example.com/application/o/moodboard/
+  clientId: moodboard
+  existingSecret: moodboard-oidc # clientSecret
+
+valkey:
+  deploy: true # false -> use an external instance
+  host: "" # only when deploy: false
+  port: 6379
+  image: valkey/valkey:9.0-alpine
+  resources:
+    requests: { memory: 100Mi, cpu: 50m }
+    limits: { memory: 200Mi, cpu: 500m }
+
+storage:
+  hostPath: /srv/moodboard/assets
+  # The node directory must be owned by this UID/GID:
+  #   sudo mkdir -p /srv/moodboard/assets && sudo chown -R 1000:1000 /srv/moodboard
+  # fsGroup has no effect on hostPath volumes — Kubernetes accepts it and ignores it — so this is
+  # a manual, one-time step on the node (§4.2).
+  runAsUser: 1000
+  runAsGroup: 1000
+  # Required when the cluster has more than one node: api and worker must land on the node that
+  # holds the files. Empty means no pinning, which is only safe on a single node.
+  nodeName: ""
+
+llm:
+  provider: anthropic
+  model: claude-opus-5
+  existingSecret: moodboard-llm # apiKey
+  monthlyCostLimitUsd: 25
+
+i18n:
+  defaultLocale: en # en | de
+  availableLocales: [en, de]
+
+migration:
+  # The migration runs as an ArgoCD PreSync hook. ArgoCD renders the chart and does not apply
+  # Helm's own hook semantics, which is why this is not a Helm pre-upgrade hook (§4.11).
+  enabled: true
+  backoffLimit: 2
+  resources:
+    requests: { memory: 128Mi, cpu: 50m }
+    limits: { memory: 512Mi, cpu: "1" }
+
+api:
+  replicas: 1
+  port: 3000
+  resources:
+    requests: { memory: 400Mi, cpu: 100m }
+    limits: { memory: 700Mi, cpu: "1" }
+
+web:
+  replicas: 1
+  # The unprivileged nginx image listens here, so no privileged port binding is needed.
+  port: 8080
+  resources:
+    requests: { memory: 50Mi, cpu: 20m }
+    limits: { memory: 128Mi, cpu: 500m }
+
+worker:
+  replicas: 1
+  concurrency: 2
+  # Containers default to 64 MB of /dev/shm and Chromium crashes on larger pages with that. The
+  # single most common cause of "works locally, dies in the cluster" (§4.6).
+  shmSize: 1Gi
+  resources:
+    requests: { memory: 512Mi, cpu: 250m }
+    limits: { memory: 2.5Gi, cpu: "2" }
+
+cloudflared:
+  # The tunnel may already exist in the cluster; then leave this off and add the hostname to the
+  # existing tunnel's configuration instead.
+  deploy: false
+  image: cloudflare/cloudflared:2026.10.0
+  existingSecret: moodboard-cloudflared # token
+  resources:
+    requests: { memory: 50Mi, cpu: 20m }
+    limits: { memory: 100Mi, cpu: 200m }

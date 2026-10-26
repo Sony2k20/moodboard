@@ -109,3 +109,31 @@ libs/classify   —         Classification port; provider adapters
 `libs/shared` is imported by the Angular bundle, so it carries no Node dependency. That is
 enforced by the `platform:` tags and the module-boundary rule in `eslint.config.mjs`, not by
 discipline.
+
+### Deployment
+
+```
+deploy/chart    Helm chart — generic defaults only
+apps/*/Dockerfile
+.github/workflows/ci.yml       lint, test, build, schema-vs-migrations, chart rendering
+.github/workflows/publish.yml  three images to GHCR, sha-<commit> and v<semver>
+```
+
+```bash
+helm lint deploy/chart
+helm template moodboard deploy/chart            # defaults
+helm template moodboard deploy/chart --set ingress.kind=Ingress
+```
+
+Environment-specific values — domain, issuer URL, HostPath, UID, registry owner — are set in the
+ArgoCD Application and deliberately live outside this repository (concept §4.3). The database is
+a separate ArgoCD Application: CloudNativePG creates its secret while bootstrapping the cluster,
+so the chart only references it (§4.3.1).
+
+One manual step on the node, once, before the first upload — `fsGroup` has no effect on
+`hostPath` volumes, so Kubernetes cannot do this:
+
+```bash
+sudo mkdir -p /srv/moodboard/assets
+sudo chown -R 1000:1000 /srv/moodboard
+```
