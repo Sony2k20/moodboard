@@ -11,7 +11,7 @@ wie `{pattern: hero, layout: split-left-text, motion: parallax-on-scroll, palett
 ## Status
 
 **Konzeptphase.** Noch kein Anwendungscode. Das abgestimmte Konzept liegt vollständig in
-[`CONCEPT.md`](./CONCEPT.md) — Datenmodell, Facetten-Vokabular, Klassifizierungs-Pipeline,
+[`docs/concept.md`](./docs/concept.md) — Datenmodell, Facetten-Vokabular, Klassifizierungs-Pipeline,
 Deployment-Architektur und Phasenschnitt.
 
 ## Leitidee
@@ -36,7 +36,7 @@ Animationstechnik. Jede Entwurfsentscheidung im Konzept fällt zugunsten der Met
 | Auth | Authentik (OIDC) |
 | Deployment | k3s, Helm, Traefik `IngressRoute`, Cloudflare Tunnel |
 
-Begründungen zu jeder Wahl in [`CONCEPT.md`](./CONCEPT.md) §3.
+Begründungen zu jeder Wahl in [`docs/concept.md`](./docs/concept.md) §3.
 
 ## Phasen
 
