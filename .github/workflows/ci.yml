@@ -41,6 +41,45 @@ jobs:
             exit 1
           fi
 
+  image-contents:
+    name: Bundle runs with the pruned dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Build and prune the api
+        run: npx nx prune api
+
+      - name: Install only the pruned dependencies and start the bundle
+        # What the image contains, nothing else. `nx prune` derives those dependencies from
+        # apps/api/package.json, not from the imports of the libraries webpack compiles into the
+        # bundle — so a package the application needs but does not declare is missing in the
+        # container and fails at start-up. Here it fails in CI instead.
+        #
+        # The database is deliberately unreachable: the migration must get far enough to attempt
+        # a connection. A MODULE_NOT_FOUND means a dependency is missing from the declaration.
+        run: |
+          mkdir -p /tmp/image-sim
+          cp dist/apps/api/package.json dist/apps/api/package-lock.json /tmp/image-sim/
+          cd /tmp/image-sim
+          npm ci --omit=dev --ignore-scripts
+          cp -r "$GITHUB_WORKSPACE"/dist/apps/api/* .
+          output=$(DATABASE_URL=postgresql://u:p@127.0.0.1:1/none node migrate.js 2>&1 || true)
+          echo "$output" | head -5
+          if echo "$output" | grep -q MODULE_NOT_FOUND; then
+            echo "::error::The image is missing a runtime dependency. Declare it in apps/api/package.json."
+            exit 1
+          fi
+          if ! echo "$output" | grep -qi 'migration failed'; then
+            echo "::error::The migration bundle did not run as expected."
+            exit 1
+          fi
+
   translations:
     name: Translation keys
     runs-on: ubuntu-latest
