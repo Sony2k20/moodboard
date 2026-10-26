@@ -38,7 +38,7 @@ provenance columns "later". Later is exactly when they become unreconstructable.
 
 Deliberately absent, all of it still phase 1 and all of it additive:
 
-- Helm chart, GitHub Actions, GHCR, cloudflared, the PreSync migration `Job`
+- Helm chart, GitHub Actions, GHCR, cloudflared, running the migrations in the cluster
 - OIDC/BFF login and the emergency admin account
 - The BullMQ job pipeline, the Anthropic adapter, any LLM call
 - Playwright website capture
@@ -146,12 +146,10 @@ Getting those wrong here would be visible in every tool response afterwards.
 
 ## Open questions
 
-- **The PreSync job and the CNPG secret are a first-install ordering problem.** The migration job
-  reads a secret the operator only creates while bootstrapping the cluster, so on a first install
-  the hook runs before the secret exists. Either the CNPG `Cluster` syncs as its own Application
-  first, or the job tolerates a missing secret on the first pass. Decided when the chart is
-  written (deployment step), not here — but it is the reason the migration runner exits non-zero
-  rather than warning.
+- **The migration and the CNPG secret are a first-install ordering problem.** The migration reads
+  a secret the operator only creates while bootstrapping the cluster. Resolved in the deployment
+  step (`0002`) by letting the database be its own ArgoCD Application — but it is the reason the
+  migration runner exits non-zero rather than warning.
 - **`docs/concept.md` §4.3 still shows `postgres.existingSecret: moodboard-db` with the keys
   `host, port, database, user, password`.** The real secret is created by CNPG and uses
   `dbname` / `username`. The concept is the source of truth, so this is left for an explicit

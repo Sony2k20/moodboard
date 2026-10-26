@@ -85,7 +85,7 @@ npx nx serve worker                   # BullMQ consumer
 npx nx serve web                      # Angular frontend
 
 npm run db:generate                   # diff the schema into a new migration
-npm run db:migrate                    # apply migrations (also the ArgoCD PreSync job, §4.11)
+npm run db:migrate                    # apply migrations (same code the initContainer runs, §4.11)
 npm run db:seed                       # seed the facet vocabulary, idempotent
 ```
 

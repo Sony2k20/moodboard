@@ -131,12 +131,22 @@ jobs:
             exit 1
           fi
 
-      - name: The migration job is a PreSync hook
-        # Getting this wrong means the new version starts against the old schema, which shows up
-        # as seemingly random runtime errors rather than as a failed deploy (§4.11).
+      - name: The migration runs before api and worker, under any tool
+        # An ArgoCD hook would order this only under ArgoCD; an initContainer is ordered by
+        # Kubernetes, so helm upgrade and kubectl apply behave the same. Getting it wrong means
+        # the new version starts against the old schema — seemingly random runtime errors rather
+        # than a failed deploy (§4.11).
         run: |
-          helm template moodboard deploy/chart \
-            | grep -q 'argocd.argoproj.io/hook: PreSync'
+          rendered=$(helm template moodboard deploy/chart)
+          echo "$rendered" | awk '/component: api/,/^---/' | grep -q 'name: migrate'
+          echo "$rendered" | awk '/component: worker/,/^---/' | grep -q 'name: migrate'
+          ! echo "$rendered" | grep -q 'argocd.argoproj.io/hook'
+          ! echo "$rendered" | grep -q '^kind: Job'
+
+      - name: The migration uses the api image, so schema and code share a build
+        run: |
+          helm template moodboard deploy/chart --set image.tag=probe \
+            | grep -A2 'name: migrate' | grep -q 'moodboard-api:probe'
 
       - name: Authentication is on by default
         # oidc.enabled=false is for a deployment with nothing to protect. If the default ever

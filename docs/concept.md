@@ -283,9 +283,10 @@ hand. Two consequences follow, and both are easier to accept than to work around
   generated password is 64 arbitrary characters, and the operator has already escaped it
   correctly.
 - **The secret does not exist before the first sync.** The database cluster therefore lives in
-  its **own ArgoCD Application**, separate from the application chart. Otherwise the `PreSync`
-  migration job (§4.11) would, on a first install, run before the secret it needs exists —
-  a failure that only ever appears once, which is precisely why it is easy to forget.
+  its **own ArgoCD Application**, separate from the application chart. Otherwise, on a first
+  install, the pods would start before the secret they need exists. The migration initContainer
+  (§4.11) retries until the database answers, so this resolves itself — but it resolves faster
+  when the database syncs first.
 
 The keys `jdbc-uri`, `fqdn-uri` and `fqdn-jdbc-uri` contain hyphens and are not valid environment
 variable names; `envFrom` skips them with an event. Nothing here needs them.
@@ -377,20 +378,41 @@ application — not even the admin.
 to the LAN, separately hashed password, disableable by configuration flag, every use recorded in
 the audit log.
 
-### 4.11 Database Migrations Under GitOps
+### 4.11 Database Migrations
 
-With ArgoCD there is no manual `helm upgrade`, so Drizzle migrations need a defined place in the
-sync sequence. Otherwise the new application version starts against an old schema — a fault that
-surfaces as seemingly random runtime errors.
+Migrations need a defined place in the deployment, or the new application version starts against
+an old schema — a fault that surfaces as seemingly random runtime errors rather than as a failed
+deploy.
 
-Solution: a migration `Job` annotated `argocd.argoproj.io/hook: PreSync`. ArgoCD runs it before
-the actual rollout and aborts the sync if it fails. Helm's own `pre-upgrade` hooks are the wrong
-tool here, because ArgoCD only renders the chart and does not apply Helm's hook semantics.
+Solution: **an `initContainer` in front of `api` and `worker`**, running `node migrate.js` from
+the api image. Kubernetes does not start the main container until it exits 0, so the ordering is
+a property of the pod rather than of the deployment tool.
 
-From this follows a rule for every migration: it must be **forward compatible**. Between the
-PreSync job and the completed rollout, the old application version briefly runs against the new
-schema. Columns are therefore added first and removed later in a separate release, never both in
-one step.
+**Why not an ArgoCD `PreSync` hook**, which is the obvious answer under GitOps: it would make
+the ordering a property of ArgoCD. A `helm upgrade` or a `kubectl apply` ignores the annotation,
+creates the job *alongside* the rollout, and lets the new version meet the old schema — and on
+an upgrade that keeps the image tag, Helm would try to patch a `Job`, whose pod template is
+immutable, and fail. Three further differences decided it:
+
+| | PreSync hook | initContainer |
+|---|---|---|
+| Failed migration | The sync hangs in the hook. The `hook-finalizer` then prevents deleting the job, and the operation has to be terminated by hand (`argocd app terminate-op`) | The new pod never becomes ready, so the Deployment keeps the previous ReplicaSet serving |
+| Database briefly unreachable | Manual re-sync | Retried automatically |
+| Run frequency | Once per sync | Every pod start — a no-op after the first |
+
+Helm's own `pre-upgrade` hooks are wrong for a third reason: ArgoCD only renders the chart and
+does not apply Helm's hook semantics at all.
+
+**The migration takes an advisory lock.** Drizzle's migrator takes none: it reads the last
+applied migration and then executes the statements, so two pods starting at once would both
+decide to create the same table and one would fail. `runMigrations` therefore holds
+`pg_advisory_lock` for the duration; the second runner waits and then finds nothing to do. This
+matters as soon as `api.replicas` is greater than one, which is a values change away.
+
+From this follows a rule for every migration: it must be **forward compatible**. During a
+rolling update the previous version runs against the new schema for as long as the rollout takes.
+Columns are therefore added first and removed later in a separate release, never both in one
+step.
 
 ### 4.12 Reachability: No Tunnel of Its Own
 
@@ -859,7 +881,7 @@ readable by Claude Code.
 
 **Data**
 - [ ] Data model §5.1-5.3, §5.5 — including `origin` and `analysis_run` from day one
-- [ ] Migration job as `argocd.argoproj.io/hook: PreSync` (§4.11)
+- [ ] Migration as an initContainer in front of api and worker, with an advisory lock (§4.11)
 - [ ] Facet vocabulary as a seed, with English and German labels (§13)
 - [ ] Admin maintenance for the vocabulary
 

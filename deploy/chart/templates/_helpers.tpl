@@ -101,3 +101,30 @@ imagePullSecrets:
   - name: {{ .Values.image.pullSecret }}
 {{- end }}
 {{- end -}}
+
+{{/*
+The migration as an initContainer, in front of both api and worker (§4.11).
+
+Deliberately not an ArgoCD PreSync hook: the ordering then holds only under ArgoCD, while
+`helm upgrade` or `kubectl apply` would create the job alongside the rollout and let the new
+version meet the old schema. Kubernetes orders this for free — the main container does not start
+until this one exits 0 — and a failed migration leaves the new pod unready, so the Deployment
+keeps the previous ReplicaSet serving.
+
+It is the api image, so schema and the code expecting it come from the same build. Running on
+every pod start is a no-op after the first; concurrent runs are serialised by an advisory lock in
+`runMigrations`, because Drizzle's migrator takes none.
+*/}}
+{{- define "moodboard.migrationInitContainer" -}}
+{{- if .Values.migration.enabled }}
+initContainers:
+  - name: migrate
+    image: {{ include "moodboard.image" (dict "root" . "component" "api") }}
+    imagePullPolicy: {{ .Values.image.pullPolicy }}
+    command: ["node", "migrate.js"]
+    env:
+      {{- include "moodboard.databaseEnv" . | trim | nindent 6 }}
+    resources:
+      {{- toYaml .Values.migration.resources | nindent 6 }}
+{{- end }}
+{{- end -}}

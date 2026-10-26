@@ -77,10 +77,11 @@ i18n:
   availableLocales: [en, de]
 
 migration:
-  # The migration runs as an ArgoCD PreSync hook. ArgoCD renders the chart and does not apply
-  # Helm's own hook semantics, which is why this is not a Helm pre-upgrade hook (§4.11).
+  # The migration runs as an initContainer in front of api and worker, not as an ArgoCD PreSync
+  # hook: the ordering then holds under any deployment tool, and a failed migration leaves the
+  # new pod unready while the previous one keeps serving (§4.11). Off only to run migrations by
+  # hand — the same `node migrate.js` from the api image.
   enabled: true
-  backoffLimit: 2
   resources:
     requests: { memory: 128Mi, cpu: 50m }
     limits: { memory: 512Mi, cpu: "1" }

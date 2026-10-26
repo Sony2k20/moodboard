@@ -26,6 +26,7 @@ spec:
       securityContext:
         {{- include "moodboard.securityContext" . | nindent 8 }}
       {{- include "moodboard.nodeAffinity" . | nindent 6 }}
+      {{- include "moodboard.migrationInitContainer" . | nindent 6 }}
       containers:
         - name: api
           image: {{ include "moodboard.image" (dict "root" . "component" "api") }}
@@ -36,8 +37,8 @@ spec:
           env:
             - name: PORT
               value: {{ .Values.api.port | quote }}
-            {{- include "moodboard.databaseEnv" . | nindent 12 }}
-            {{- include "moodboard.queueEnv" . | nindent 12 }}
+            {{- include "moodboard.databaseEnv" . | trim | nindent 12 }}
+            {{- include "moodboard.queueEnv" . | trim | nindent 12 }}
             # Always explicit, never inferred from a missing variable: the api refuses to serve
             # data endpoints unless this says oidc (§9).
             - name: AUTH_MODE

@@ -31,12 +31,12 @@ Both are cheaper to get right now than to diagnose later.
   - Deployments for `api`, `worker` and `web`, with the resource requests and limits from §4.6
     and §4.7
   - `IngressRoute` by default, `Ingress` selectable via `ingress.kind` (§4.4)
-  - `cloudflared` deployment (§4)
+  - `cloudflared` deployment, off by default (§4.12)
   - Valkey behind a `deploy` flag (§4.3)
   - HostPath volume, `nodeAffinity` pinning `api` and `worker` to one node, `runAsUser: 1000`
     (§4.2)
   - `/dev/shm` as an `emptyDir` with `medium: Memory`, `sizeLimit: 1Gi` on the worker (§4.6)
-  - The migration `Job` as `argocd.argoproj.io/hook: PreSync` (§4.11)
+  - The migration as an initContainer in front of api and worker (§4.11)
   - All secrets referenced, never created: the CNPG application secret (§4.3.1), OIDC, LLM, GHCR
     pull
 
@@ -56,11 +56,12 @@ Both are cheaper to get right now than to diagnose later.
 
 None. This step adds no table and no column.
 
-It does fix **when** migrations run, which is the operational half of §4.11: the `PreSync` job
-applies them before the rollout and aborts the sync on failure. The rule that follows applies to
-every later migration: between the hook and the completed rollout, the previous application
-version briefly runs against the new schema, so columns are added in one release and removed in
-a later one, never both at once.
+It does fix **when** migrations run, which is the operational half of §4.11: an initContainer
+applies them before api and worker start, under any deployment tool, and a failure leaves the new
+pod unready while the previous one keeps serving. The rule that follows applies to every later
+migration: during a rolling update the previous version runs against the new schema for as long
+as the rollout takes, so columns are added in one release and removed in a later one, never both
+at once.
 
 ## Vocabulary impact
 
@@ -81,11 +82,10 @@ reachable by Claude Code, which is the primary consumer (§1).
 
 ## Known limits
 
-- **A first install needs two syncs in the right order.** The migration job reads the CNPG
-  secret, which the operator creates while bootstrapping the database cluster. The cluster is its
-  own Application (§4.3.1), so the ordering holds — but it is an ordering between Applications,
-  not something this chart can enforce. A first install against a non-existent database fails
-  loudly, which is the intended behaviour.
+- **A first install depends on the database Application syncing first.** The migration reads the
+  CNPG secret, which the operator creates while bootstrapping the cluster. That is an ordering
+  between Applications, not something this chart can enforce — the initContainer simply retries
+  until the database answers, so it resolves itself, just later.
 - **`nodeAffinity` on a single-node cluster is a formality** that does nothing today. It is in
   the chart so that a later second node makes the pod fail to schedule visibly, instead of the
   API silently serving files the worker wrote somewhere else.
@@ -98,12 +98,9 @@ reachable by Claude Code, which is the primary consumer (§1).
 
 ## Open questions
 
-- **Cloudflare Tunnel**: reuse the existing tunnel or create a new one? Affects whether the chart
-  ships a `cloudflared` deployment at all or just a hostname in an existing tunnel's config.
-  Owner: the user.
-- **HostPath directory and UID**: `/srv/moodboard/assets` and 1000 are the chart defaults and
-  still unconfirmed against the other HostPath services on that node.
-- **Node name** for `nodeAffinity`, needed only if the cluster ever has more than one node.
+- **Scaling `api.replicas` beyond one** is a values change, and two pods would then migrate
+  concurrently. The advisory lock in `runMigrations` covers that, but nothing else about running
+  two api replicas has been thought through — sessions, in particular.
 
 ## Verification
 
@@ -111,9 +108,9 @@ reachable by Claude Code, which is the primary consumer (§1).
 2. `helm lint deploy/chart` and `helm template deploy/chart` render without error, and with
    `--set ingress.kind=Ingress` produce an `Ingress` instead of an `IngressRoute`; with
    `--set valkey.deploy=false` no Valkey objects appear.
-3. The rendered migration job carries `argocd.argoproj.io/hook: PreSync` and the worker carries
+3. The rendered api and worker both carry the migration initContainer, and the worker carries
    the `/dev/shm` mount with `medium: Memory`.
 4. A push to `main` produces three images in GHCR tagged `sha-<commit>`, and each one starts:
    `docker run` on `api` answers on its port, `web` serves the Angular bundle.
-5. Pointed at the cluster through the ArgoCD Application, the sync completes, the migration job
-   reports "Migrations applied", and all three deployments become ready.
+5. Pointed at the cluster through the ArgoCD Application, the sync completes, the migration
+   initContainer logs "Migrations applied", and all three deployments become ready.
