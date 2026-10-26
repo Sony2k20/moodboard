@@ -1,6 +1,6 @@
 # Mood Board App — Concept
 
-> Last updated: 2026-10-26 · Status: draft for review
+> Last updated: 2026-10-26 · Status: phase 1 in progress
 
 ## 1. Core Idea
 
@@ -230,7 +230,8 @@ ingress:
     secretName: ""
 
 postgres:
-  existingSecret: moodboard-db       # host, port, database, user, password
+  existingSecret: moodboard-database-app
+  # Keys: uri, host, port, dbname, username, password — see §4.3.1
 
 oidc:
   issuerUrl: https://auth.example.com/application/o/moodboard/
@@ -270,6 +271,27 @@ irreversible failure, so to state it explicitly: what matters is not that backup
 configured but that a **restore has been rehearsed at least once**. An untested restore path is
 not a backup. The same applies to the asset files on the HostPath; they cannot be reconstructed
 from the database.
+
+#### 4.3.1 The Database Secret Belongs to the Operator
+
+Postgres is operated by **CloudNativePG**, and the application secret is created by the operator
+itself when it bootstraps the cluster (`cnpg.io/userType=app`), not by this chart and not by
+hand. Two consequences follow, and both are easier to accept than to work around:
+
+- **The key names are the operator's.** `username`, `password`, `dbname`, `host`, `port`, plus a
+  ready-made `uri`. The application therefore reads exactly these names in addition to
+  `DATABASE_URL`, so the secret can be mounted with `envFrom` and nothing has to be kept in sync
+  with the operator. Renaming them in a copy of the secret would mean reconciling that copy on
+  every password rotation. Note that `uri` is preferred over assembling a URL from the parts: the
+  generated password is 64 arbitrary characters, and the operator has already escaped it
+  correctly.
+- **The secret does not exist before the first sync.** The database cluster therefore lives in
+  its **own ArgoCD Application**, separate from the application chart. Otherwise the `PreSync`
+  migration job (§4.11) would, on a first install, run before the secret it needs exists —
+  a failure that only ever appears once, which is precisely why it is easy to forget.
+
+The keys `jdbc-uri`, `fqdn-uri` and `fqdn-jdbc-uri` contain hyphens and are not valid environment
+variable names; `envFrom` skips them with an event. Nothing here needs them.
 
 ### 4.4 Ingress: IngressRoute
 
@@ -339,8 +361,13 @@ No k3s on the development machine. Rather than maintaining dev and prod manifest
 
 - `api`, `worker` and `web` run through `nx serve` directly on the host: fast HMR, ordinary
   debugging, no image build per change.
-- Postgres and Valkey as dependencies — either via Docker Compose locally or through an SSH
-  tunnel to an existing instance.
+- **Postgres through a `kubectl port-forward` to the cluster instance**, not a local one. The
+  database is operated by CloudNativePG and its credentials are generated there (§4.3.1), so a
+  local copy would mean maintaining a second set — and development would no longer run against
+  the Postgres version, extensions and settings that production uses. The price is a forwarded
+  connection that dies with the terminal: a dropped forward looks like `ECONNRESET` in the
+  middle of a migration rather than like a lost tunnel.
+- Valkey becomes relevant with the job pipeline; until then nothing local depends on it.
 - The Helm chart is purely a deployment artefact and is validated in CI with `helm template`.
 
 ### 4.10 Operational Risk: the IdP as a Single Point of Failure
@@ -881,8 +908,8 @@ readable by Claude Code.
    migration, rollback.
 2. **Authentik application** — an Application plus an OIDC provider named `moodboard`, with
    redirect URIs, must be created in the respective instance.
-3. **Local development environment** — Docker Compose for Postgres and Valkey, or an SSH tunnel
-   to existing instances (§4.9).
+3. **Valkey for local development** — the chart deploys it in the cluster; whether local work
+   forwards to that instance or runs its own is open until the job pipeline exists (§4.9).
 
 > Environment-specific values (domain, issuer URL, HostPath, UID, registry owner) are
 > deliberately **not** part of this document. They are set through the ArgoCD Application; for
