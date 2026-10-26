@@ -10,11 +10,26 @@ design references straight into development — instead of "looks good", an answ
 
 ## Status
 
-**Phase 1 in progress.** The workspace, the data model and the facet vocabulary are in place
-(see [`docs/features/0001-foundation-data-model.md`](./docs/features/0001-foundation-data-model.md));
-deployment, authentication, the job pipeline, website capture, the UI and the MCP server are
-still to come. The full concept lives in [`docs/concept.md`](./docs/concept.md) — data model,
-facet vocabulary, classification pipeline, deployment architecture and the phased plan.
+**Phase 1 in progress.** Deployed and running, but not yet usable: an Angular skeleton and a
+`Hello API` behind a real deployment path.
+
+| Step | State |
+|---|---|
+| [`0001`](./docs/features/0001-foundation-data-model.md) Workspace, data model, vocabulary | done — schema and 93 vocabulary values live in the cluster database |
+| [`0002`](./docs/features/0002-deployment-foundation.md) Images, CI, Helm chart | done — three images on GHCR, synced by ArgoCD |
+| [`0003`](./docs/features/0003-oidc-login.md) OIDC login, BFF session, emergency admin | **next** — draft written, nothing implemented |
+| Upload and the job pipeline | not started |
+| Website capture | not started |
+| Overview UI and i18n | not started |
+| MCP server | not started |
+
+**Authentication is currently off** (`oidc.enabled: false`), which is why `0003` comes next:
+every table after this records who acted, and `origin = 'human'` (concept §5.6) is meaningless
+without a named human.
+
+The full concept lives in [`docs/concept.md`](./docs/concept.md) — data model, facet vocabulary,
+classification pipeline, deployment architecture and the phased plan. It is the source of truth;
+read it before making design decisions.
 
 ## Core idea
 
