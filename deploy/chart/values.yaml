@@ -31,6 +31,12 @@ postgres:
   existingSecret: moodboard-database-app
 
 oidc:
+  # Off only while there is nothing to protect. The application is exposed to the internet and
+  # access is invite-only through the IdP (§9), so a deployment carrying real assets without
+  # authentication is not a configuration — it is a data leak. Disabling it therefore does not
+  # merely omit the OIDC variables: the api is told AUTH_MODE=disabled and refuses to serve
+  # anything but health and the UI shell, so the gap fails closed rather than quietly open.
+  enabled: true
   issuerUrl: https://auth.example.com/application/o/moodboard/
   clientId: moodboard
   existingSecret: moodboard-oidc # clientSecret
@@ -57,6 +63,10 @@ storage:
   nodeName: ""
 
 llm:
+  # Off until the classification pipeline exists. Uploads then still work and assets stay
+  # status=pending; they are classified once it is on, which is the same path a failed classify
+  # job already takes (§7.1).
+  enabled: true
   provider: anthropic
   model: claude-opus-5
   existingSecret: moodboard-llm # apiKey

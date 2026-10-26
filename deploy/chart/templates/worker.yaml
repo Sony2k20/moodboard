@@ -33,6 +33,9 @@ spec:
             # Capped so two parallel video captures do not double the memory peak (§4.6).
             - name: WORKER_CONCURRENCY
               value: {{ .Values.worker.concurrency | quote }}
+            - name: LLM_ENABLED
+              value: {{ .Values.llm.enabled | quote }}
+            {{- if .Values.llm.enabled }}
             - name: LLM_PROVIDER
               value: {{ .Values.llm.provider | quote }}
             - name: LLM_MODEL
@@ -42,8 +45,9 @@ spec:
             - name: LLM_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.llm.existingSecret }}
+                  name: {{ required "llm.existingSecret is required when llm.enabled is true" .Values.llm.existingSecret }}
                   key: apiKey
+            {{- end }}
           volumeMounts:
             - name: assets
               mountPath: {{ .Values.storage.hostPath }}

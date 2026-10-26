@@ -99,6 +99,21 @@ jobs:
           helm template moodboard deploy/chart \
             | grep -q 'argocd.argoproj.io/hook: PreSync'
 
+      - name: Authentication is on by default
+        # oidc.enabled=false is for a deployment with nothing to protect. If the default ever
+        # flips, an exposed instance carrying real assets would serve them to anyone.
+        run: |
+          helm template moodboard deploy/chart | grep -A1 'name: AUTH_MODE' | grep -q 'value: oidc'
+
+      - name: Disabled authentication says so explicitly
+        # Not merely the absence of OIDC variables: the api is told, and the pod is annotated, so
+        # the state is visible in the cluster and the api can fail closed.
+        run: |
+          rendered=$(helm template moodboard deploy/chart --set oidc.enabled=false)
+          echo "$rendered" | grep -A1 'name: AUTH_MODE' | grep -q 'value: disabled'
+          echo "$rendered" | grep -q 'moodboard.dev/auth: disabled'
+          ! echo "$rendered" | grep -q 'key: clientSecret'
+
       - name: The worker has an enlarged /dev/shm
         # Chromium crashes on larger pages with the 64 MB default. The single most common cause
         # of "works locally, dies in the cluster" (§4.6).

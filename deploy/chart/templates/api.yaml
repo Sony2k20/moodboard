@@ -16,6 +16,11 @@ spec:
       labels:
         {{- include "moodboard.labels" . | nindent 8 }}
         app.kubernetes.io/component: api
+      {{- if not .Values.oidc.enabled }}
+      annotations:
+        # Visible in `kubectl describe`, so this state cannot hide in a values file.
+        moodboard.dev/auth: disabled
+      {{- end }}
     spec:
       {{- include "moodboard.imagePullSecrets" . | nindent 6 }}
       securityContext:
@@ -33,6 +38,11 @@ spec:
               value: {{ .Values.api.port | quote }}
             {{- include "moodboard.databaseEnv" . | nindent 12 }}
             {{- include "moodboard.queueEnv" . | nindent 12 }}
+            # Always explicit, never inferred from a missing variable: the api refuses to serve
+            # data endpoints unless this says oidc (§9).
+            - name: AUTH_MODE
+              value: {{ if .Values.oidc.enabled }}oidc{{ else }}disabled{{ end }}
+            {{- if .Values.oidc.enabled }}
             - name: OIDC_ISSUER_URL
               value: {{ .Values.oidc.issuerUrl | quote }}
             - name: OIDC_CLIENT_ID
@@ -40,8 +50,9 @@ spec:
             - name: OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.oidc.existingSecret }}
+                  name: {{ required "oidc.existingSecret is required when oidc.enabled is true" .Values.oidc.existingSecret }}
                   key: clientSecret
+            {{- end }}
             - name: PUBLIC_URL
               value: {{ printf "https://%s" .Values.ingress.host | quote }}
             - name: STORAGE_ROOT
