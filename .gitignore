@@ -1,0 +1,60 @@
+# Abhängigkeiten
+node_modules/
+
+# Build-Artefakte
+dist/
+tmp/
+out-tsc/
+*.tsbuildinfo
+
+# Nx
+.nx/cache
+.nx/workspace-data
+.nx/polygraph
+.nx/self-healing
+.nx/migrate-runs
+
+# Secrets und lokale Konfiguration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Laufzeit-Artefakte (Capture, Uploads, Thumbnails)
+/data/
+/assets/
+playwright-report/
+test-results/
+*.webm
+*.mp4
+
+# Tests und Coverage
+coverage/
+
+# IDEs
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+*.swp
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Claude Code
+.claude/settings.local.json
+.claude/worktrees
+
+# Lokale Infrastruktur-Notizen — enthalten umgebungsspezifische Werte,
+# die bewusst nicht im öffentlichen Repository stehen
+*.local.md
+*.local.yaml
