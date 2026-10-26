@@ -23,12 +23,19 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
 {{- end -}}
 
-{{/* Image reference for one component, e.g. (include "moodboard.image" (dict "root" . "component" "api")) */}}
+{{/*
+Image reference for one component, e.g. (include "moodboard.image" (dict "root" . "component" "api"))
+
+Registry and repository are lower-cased, the tag is not. An OCI repository name may only contain
+lower-case characters, so a registry written `ghcr.io/Owner` produces a pod stuck in
+`InvalidImageName` — and the image is nevertheless there, because GitHub's metadata action
+lower-cases the name on push. Tags may legally contain upper case, so they are left alone.
+*/}}
 {{- define "moodboard.image" -}}
 {{- $root := .root -}}
 {{- $name := index $root.Values.image.names .component -}}
 {{- $tag := default $root.Chart.AppVersion $root.Values.image.tag -}}
-{{- printf "%s/%s:%s" $root.Values.image.registry $name $tag -}}
+{{- printf "%s/%s" $root.Values.image.registry $name | lower -}}:{{ $tag -}}
 {{- end -}}
 
 {{/*

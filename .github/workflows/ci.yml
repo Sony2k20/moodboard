@@ -114,6 +114,13 @@ jobs:
           echo "$rendered" | grep -q 'moodboard.dev/auth: disabled'
           ! echo "$rendered" | grep -q 'key: clientSecret'
 
+      - name: Image references are lower-cased
+        # An OCI repository name may only contain lower case. A registry written ghcr.io/Owner
+        # renders a pod stuck in InvalidImageName while the image is sitting there under the
+        # lower-cased name, because the push lower-cases it too.
+        run: |
+          helm template moodboard deploy/chart --set image.registry=ghcr.io/Owner             | grep -q 'image: ghcr.io/owner/moodboard-api'
+
       - name: The worker has an enlarged /dev/shm
         # Chromium crashes on larger pages with the 64 MB default. The single most common cause
         # of "works locally, dies in the cluster" (§4.6).
