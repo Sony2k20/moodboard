@@ -34,7 +34,7 @@ Every trade-off in this document resolves in favour of metadata quality.
 | IdP | **External dependency** — Authentik via OIDC (§4.5) |
 | Queue | **Valkey** instead of Redis (BSD licence), `deploy` flag in the chart |
 | Registry | **GHCR**, built and pushed by GitHub Actions (§4.8) |
-| Reachability | Over the internet, via Cloudflare Tunnel (no open ports) |
+| Reachability | Over the internet, through the **path the cluster already uses** — Traefik `IngressRoute`. The chart carries an optional `cloudflared`, off by default (§4.12) |
 | Visibility | **All assets visible to all users**, filterable by author. No private assets. |
 | Taxonomy | Controlled facet vocabulary **plus** free-form tags — vocabulary in §6 is **approved** |
 | Volume | A few hundred assets per year |
@@ -104,11 +104,8 @@ Nx monorepo
 ```
                          Internet
                             │
-                   Cloudflare Tunnel
-                            │
-                   ┌────────▼─────────┐
-                   │   cloudflared    │  Deployment, no open ports
-                   └────────┬─────────┘
+                            │  however the cluster is already exposed
+                            │  (optional: cloudflared, §4.12)
                             │
                    ┌────────▼─────────┐
                    │ Traefik          │  IngressRoute
@@ -336,7 +333,7 @@ Postgres and Authentik are external services and are not counted here.
 | api | 400 MB | 700 MB |
 | web (nginx, static) | 50 MB | 50 MB |
 | worker (Chromium + ffmpeg) | 500 MB | **2.5 GB** |
-| cloudflared | 50 MB | 100 MB |
+| cloudflared (optional, §4.12) | 50 MB | 100 MB |
 | **Total** | **~1.1 GB** | **~3.5 GB** |
 
 ### 4.8 Build and Registry: GHCR via GitHub Actions
@@ -394,6 +391,23 @@ From this follows a rule for every migration: it must be **forward compatible**.
 PreSync job and the completed rollout, the old application version briefly runs against the new
 schema. Columns are therefore added first and removed later in a separate release, never both in
 one step.
+
+### 4.12 Reachability: No Tunnel of Its Own
+
+The cluster already exposes other applications over the internet through Traefik
+`IngressRoute`s — the IdP among them, which has to be reachable for the OIDC redirect (§4.10).
+Moodboard uses that same path and adds nothing: one more `IngressRoute` on the existing
+entry points.
+
+A `cloudflared` of its own would be worth it only if no such path existed. It is in the chart
+behind `cloudflared.deploy`, defaulting to **false**, so the chart stays usable in a cluster
+without one — but running a second tunnel beside an existing one would mean a second token to
+rotate and a second component to debug, for an application that is not the reason the cluster is
+exposed.
+
+What this does mean: **Moodboard inherits whatever protects that path.** TLS termination,
+redirect and security headers come from the cluster's Traefik middlewares, set per environment
+in the ArgoCD Application, not from this chart.
 
 ## 5. Data Model
 
@@ -836,7 +850,7 @@ readable by Claude Code.
 
 **Foundation**
 - [ ] Nx monorepo, Dockerfiles, GitHub Actions → GHCR (§4.8)
-- [ ] Helm chart with the `IngressRoute`/`Ingress` switch, cloudflared
+- [ ] Helm chart with the `IngressRoute`/`Ingress` switch, optional cloudflared (§4.12)
 - [ ] Wiring to external Postgres and Authentik via values (§4.3)
 - [ ] Valkey with its `deploy` flag
 - [ ] HostPath volume + nodeAffinity + UID 1000 (§4.2)
