@@ -31,8 +31,21 @@ export interface AssetSummary {
   readonly thumbnailUrl: string | null;
 }
 
-/** Browsers name a pasted image `image.png`; that is not a title anyone chose. */
-const GENERIC_NAMES = new Set(['image', 'blob', 'clipboard', 'untitled']);
+/**
+ * Names nobody chose as a title: what browsers call a pasted image (`image.png`), and a file
+ * named after its own format (`jpg`), which some download dialogs produce.
+ */
+const GENERIC_NAMES = new Set([
+  'image',
+  'blob',
+  'clipboard',
+  'untitled',
+  'png',
+  'jpg',
+  'jpeg',
+  'webp',
+  'gif',
+]);
 
 export function titleFromFileName(name: string | undefined): string | null {
   const stem = (name ?? '').replace(/\.[^.]*$/, '').trim();

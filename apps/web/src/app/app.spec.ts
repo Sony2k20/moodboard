@@ -118,5 +118,7 @@ describe('App', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('.user')?.textContent).toContain('Ada');
     expect(el.querySelector('button')).not.toBeNull();
+    // ada.locale is 'de'; the select must show it, not the first option.
+    expect(el.querySelector('select')?.value).toBe('de');
   });
 });

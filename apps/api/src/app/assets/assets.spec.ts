@@ -70,6 +70,8 @@ describe('titleFromFileName', () => {
     expect(titleFromFileName('image.png')).toBeNull();
     expect(titleFromFileName('blob')).toBeNull();
     expect(titleFromFileName(undefined)).toBeNull();
+    expect(titleFromFileName('jpg')).toBeNull();
+    expect(titleFromFileName('PNG.png')).toBeNull();
   });
 });
 

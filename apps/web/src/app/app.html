@@ -8,9 +8,13 @@
   </span>
   <label class="locale">
     <span class="visually-hidden">{{ 'app.language' | transloco }}</span>
-    <select [value]="user.locale" (change)="changeLocale($event)">
+    <!-- [selected] per option, not [value] on the select: that is applied before the options
+         exist, and the browser then shows the first one. -->
+    <select (change)="changeLocale($event)">
       @for (locale of locales; track locale) {
-      <option [value]="locale">{{ 'app.locale.' + locale | transloco }}</option>
+      <option [value]="locale" [selected]="locale === user.locale">
+        {{ 'app.locale.' + locale | transloco }}
+      </option>
       }
     </select>
   </label>
