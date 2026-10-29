@@ -2,8 +2,9 @@ apiVersion: v2
 name: moodboard
 description: A self-hosted, team-wide design memory
 type: application
-# version is the chart, appVersion the application. appVersion doubles as the default image tag,
-# so a release bumps both.
+# Chart and application are released together, so both are always the same version: the git tag
+# vX.Y.Z without its v. appVersion is the default image tag, which lets a deployment pin only the
+# git tag. The publish workflow refuses a tag that does not match both. See README, Releasing.
 version: 0.1.0
 appVersion: "0.1.0"
 kubeVersion: ">=1.29.0-0"

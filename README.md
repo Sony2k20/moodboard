@@ -83,6 +83,18 @@ The application UI is available in **English (default) and German**, switchable 
 Everything else — code, database identifiers, documentation, commit messages — is English only.
 See [`docs/concept.md`](./docs/concept.md) §13.
 
+## Releasing
+
+Semantic versioning, one version for chart and images. While phase 1 is in progress the major
+version stays 0: a new feature is a minor release, a fix a patch.
+
+1. Set `version` and `appVersion` in [`deploy/chart/Chart.yaml`](./deploy/chart/Chart.yaml) to the
+   new version, commit.
+2. `git tag vX.Y.Z && git push origin vX.Y.Z` — the publish workflow checks that the tag matches
+   the chart and pushes the images as `X.Y.Z` and `X.Y`.
+3. In the ArgoCD Application, set `targetRevision: vX.Y.Z`. Nothing else: the image tag comes
+   from the chart's `appVersion`.
+
 ## Development
 
 Requires Node 24 and npm 11. Postgres is an external dependency, operated by CloudNativePG in

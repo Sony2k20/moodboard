@@ -14,8 +14,29 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  release-version:
+    name: Release version matches the chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Tag, chart version and appVersion agree
+        # The deployment pins one value, the git tag; the image tag comes from the chart's
+        # appVersion at that tag. If the three disagree, a release deploys images of another
+        # version than it says — so a mismatched tag builds nothing.
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(grep '^version:' deploy/chart/Chart.yaml | awk '{print $2}' | tr -d '"')
+          app=$(grep '^appVersion:' deploy/chart/Chart.yaml | awk '{print $2}' | tr -d '"')
+          echo "tag=$tag version=$version appVersion=$app"
+          if [ "$tag" != "$version" ] || [ "$tag" != "$app" ]; then
+            echo "::error::Tag v$tag does not match Chart.yaml (version $version, appVersion $app)."
+            exit 1
+          fi
+
   build:
     name: ${{ matrix.image }}
+    needs: release-version
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,11 +68,13 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
-          # `sha-<commit>` on every build, `v<semver>` on releases. The point is rollback: a
-          # `helm rollback` to the previous tag is a matter of seconds (§4.8).
+          # Releases (git tag vX.Y.Z) publish X.Y.Z and X.Y — without the v, so the tag equals the
+          # chart's appVersion, which is the chart's default image tag. sha-<commit> on every
+          # build, for testing a commit before it is released (§4.8).
           tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=sha-,format=short
-            type=semver,pattern=v{{version}}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - uses: docker/build-push-action@v6

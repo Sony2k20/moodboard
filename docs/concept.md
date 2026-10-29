@@ -347,8 +347,11 @@ automatically provided `GITHUB_TOKEN` is enough to push, so there is no extra se
 rotation concern. It also avoids the Docker Hub pull limits that occasionally bite on image
 pulls in the cluster.
 
-Tagging: `sha-<commit>` for every build, plus `v<semver>` on releases. The real gain is
-rollback — `helm rollback` to the previous image tag is a matter of seconds.
+Tagging: a release is a git tag `vX.Y.Z`; it publishes the images as `X.Y.Z` and `X.Y`, and the
+chart carries the same `X.Y.Z` as `version` and `appVersion`. The ArgoCD Application pins only
+the git tag — the image tag follows from the chart's `appVersion`, so chart and images cannot
+drift apart, and a rollback is one value. Every build is also tagged `sha-<commit>`, for trying
+an unreleased commit.
 
 In the cluster, an `imagePullSecret` (`ghcr-pull`) holding a read-only PAT, as long as the
 packages stay private.

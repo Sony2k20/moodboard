@@ -4,8 +4,8 @@
 
 image:
   registry: ghcr.io/owner
-  # Empty means Chart.AppVersion. Set to sha-<commit> to deploy a specific build, which is also
-  # how a rollback works.
+  # Empty means Chart.AppVersion, the released version — leave it empty and pin the chart's git tag
+  # instead; chart and images then cannot drift apart. sha-<commit> only to try an unreleased build.
   tag: ""
   pullPolicy: IfNotPresent
   pullSecret: ghcr-pull
