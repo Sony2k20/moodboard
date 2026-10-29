@@ -12,6 +12,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { valkeyPrefix } from '@moodboard/shared';
 import type { Request, Response } from 'express';
 import { VALKEY, ValkeyClient } from '../valkey.module';
 import { AUTH_CONFIG, AuthConfig } from './auth.config';
@@ -21,7 +22,7 @@ import { verifyPassword } from './password';
 import { SessionStore } from './session.store';
 import { UsersService } from './users.service';
 
-const FAILURES_KEY = 'mb:auth:emergency-failures';
+const FAILURES_KEY = `${valkeyPrefix(process.env)}:auth:emergency-failures`;
 export const MAX_FAILURES = 5;
 export const LOCKOUT_SECONDS = 15 * 60;
 

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
+import { valkeyPrefix } from '@moodboard/shared';
 import { VALKEY, ValkeyClient } from '../valkey.module';
 
 /**
@@ -35,7 +36,8 @@ export const SESSION_ABSOLUTE_SECONDS = 30 * DAY;
 export const EMERGENCY_SESSION_SECONDS = 12 * 60 * 60;
 const LOGIN_FLOW_SECONDS = 10 * 60;
 
-const PREFIX = 'mb:auth:';
+// `mb` in production, `mb-dev` locally, so the two never share keys on one Valkey (0004).
+const PREFIX = `${valkeyPrefix(process.env)}:auth:`;
 const sessionKey = (tokenHash: string) => `${PREFIX}session:${tokenHash}`;
 const sidKey = (sid: string) => `${PREFIX}sid:${sid}`;
 const subKey = (sub: string) => `${PREFIX}sub:${sub}`;

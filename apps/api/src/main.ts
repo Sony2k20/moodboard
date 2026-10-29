@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
@@ -9,7 +9,11 @@ import { AUTH_CONFIG, AuthConfig } from './app/auth/auth.config';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
+  // Stored files keep the `/files/…` URLs the storage port builds (§4.2); the ingress routes
+  // that prefix to the api as well.
+  app.setGlobalPrefix(globalPrefix, {
+    exclude: [{ path: 'files/{*path}', method: RequestMethod.GET }],
+  });
   app.use(cookieParser());
   app.enableShutdownHooks();
   // The api sees one proxy hop (Traefik); without this `req.protocol` would read http.

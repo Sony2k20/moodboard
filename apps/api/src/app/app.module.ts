@@ -1,11 +1,19 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
+import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database.module';
+import { StorageModule } from './storage.module';
 import { ValkeyModule } from './valkey.module';
 
 @Module({
-  imports: [DatabaseModule, ValkeyModule, AuthModule],
+  imports: [
+    DatabaseModule,
+    ValkeyModule,
+    StorageModule,
+    AuthModule,
+    AssetsModule,
+  ],
   controllers: [AppController],
 })
 export class AppModule {}
