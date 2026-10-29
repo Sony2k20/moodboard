@@ -44,6 +44,20 @@ To be decided during implementation, but the shape follows from §4.5:
 - Upload, pipeline, UI beyond a login state.
 - Role management: roles live in Authentik, the application only reads them (§9).
 
+### Decided
+
+- **Server-side sessions in Valkey.** The cookie carries an opaque session id, nothing else.
+  Authentik is configured with a backchannel logout URI (`/api/auth/backchannel-logout`), and
+  a logout notification can only end a session the server can find and delete — a signed cookie
+  cannot be revoked. Valkey already runs, so this costs no new component.
+- **Role from the `groups` claim, on every login.** One Authentik group maps to `admin`, one to
+  `member`; the group names are chart values (`oidc.adminGroup`, `oidc.memberGroup`), because
+  they belong to the environment, not to the code. A user in neither group is refused with 403
+  even if Authentik let them through — the Application's policy binding is the first gate, this
+  is the second.
+- **Post-logout redirect** goes to the application root, which sends an anonymous visitor
+  straight back to the Authentik login. No separate "signed out" page in phase 1.
+
 ## Data model impact
 
 **Additive.** `user` exists with `sub`, `email`, `display_name`, `role`, `locale` (§5.1,
@@ -80,13 +94,10 @@ format here even if the endpoint comes later.
 
 ## Open questions
 
-- **The Authentik Application and OIDC provider do not exist yet.** Needed: a provider named
-  `moodboard`, redirect URI `https://moodboard.example.com/api/auth/callback`, and the client
-  secret as `moodboard-oidc` in namespace `prod`. Owner: the user.
-  The real host is in `infra.local.md`.
+- **Authentik is set up** (provider, groups, redirect and backchannel logout URI); the real
+  values are in `infra.local.md`. The client secret must be in a secret `moodboard-oidc` under
+  the key `clientSecret`, which is what the chart reads.
 - Where the emergency admin's password hash lives: a secret, or a column on `user`?
-- Session storage: signed cookie alone, or a server-side session in Valkey? Valkey is deployed
-  and running, so the second option is available at no extra cost.
 
 ## Verification
 
