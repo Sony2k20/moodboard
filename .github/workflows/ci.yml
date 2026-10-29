@@ -92,7 +92,7 @@ jobs:
           npm ci --omit=dev --ignore-scripts
           cp -r "$GITHUB_WORKSPACE"/dist/apps/worker/* .
           node -e "require('sharp')"
-          output=$(DATABASE_URL=postgresql://u:p@127.0.0.1:1/none VALKEY_PORT=1 timeout 10 node main.js 2>&1 || true)
+          output=$(DATABASE_URL=postgresql://u:p@127.0.0.1:1/none VALKEY_PORT=1 timeout -k 30 10 node main.js 2>&1 || true)
           echo "$output" | head -5
           if echo "$output" | grep -q MODULE_NOT_FOUND; then
             echo "::error::The worker image is missing a runtime dependency. Declare it in apps/worker/package.json."

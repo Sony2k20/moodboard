@@ -22,6 +22,9 @@ import {
 import { ClassifyStep } from './classify.step';
 import { ImageSteps } from './image.steps';
 
+/** Below the pod's default 30 s termination grace period. */
+const SHUTDOWN_GRACE_MS = 20_000;
+
 /** Three attempts with backoff: covers a rate limit or a flaky network, not a broken file. */
 const JOB_OPTIONS = {
   attempts: 3,
@@ -131,8 +134,21 @@ export class PipelineRunner
     }
   }
 
+  /**
+   * Lets running jobs finish, but not forever: with Valkey unreachable a graceful close never
+   * completes, and the pod would hang until the kubelet kills it. An interrupted job is not lost —
+   * the reconciler finds its asset in the database.
+   */
   async onApplicationShutdown(): Promise<void> {
-    await this.worker?.close();
-    await this.queue.close();
+    const graceful = (async () => {
+      await this.worker?.close();
+      await this.queue.close();
+    })();
+    const deadline = new Promise<void>((resolve) =>
+      setTimeout(resolve, SHUTDOWN_GRACE_MS).unref(),
+    );
+    await Promise.race([graceful, deadline]);
+    await this.worker?.disconnect().catch(() => undefined);
+    await this.queue.disconnect().catch(() => undefined);
   }
 }
