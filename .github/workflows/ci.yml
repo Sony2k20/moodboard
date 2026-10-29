@@ -163,6 +163,29 @@ jobs:
           echo "$rendered" | grep -q 'moodboard.dev/auth: disabled'
           ! echo "$rendered" | grep -q 'key: clientSecret'
 
+      - name: The emergency admin is off by default
+        # A login that bypasses the IdP is opt-in (§4.10): no password hash mounted, no route.
+        # `! cmd || exit 1`, not a bare `! cmd`: bash -e does not stop on a negated command, so
+        # only the last line of a step would otherwise count.
+        run: |
+          rendered=$(helm template moodboard deploy/chart)
+          echo "$rendered" | grep -A1 'name: EMERGENCY_ADMIN_ENABLED' | grep -q 'value: "false"'
+          ! echo "$rendered" | grep -q 'key: passwordHash' || exit 1
+          ! echo "$rendered" | grep -q 'name: moodboard-emergency$' || exit 1
+
+      - name: The emergency login is routed to its own port only
+        # "LAN only" rests on this: the emergency path reaches the second api port only through
+        # its own IngressRoute, which carries the LAN entry points alone. A plain Ingress cannot
+        # express that, so the chart refuses the combination.
+        run: |
+          rendered=$(helm template moodboard deploy/chart --set emergencyAdmin.enabled=true \
+            --set 'ingress.entryPoints={lan,internet}' --set 'emergencyAdmin.entryPoints={lan}')
+          route=$(echo "$rendered" | awk '/name: moodboard-emergency$/,/^---/')
+          echo "$route" | grep -q 'port: 3001'
+          echo "$route" | grep -A2 'entryPoints:' | grep -q -- '- lan'
+          ! echo "$route" | grep -q -- '- internet' || exit 1
+          ! helm template moodboard deploy/chart --set emergencyAdmin.enabled=true --set ingress.kind=Ingress || exit 1
+
       - name: Image references are lower-cased
         # An OCI repository name may only contain lower case. A registry written ghcr.io/Owner
         # renders a pod stuck in InvalidImageName while the image is sitting there under the

@@ -40,6 +40,20 @@ oidc:
   issuerUrl: https://auth.example.com/application/o/moodboard/
   clientId: moodboard
   existingSecret: moodboard-oidc # clientSecret
+  # Authentik groups mapped to the two roles (§9), compared exactly. A user in neither group is
+  # refused even if Authentik lets them through; admin wins if a user is in both.
+  adminGroup: moodboard-admins
+  memberGroup: moodboard-users
+
+emergencyAdmin:
+  # Local login that bypasses Authentik, for when the IdP is down (§4.10). Off by default; when
+  # on, it answers only on its own port, and that port is routed only from the entry points
+  # below — which must be LAN-only. The source IP is not used: behind the cluster load balancer
+  # LAN traffic is source-NATed, so an address check would be meaningless.
+  enabled: false
+  existingSecret: moodboard-emergency-admin # passwordHash, from tools/hash-password.mjs
+  port: 3001
+  entryPoints: [websecure]
 
 valkey:
   deploy: true # false -> use an external instance

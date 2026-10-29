@@ -34,6 +34,21 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.api.port }}
+            {{- if .Values.emergencyAdmin.enabled }}
+            - name: emergency
+              containerPort: {{ .Values.emergencyAdmin.port }}
+            {{- end }}
+          # Liveness only: the endpoint touches neither the database nor Valkey nor the IdP, so an
+          # Authentik outage does not restart the api — the emergency admin needs it running.
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
           env:
             - name: PORT
               value: {{ .Values.api.port | quote }}
@@ -53,6 +68,21 @@ spec:
                 secretKeyRef:
                   name: {{ required "oidc.existingSecret is required when oidc.enabled is true" .Values.oidc.existingSecret }}
                   key: clientSecret
+            - name: OIDC_ADMIN_GROUP
+              value: {{ required "oidc.adminGroup is required when oidc.enabled is true" .Values.oidc.adminGroup | quote }}
+            - name: OIDC_MEMBER_GROUP
+              value: {{ required "oidc.memberGroup is required when oidc.enabled is true" .Values.oidc.memberGroup | quote }}
+            {{- end }}
+            - name: EMERGENCY_ADMIN_ENABLED
+              value: {{ .Values.emergencyAdmin.enabled | quote }}
+            {{- if .Values.emergencyAdmin.enabled }}
+            - name: EMERGENCY_ADMIN_PORT
+              value: {{ .Values.emergencyAdmin.port | quote }}
+            - name: EMERGENCY_ADMIN_PASSWORD_HASH
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "emergencyAdmin.existingSecret is required when emergencyAdmin.enabled is true" .Values.emergencyAdmin.existingSecret }}
+                  key: passwordHash
             {{- end }}
             - name: PUBLIC_URL
               value: {{ printf "https://%s" .Values.ingress.host | quote }}
@@ -90,3 +120,8 @@ spec:
     - name: http
       port: {{ .Values.api.port }}
       targetPort: http
+    {{- if .Values.emergencyAdmin.enabled }}
+    - name: emergency
+      port: {{ .Values.emergencyAdmin.port }}
+      targetPort: emergency
+    {{- end }}
