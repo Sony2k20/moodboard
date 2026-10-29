@@ -18,7 +18,7 @@ to do once signed in yet: no upload, no assets.
 | [`0001`](./docs/features/0001-foundation-data-model.md) Workspace, data model, vocabulary | done — schema and 93 vocabulary values live in the cluster database |
 | [`0002`](./docs/features/0002-deployment-foundation.md) Images, CI, Helm chart | done — three images on GHCR, synced by ArgoCD |
 | [`0003`](./docs/features/0003-oidc-login.md) OIDC login, BFF session, emergency admin | done — login through Authentik is live; emergency admin implemented, not enabled |
-| Upload and the job pipeline | **next** |
+| [`0004`](./docs/features/0004-upload-job-pipeline.md) Upload and the job pipeline | **next** — draft written, two decisions open |
 | Website capture | not started |
 | Overview UI and i18n | not started |
 | MCP server | not started |
