@@ -17,16 +17,14 @@ design references straight into development — instead of "looks good", an answ
 |---|---|
 | [`0001`](./docs/features/0001-foundation-data-model.md) Workspace, data model, vocabulary | done — schema and 93 vocabulary values live in the cluster database |
 | [`0002`](./docs/features/0002-deployment-foundation.md) Images, CI, Helm chart | done — three images on GHCR, synced by ArgoCD |
-| [`0003`](./docs/features/0003-oidc-login.md) OIDC login, BFF session, emergency admin | **implemented** — not yet switched on in the cluster |
-| Upload and the job pipeline | not started |
+| [`0003`](./docs/features/0003-oidc-login.md) OIDC login, BFF session, emergency admin | done — login through Authentik is live; emergency admin implemented, not enabled |
+| Upload and the job pipeline | **next** |
 | Website capture | not started |
 | Overview UI and i18n | not started |
 | MCP server | not started |
 
-**Authentication is currently off** (`oidc.enabled: false`). The code is in place (`0003`); switching
-it on is a change to the ArgoCD Application, listed in `0003` under *Switching it on*. It comes
-before everything else because every table after this records who acted, and `origin = 'human'`
-(concept §5.6) is meaningless without a named human.
+**Authentication is on**: every data endpoint requires a session, and every row written from here
+on can name the human who acted — which is what `origin = 'human'` (concept §5.6) rests on.
 
 The full concept lives in [`docs/concept.md`](./docs/concept.md) — data model, facet vocabulary,
 classification pipeline, deployment architecture and the phased plan. It is the source of truth;

@@ -1,6 +1,6 @@
 # 0003 — OIDC login, BFF session and the emergency admin
 
-> Status: implemented, not yet switched on in the cluster
+> Status: done — live since 2026-10-29; the emergency admin is implemented but not enabled
 > Phase: 1
 > Created: 2026-10-27
 
