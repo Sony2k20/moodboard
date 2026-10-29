@@ -60,3 +60,6 @@ logs/
 *.local.yaml
 
 .angular
+
+# Local STORAGE_ROOT for development (0004)
+.storage/

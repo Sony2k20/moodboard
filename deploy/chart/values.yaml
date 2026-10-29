@@ -59,6 +59,9 @@ valkey:
   deploy: true # false -> use an external instance
   host: "" # only when deploy: false
   port: 6379
+  # Prefix of every key the application writes, queue and sessions alike. Distinct per
+  # installation sharing one Valkey, so one installation's worker never takes another's jobs.
+  prefix: mb
   image: valkey/valkey:9.0-alpine
   resources:
     requests: { memory: 100Mi, cpu: 50m }

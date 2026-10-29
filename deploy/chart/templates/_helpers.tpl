@@ -68,6 +68,8 @@ are passed as well so a non-CNPG Postgres can be wired up through the same templ
   value: {{ $host | quote }}
 - name: VALKEY_PORT
   value: {{ .Values.valkey.port | quote }}
+- name: VALKEY_PREFIX
+  value: {{ .Values.valkey.prefix | quote }}
 {{- end -}}
 
 {{- define "moodboard.securityContext" -}}

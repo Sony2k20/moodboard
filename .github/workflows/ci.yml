@@ -80,6 +80,26 @@ jobs:
             exit 1
           fi
 
+      - name: The same for the worker
+        # The worker carries sharp, a native module whose Linux binaries come in as optional
+        # dependencies — exactly what a pruned lockfile can lose. It has no exit of its own, so it
+        # runs for a few seconds against unreachable services and must not fail to load.
+        run: |
+          npx nx prune worker
+          mkdir -p /tmp/worker-sim
+          cp dist/apps/worker/package.json dist/apps/worker/package-lock.json /tmp/worker-sim/
+          cd /tmp/worker-sim
+          npm ci --omit=dev --ignore-scripts
+          cp -r "$GITHUB_WORKSPACE"/dist/apps/worker/* .
+          node -e "require('sharp')"
+          output=$(DATABASE_URL=postgresql://u:p@127.0.0.1:1/none VALKEY_PORT=1 timeout 10 node main.js 2>&1 || true)
+          echo "$output" | head -5
+          if echo "$output" | grep -q MODULE_NOT_FOUND; then
+            echo "::error::The worker image is missing a runtime dependency. Declare it in apps/worker/package.json."
+            exit 1
+          fi
+          echo "$output" | grep -q 'Worker started'
+
   translations:
     name: Translation keys
     runs-on: ubuntu-latest
