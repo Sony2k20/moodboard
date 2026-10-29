@@ -86,7 +86,10 @@ llm:
   enabled: true
   provider: anthropic
   model: claude-opus-5
-  existingSecret: moodboard-llm # apiKey
+  existingSecret: moodboard-llm
+  # The key inside that secret. Configurable because one API-key secret is often shared by
+  # several applications, each reading its own key.
+  existingSecretKey: apiKey
   monthlyCostLimitUsd: 25
 
 i18n:

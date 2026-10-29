@@ -47,7 +47,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ required "llm.existingSecret is required when llm.enabled is true" .Values.llm.existingSecret }}
-                  key: apiKey
+                  key: {{ required "llm.existingSecretKey is required when llm.enabled is true" .Values.llm.existingSecretKey }}
             {{- end }}
           volumeMounts:
             - name: assets
