@@ -1,6 +1,6 @@
 # 0004 — Upload and the job pipeline
 
-> Status: implemented, not yet deployed
+> Status: deployed in v0.2.0 (2026-10-30) — end-to-end verification with a real upload pending
 > Phase: 1
 > Created: 2026-10-29
 
