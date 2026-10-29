@@ -15,7 +15,8 @@
     "cookie-parser": "^1.4.7",
     "ioredis": "^6.0.0",
     "jose": "^6.2.12",
-    "openid-client": "^6.8.8"
+    "openid-client": "^6.8.8",
+    "bullmq": "6.3.15"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0"
