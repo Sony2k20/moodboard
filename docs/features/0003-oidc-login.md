@@ -81,8 +81,9 @@ format here even if the endpoint comes later.
 ## Open questions
 
 - **The Authentik Application and OIDC provider do not exist yet.** Needed: a provider named
-  `moodboard`, redirect URI `https://moodboard.csnguyen.de/api/auth/callback`, and the client
+  `moodboard`, redirect URI `https://moodboard.example.com/api/auth/callback`, and the client
   secret as `moodboard-oidc` in namespace `prod`. Owner: the user.
+  The real host is in `infra.local.md`.
 - Where the emergency admin's password hash lives: a secret, or a column on `user`?
 - Session storage: signed cookie alone, or a server-side session in Valkey? Valkey is deployed
   and running, so the second option is available at no extra cost.
@@ -91,7 +92,7 @@ format here even if the endpoint comes later.
 
 1. `oidc.enabled: true` in the ArgoCD Application, with `moodboard-oidc` present: the api pod
    starts, `AUTH_MODE=oidc`, the annotation `moodboard.dev/auth` is gone.
-2. Opening `https://moodboard.csnguyen.de` redirects to Authentik and back, and a `user` row
+2. Opening `https://moodboard.example.com` redirects to Authentik and back, and a `user` row
    appears with the right `sub`.
 3. A data endpoint without a session answers 401, not 200.
 4. With `oidc.enabled: false` the same endpoint answers 503 or 401 — never data.
