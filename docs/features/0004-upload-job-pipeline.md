@@ -1,6 +1,6 @@
 # 0004 — Upload and the job pipeline
 
-> Status: draft
+> Status: implemented, not yet deployed
 > Phase: 1
 > Created: 2026-10-29
 
@@ -126,25 +126,31 @@ None directly. Two things prepared for it:
 - **Lost jobs are found within 10 minutes**, not immediately, after a Valkey or worker restart.
 - **Upload size limit 25 MB per file.** Design references above that are almost always
   uncompressed exports.
-- `@nestjs/platform-express` currently pulls a `multer` version with a known DoS advisory. This
-  feature is the first to use multipart uploads, so it updates the dependency first.
+- **`multer` 2.4.0 carries a DoS advisory** (GHSA-q7qp-rjg7-q26m) and stays for now. Only Nest 12
+  ships the fixed version, and an npm `overrides` entry does not survive `nx prune` — the image
+  build fails on it. The advisory needs an asynchronous `fileFilter`; the upload uses none, and
+  the controller says that none may be added before the move to Nest 12.
 
-## Open questions
+## Decided
 
-1. **Should the stored original keep its metadata?** — *my recommendation: yes, byte-exact; you
-   decide, because it deviates from §7.1.* §7.1 says `normalize` strips EXIF. Doing that to the
-   original means re-encoding it — lossy for JPEG — and EXIF also holds the orientation, so
-   stripping it without re-encoding turns photos sideways. Recommendation: keep the original
-   byte-exact (it is the reference, and fidelity is the point), and strip metadata from
-   everything derived from it — thumbnails and the image sent to the model. Trade-off: an
-   uploaded photo can carry GPS coordinates in its original, visible to every signed-in user.
-   Screenshots, the bulk of the corpus, carry none.
-2. **Local development needs its own database.** — *my recommendation: a `moodboard_dev`
-   database on the same CNPG cluster, a queue prefix `mb-dev`, and a local `STORAGE_ROOT`; you
-   decide, because it is infrastructure.* Until now local work used a port-forward to the
-   production database. With uploads that breaks: a local upload creates a production `asset`
-   row whose files exist only on the laptop, and a local worker on the cluster's Valkey would
-   take production jobs. This also closes open point 3 of §12.
+1. **The stored original stays byte-exact; metadata is stripped from everything derived from
+   it** — thumbnails and the image sent to the model. Deviates from §7.1, which says
+   `normalize` strips EXIF: doing that to the original means re-encoding it, lossy for JPEG, and
+   EXIF also carries the orientation, so stripping it without re-encoding turns photos sideways.
+   Fidelity of the reference is the point. Accepted trade-off: an uploaded photo can carry GPS
+   coordinates in its original, visible to every signed-in user; screenshots, the bulk of the
+   corpus, carry none.
+2. **Local development has its own database and queue.** A `moodboard_dev` database on the same
+   CNPG cluster, the queue prefix `mb-dev` (production: `mb`), and a local `STORAGE_ROOT`.
+   Until now local work used a port-forward to the production database; with uploads a local
+   upload would create a production `asset` whose files exist only on the laptop, and a local
+   worker on the cluster's Valkey would take production jobs. Closes open point 3 of §12.
+3. **The structured-output schema is built by hand, not with `zodOutputFormat`.** Deviates from
+   CLAUDE.md. The SDK helper in the installed version moves every `enum` into the description
+   text, so the vocabulary would no longer be enforced by the grammar and the model could produce
+   a value outside it. `libs/classify/src/lib/output-schema.ts` derives the JSON schema from the
+   same Zod schema with `enum` intact and validates the response against Zod afterwards — the
+   contract of §7.2 is unchanged.
 
 ## Verification
 
