@@ -13,9 +13,6 @@
     "disabled": "Die Anmeldung ist auf dieser Instanz ausgeschaltet, deshalb gibt es nichts anzuzeigen.",
     "unavailable": "Die Anwendung ist gerade nicht erreichbar. Bitte gleich noch einmal versuchen."
   },
-  "home": {
-    "signedInAs": "Angemeldet als {{ name }}."
-  },
   "loginFailed": {
     "title": "Anmeldung fehlgeschlagen",
     "retry": "Erneut versuchen",
@@ -36,6 +33,29 @@
       "locked": "Zu viele Fehlversuche. In 15 Minuten erneut versuchen.",
       "disabled": "Die Anmeldung ist auf dieser Instanz ausgeschaltet.",
       "failed": "Anmeldung fehlgeschlagen. Bitte gleich noch einmal versuchen."
+    }
+  },
+  "upload": {
+    "drop": "Bilder hierher ziehen oder einen Screenshot irgendwo auf der Seite einfügen.",
+    "pick": "Dateien auswählen",
+    "formats": "PNG, JPEG, WebP oder GIF, jeweils bis 25 MB.",
+    "dismiss": "Schließen",
+    "error": {
+      "tooLarge": "Zu groß — höchstens 25 MB.",
+      "unsupported": "Kein unterstütztes Bild. Nur PNG, JPEG, WebP oder GIF.",
+      "failed": "Upload fehlgeschlagen. Bitte gleich noch einmal versuchen."
+    }
+  },
+  "recent": {
+    "title": "Letzte Uploads",
+    "empty": "Noch nichts hochgeladen.",
+    "untitled": "Ohne Titel",
+    "classified": "klassifiziert",
+    "unclassified": "noch nicht klassifiziert",
+    "status": {
+      "pending": "Wird verarbeitet",
+      "ready": "Bereit",
+      "failed": "Datei nicht lesbar"
     }
   }
 }

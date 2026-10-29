@@ -1,0 +1,73 @@
+.dropzone {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  border: 2px dashed #bbb;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.dropzone.dragging {
+  border-color: #333;
+  background: #f4f4f4;
+}
+
+.pick input {
+  display: none;
+}
+
+.pick {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.in-flight,
+.recent {
+  list-style: none;
+  padding: 0;
+}
+
+.in-flight li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.in-flight li.error {
+  color: #a00;
+}
+
+.recent {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.thumb {
+  aspect-ratio: 4 / 3;
+  background: #eee;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.meta {
+  display: grid;
+  gap: 0.15rem;
+  padding-top: 0.35rem;
+}
+
+.status[data-status='failed'] {
+  color: #a00;
+}
+
+.status[data-status='pending'] {
+  color: #777;
+}

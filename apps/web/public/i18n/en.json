@@ -13,9 +13,6 @@
     "disabled": "Sign-in is switched off on this instance, so there is nothing to show.",
     "unavailable": "The application is not reachable right now. Try again in a moment."
   },
-  "home": {
-    "signedInAs": "Signed in as {{ name }}."
-  },
   "loginFailed": {
     "title": "Sign-in failed",
     "retry": "Try again",
@@ -36,6 +33,29 @@
       "locked": "Too many failed attempts. Try again in 15 minutes.",
       "disabled": "Sign-in is switched off on this instance.",
       "failed": "Sign-in failed. Try again in a moment."
+    }
+  },
+  "upload": {
+    "drop": "Drop images here, or paste a screenshot anywhere on this page.",
+    "pick": "Choose files",
+    "formats": "PNG, JPEG, WebP or GIF, up to 25 MB each.",
+    "dismiss": "Dismiss",
+    "error": {
+      "tooLarge": "Too large — 25 MB at most.",
+      "unsupported": "Not a supported image. PNG, JPEG, WebP or GIF only.",
+      "failed": "Upload failed. Try again in a moment."
+    }
+  },
+  "recent": {
+    "title": "Latest uploads",
+    "empty": "Nothing uploaded yet.",
+    "untitled": "Untitled",
+    "classified": "classified",
+    "unclassified": "not classified yet",
+    "status": {
+      "pending": "Processing",
+      "ready": "Ready",
+      "failed": "Unreadable file"
     }
   }
 }
