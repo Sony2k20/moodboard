@@ -1,18 +1,34 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
-
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import cookieParser from 'cookie-parser';
+import { createServer } from 'node:http';
 import { AppModule } from './app/app.module';
+import { AUTH_CONFIG, AuthConfig } from './app/auth/auth.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
-  const port = process.env.PORT || 3000;
+  app.use(cookieParser());
+  app.enableShutdownHooks();
+  // The api sees one proxy hop (Traefik); without this `req.protocol` would read http.
+  app.set('trust proxy', 1);
+
+  const port = Number(process.env.PORT || 3000);
   await app.listen(port);
+
+  // Same application, second listener: the emergency login answers only on this port, and the
+  // chart routes it only from the LAN entry point (§4.10, 0003).
+  const config = app.get<AuthConfig>(AUTH_CONFIG);
+  if (config.emergencyAdmin) {
+    const emergencyPort = config.emergencyAdmin.port;
+    createServer(app.getHttpAdapter().getInstance()).listen(emergencyPort, () =>
+      Logger.log(`Emergency admin login listening on port ${emergencyPort}`),
+    );
+  }
+  Logger.log(`Authentication mode: ${config.mode}`);
+
   // Set when Nx waits for this server to be ready
   if (process.env.NX_READY_SIGNAL_SOCKET) {
     try {

@@ -1,12 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Public } from './auth/auth.guard';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
-  @Get()
-  getData() {
-    return this.appService.getData();
+  /** Liveness only — no database, no Valkey, no IdP. Public in every auth mode. */
+  @Get('health')
+  @Public()
+  health(): { status: 'ok' } {
+    return { status: 'ok' };
   }
 }
