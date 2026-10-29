@@ -10,8 +10,8 @@ design references straight into development — instead of "looks good", an answ
 
 ## Status
 
-**Phase 1 in progress.** Deployed and running, but not yet usable: an Angular skeleton and a
-`Hello API` behind a real deployment path.
+**Phase 1 in progress.** Deployed, and signing in through Authentik works — but there is nothing
+to do once signed in yet: no upload, no assets.
 
 | Step | State |
 |---|---|
