@@ -11,7 +11,11 @@
     "tslib": "^2.3.0",
     "drizzle-orm": "^0.45.4",
     "pg": "^8.23.1",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "cookie-parser": "^1.4.7",
+    "ioredis": "^6.0.0",
+    "jose": "^6.2.12",
+    "openid-client": "^6.8.8"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0"
