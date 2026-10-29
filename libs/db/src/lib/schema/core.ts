@@ -8,7 +8,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { assetFileKind, assetStatus, locale, userRole } from './enums';
+import { assetFileKind, assetStatus, locale, origin, userRole } from './enums';
 
 /** Shorthand: every timestamp is `timestamptz`. A design memory outlives one timezone. */
 export const tstz = (name: string) => timestamp(name, { withTimezone: true });
@@ -46,6 +46,12 @@ export const assets = pgTable(
     title: text('title'),
     /** LLM-generated, English by decision (§13.3). Primary search material. */
     description: text('description'),
+    /**
+     * Who wrote the description (0004). The description is the one piece of LLM output that lives
+     * on `asset` rather than in a join table, so it carries its own provenance: `origin = 'human'`
+     * wins here exactly as on facets (§5.6), enforced by `asset_description_origin_guard`.
+     */
+    descriptionOrigin: origin('description_origin').notNull().default('ai'),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id),
