@@ -1,0 +1,41 @@
+{
+  "app": {
+    "title": "Mood Board",
+    "language": "Sprache",
+    "locale": {
+      "en": "English",
+      "de": "Deutsch"
+    }
+  },
+  "auth": {
+    "logout": "Abmelden",
+    "roleAdmin": "Admin",
+    "disabled": "Die Anmeldung ist auf dieser Instanz ausgeschaltet, deshalb gibt es nichts anzuzeigen.",
+    "unavailable": "Die Anwendung ist gerade nicht erreichbar. Bitte gleich noch einmal versuchen."
+  },
+  "home": {
+    "signedInAs": "Angemeldet als {{ name }}."
+  },
+  "loginFailed": {
+    "title": "Anmeldung fehlgeschlagen",
+    "retry": "Erneut versuchen",
+    "reason": {
+      "expired": "Die Anmeldung hat zu lange gedauert oder wurde in einem anderen Browser begonnen. Bitte neu starten.",
+      "not_permitted": "Dein Konto hat keinen Zugriff auf diese Anwendung. Bitte einen Admin, dich einer ihrer Gruppen hinzuzufügen.",
+      "failed": "Der Identity Provider konnte die Anmeldung nicht bestätigen."
+    }
+  },
+  "emergency": {
+    "title": "Notfall-Anmeldung",
+    "explanation": "Lokales Admin-Konto für den Fall, dass der Identity Provider ausfällt. Nur aus dem lokalen Netz erreichbar; jeder Versuch wird protokolliert.",
+    "password": "Passwort",
+    "submit": "Anmelden",
+    "error": {
+      "notAvailable": "Aus diesem Netz nicht verfügbar.",
+      "wrongPassword": "Falsches Passwort.",
+      "locked": "Zu viele Fehlversuche. In 15 Minuten erneut versuchen.",
+      "disabled": "Die Anmeldung ist auf dieser Instanz ausgeschaltet.",
+      "failed": "Anmeldung fehlgeschlagen. Bitte gleich noch einmal versuchen."
+    }
+  }
+}

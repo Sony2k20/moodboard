@@ -1,2 +1,31 @@
-<mb-nx-welcome></mb-nx-welcome>
-<router-outlet></router-outlet>
+<header class="bar">
+  <span class="brand">{{ 'app.title' | transloco }}</span>
+  @if (session.user(); as user) {
+  <span class="user">
+    {{ user.displayName }} @if (user.role === 'admin') {
+    <small>· {{ 'auth.roleAdmin' | transloco }}</small>
+    }
+  </span>
+  <label class="locale">
+    <span class="visually-hidden">{{ 'app.language' | transloco }}</span>
+    <select [value]="user.locale" (change)="changeLocale($event)">
+      @for (locale of locales; track locale) {
+      <option [value]="locale">{{ 'app.locale.' + locale | transloco }}</option>
+      }
+    </select>
+  </label>
+  <button type="button" (click)="logout()">
+    {{ 'auth.logout' | transloco }}
+  </button>
+  }
+</header>
+
+<main>
+  @switch (session.state()) { @case ('disabled') {
+  <p role="status">{{ 'auth.disabled' | transloco }}</p>
+  } @case ('unavailable') {
+  <p role="alert">{{ 'auth.unavailable' | transloco }}</p>
+  } @default {
+  <router-outlet />
+  } }
+</main>

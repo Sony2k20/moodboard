@@ -12,7 +12,8 @@ module.exports = {
       },
     ],
   },
-  transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+  // Transloco's helper package ships ESM as `.esm.js`, not `.mjs`, so it is named explicitly.
+  transformIgnorePatterns: ['node_modules/(?!(.*\\.mjs$|@jsverse/))'],
   snapshotSerializers: [
     'jest-preset-angular/build/serializers/no-ng-attributes',
     'jest-preset-angular/build/serializers/ng-snapshot',

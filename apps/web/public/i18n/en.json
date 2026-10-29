@@ -1,0 +1,41 @@
+{
+  "app": {
+    "title": "Mood Board",
+    "language": "Language",
+    "locale": {
+      "en": "English",
+      "de": "Deutsch"
+    }
+  },
+  "auth": {
+    "logout": "Sign out",
+    "roleAdmin": "Admin",
+    "disabled": "Sign-in is switched off on this instance, so there is nothing to show.",
+    "unavailable": "The application is not reachable right now. Try again in a moment."
+  },
+  "home": {
+    "signedInAs": "Signed in as {{ name }}."
+  },
+  "loginFailed": {
+    "title": "Sign-in failed",
+    "retry": "Try again",
+    "reason": {
+      "expired": "The sign-in took too long or was started in another browser. Please start again.",
+      "not_permitted": "Your account has no access to this application. Ask an admin to add you to one of its groups.",
+      "failed": "The identity provider could not confirm your sign-in."
+    }
+  },
+  "emergency": {
+    "title": "Emergency sign-in",
+    "explanation": "Local admin account for when the identity provider is down. Only available from the local network; every attempt is logged.",
+    "password": "Password",
+    "submit": "Sign in",
+    "error": {
+      "notAvailable": "Not available from this network.",
+      "wrongPassword": "Wrong password.",
+      "locked": "Too many failed attempts. Try again in 15 minutes.",
+      "disabled": "Sign-in is switched off on this instance.",
+      "failed": "Sign-in failed. Try again in a moment."
+    }
+  }
+}
