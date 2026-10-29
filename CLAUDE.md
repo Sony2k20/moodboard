@@ -78,9 +78,12 @@ only when the answer would genuinely change the work.
 - Always enable server-side refusal fallbacks (`betas: ['server-side-fallback-2026-07-01']`,
   `fallbacks: 'default'`); third-party screenshots occasionally trip a safety classifier, and
   without a fallback the asset silently stays unclassified
-- Use `@anthropic-ai/sdk` directly with `client.messages.parse()` and `zodOutputFormat`. Do not
-  introduce a generic multi-provider wrapper — the Zod schema is the contract, each adapter uses
-  its own native SDK (§7.2)
+- Use `@anthropic-ai/sdk` directly. Do not introduce a generic multi-provider wrapper — the Zod
+  schema is the contract, each adapter uses its own native SDK (§7.2)
+- **Not `zodOutputFormat`** for the classification schema: the installed SDK helper moves `enum`
+  into the description, so facet values are no longer enforced. `libs/classify/output-schema.ts`
+  builds the JSON schema with `enum` intact and validates with Zod afterwards (0004). Re-check
+  before switching back after an SDK upgrade
 
 ## Known pitfalls
 
