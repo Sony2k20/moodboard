@@ -1,6 +1,6 @@
 # 0003 — OIDC login, BFF session and the emergency admin
 
-> Status: draft
+> Status: implemented, not yet switched on in the cluster
 > Phase: 1
 > Created: 2026-10-27
 
@@ -57,6 +57,26 @@ To be decided during implementation, but the shape follows from §4.5:
   is the second.
 - **Post-logout redirect** goes to the application root, which sends an anonymous visitor
   straight back to the Authentik login. No separate "signed out" page in phase 1.
+- **Session lifetime:** 7 days sliding, 30 days absolute; 12 hours absolute for the emergency
+  admin. The session id in the cookie is stored in Valkey only as its SHA-256, so a dump of
+  Valkey holds nothing that can be replayed as a cookie.
+- **The api starts without Authentik.** Discovery and the signing keys are fetched on first use
+  and retried, not at startup — otherwise the api would not come up during exactly the outage
+  the emergency admin exists for.
+- **The emergency admin's password hash lives in a secret** (`emergencyAdmin.existingSecret`, key
+  `passwordHash`, scrypt from `node:crypto`, generated with `tools/hash-password.mjs`), not in
+  a column. It has to work when the IdP is down, and rotating it must not need database access.
+  The account itself is an ordinary `user` row with `sub = 'local:emergency-admin'` and role
+  `admin`, so `created_by` and the audit log can point at it.
+- **"LAN only" is enforced by port, not by source IP.** Behind the cluster load balancer the
+  source address of LAN traffic is rewritten, so an IP allowlist would either let everyone in or
+  nobody. The emergency login is served on a second api port (default 3001) and only there; the
+  chart routes that port through a separate IngressRoute bound to the LAN entry point
+  (`emergencyAdmin.entryPoints`). From the internet the same path reaches port 3000 and gets 404.
+  Five failed attempts lock the login for 15 minutes; every attempt is in `audit_log`.
+- **Personal API tokens do not land here.** The table arrives with the MCP step; it is additive
+  and nothing here depends on it. The format is fixed now so the MCP step does not reopen it:
+  `mbp_` followed by 32 random bytes in base64url, stored only as SHA-256.
 
 ## Data model impact
 
@@ -97,7 +117,31 @@ format here even if the endpoint comes later.
 - **Authentik is set up** (provider, groups, redirect and backchannel logout URI); the real
   values are in `infra.local.md`. The client secret must be in a secret `moodboard-oidc` under
   the key `clientSecret`, which is what the chart reads.
-- Where the emergency admin's password hash lives: a secret, or a column on `user`?
+
+## Implementation
+
+| Where | What |
+|---|---|
+| `apps/api/src/app/auth/` | Login, callback, logout, backchannel logout, `/api/me`, the global guard, the emergency login |
+| `oidc.client.ts` | The only file that imports `openid-client` and `jose`; lazy discovery |
+| `session.store.ts` | Valkey keys under `mb:auth:` — session, `sid` and `sub` indexes, one-shot login state |
+| `identity.ts` | Pure mapping: groups → role, `Accept-Language` → locale, `returnTo` sanitising, logout token claims |
+| `deploy/chart` | `oidc.adminGroup`, `oidc.memberGroup`, `emergencyAdmin.*`, health probes, the LAN-only IngressRoute |
+| `apps/web` | Session state, sign-out, language switch, `/login-failed`, `/emergency`; Transloco with `en.json` / `de.json` |
+| `tools/hash-password.mjs` | Writes the emergency admin's `passwordHash` |
+
+Every non-public route requires a session by default; `@Public()` is the opt-out, so an
+endpoint that forgets about authentication is protected anyway.
+
+### Switching it on
+
+1. Image tag in the ArgoCD Application to the build that contains this.
+2. `oidc.adminGroup` and `oidc.memberGroup` to the real Authentik group names.
+3. `oidc.enabled: true`.
+4. Optional, separately: the emergency admin —
+   `node tools/hash-password.mjs | kubectl -n <namespace> create secret generic moodboard-emergency-admin --from-file=passwordHash=/dev/stdin`,
+   then `emergencyAdmin.enabled: true` with `emergencyAdmin.entryPoints` set to the LAN entry
+   points only.
 
 ## Verification
 
