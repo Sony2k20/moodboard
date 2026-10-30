@@ -40,7 +40,7 @@
   <section class="results" [attr.aria-busy]="store.loading()">
     <header>
       <span role="status">
-        {{ 'overview.results' | transloco: { count: store.total() } }}
+        {{ (store.total() === 1 ? 'overview.resultsOne' : 'overview.results') | transloco: { count: store.total() } }}
       </span>
       @if (store.hasFilters()) {
       <button type="button" class="link" (click)="store.clear()">

@@ -63,6 +63,7 @@
     "tags": "Tags",
     "remove": "Filter entfernen",
     "results": "{{ count }} Assets",
+    "resultsOne": "1 Asset",
     "clear": "Alle Filter zurücksetzen",
     "empty": "Noch nichts hochgeladen. Bilder auf diese Seite ziehen, um anzufangen.",
     "noMatch": "Kein Asset passt zu diesen Filtern.",

@@ -63,6 +63,7 @@
     "tags": "Tags",
     "remove": "Remove filter",
     "results": "{{ count }} assets",
+    "resultsOne": "1 asset",
     "clear": "Clear all filters",
     "empty": "Nothing uploaded yet. Drop images onto this page to start.",
     "noMatch": "No asset matches these filters.",
