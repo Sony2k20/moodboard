@@ -1,0 +1,100 @@
+:host {
+  display: block;
+  max-width: 48rem;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.4rem;
+}
+
+h2 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.intro,
+.empty {
+  color: #666;
+}
+
+.error {
+  color: #a00;
+}
+
+.create {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.create input {
+  flex: 1;
+  max-width: 24rem;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+}
+
+.created {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d9a441;
+  border-radius: 6px;
+  background: #fff6e0;
+}
+
+.created h2 {
+  margin-top: 0;
+}
+
+.token {
+  display: block;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  background: #fff;
+  word-break: break-all;
+  user-select: all;
+}
+
+pre {
+  padding: 0.5rem;
+  border-radius: 4px;
+  background: #f4f4f4;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 0.8rem;
+}
+
+ul {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem 1rem;
+  align-items: center;
+}
+
+li small {
+  grid-column: 1;
+  color: #666;
+}
+
+li code {
+  margin-left: 0.5rem;
+  color: #777;
+}
+
+.revoke {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: #a00;
+}
+
+.usage {
+  margin-top: 2rem;
+  color: #555;
+}

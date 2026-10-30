@@ -12,6 +12,10 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./trash/trash').then((m) => m.TrashPage),
   },
   {
+    path: 'tokens',
+    loadComponent: () => import('./tokens/tokens').then((m) => m.TokensPage),
+  },
+  {
     path: 'login-failed',
     loadComponent: () =>
       import('./auth/login-failed').then((m) => m.LoginFailed),

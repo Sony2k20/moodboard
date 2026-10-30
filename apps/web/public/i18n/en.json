@@ -148,5 +148,28 @@
     "restore": "Restore",
     "failed": "The trash could not be loaded. Try again in a moment.",
     "restoreFailed": "The asset could not be restored. Try again in a moment."
+  },
+  "tokens": {
+    "nav": "API tokens",
+    "title": "API tokens",
+    "intro": "Tokens let Claude Code and other MCP clients search this design memory, look at references and add new ones — as you. Create one per device or client.",
+    "name": "Name",
+    "namePlaceholder": "e.g. Claude Code, laptop",
+    "create": "Create token",
+    "failed": "That did not work. Try again in a moment.",
+    "createdTitle": "Token \"{{ name }}\" created",
+    "createdHint": "Copy it now — it will not be shown again.",
+    "setup": "Add this server to Claude Code:",
+    "copyCommand": "Copy command",
+    "copied": "Copied",
+    "listTitle": "Your tokens",
+    "empty": "No tokens yet.",
+    "createdAt": "created",
+    "lastUsed": "last used",
+    "neverUsed": "never used",
+    "revoke": "Revoke",
+    "confirmRevoke": "Revoke the token \"{{ name }}\"? Clients using it lose access at once.",
+    "usageTitle": "How to connect",
+    "usage": "Run this in a terminal, with your token in place of <token>. In Claude Code, /mcp then lists the four tools: list_vocabulary, search_assets, get_asset, add_asset."
   }
 }

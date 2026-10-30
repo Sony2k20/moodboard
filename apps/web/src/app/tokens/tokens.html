@@ -1,0 +1,64 @@
+<h1>{{ 'tokens.title' | transloco }}</h1>
+<p class="intro">{{ 'tokens.intro' | transloco }}</p>
+
+<form class="create" (submit)="$event.preventDefault(); create(name)">
+  <input
+    #name
+    maxlength="100"
+    [placeholder]="'tokens.namePlaceholder' | transloco"
+    [attr.aria-label]="'tokens.name' | transloco"
+  />
+  <button type="submit" [disabled]="busy()">{{ 'tokens.create' | transloco }}</button>
+</form>
+
+@if (failed()) {
+<p role="alert" class="error">{{ 'tokens.failed' | transloco }}</p>
+}
+
+@if (created(); as created) {
+<section class="created" role="status">
+  <h2>{{ 'tokens.createdTitle' | transloco: { name: created.item.name } }}</h2>
+  <p>{{ 'tokens.createdHint' | transloco }}</p>
+  <code class="token">{{ created.token }}</code>
+  <p>{{ 'tokens.setup' | transloco }}</p>
+  <pre>{{ command() }}</pre>
+  <button type="button" (click)="copyCommand()">
+    {{ (copied() ? 'tokens.copied' : 'tokens.copyCommand') | transloco }}
+  </button>
+</section>
+}
+
+<h2>{{ 'tokens.listTitle' | transloco }}</h2>
+@if (tokens.value(); as list) {
+@if (list.length === 0) {
+<p class="empty">{{ 'tokens.empty' | transloco }}</p>
+} @else {
+<ul>
+  @for (item of list; track item.id) {
+  <li>
+    <div>
+      <strong>{{ item.name }}</strong>
+      <code>{{ item.prefix }}…</code>
+    </div>
+    <small>
+      {{ 'tokens.createdAt' | transloco }} {{ item.createdAt | date: 'mediumDate' }} ·
+      @if (item.lastUsedAt) {
+      {{ 'tokens.lastUsed' | transloco }} {{ item.lastUsedAt | date: 'medium' }}
+      } @else {
+      {{ 'tokens.neverUsed' | transloco }}
+      }
+    </small>
+    <button type="button" class="revoke" (click)="revoke(item)">
+      {{ 'tokens.revoke' | transloco }}
+    </button>
+  </li>
+  }
+</ul>
+}
+}
+
+<details class="usage">
+  <summary>{{ 'tokens.usageTitle' | transloco }}</summary>
+  <p>{{ 'tokens.usage' | transloco }}</p>
+  <pre>{{ command() }}</pre>
+</details>

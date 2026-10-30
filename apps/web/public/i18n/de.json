@@ -148,5 +148,28 @@
     "restore": "Wiederherstellen",
     "failed": "Der Papierkorb konnte nicht geladen werden. Bitte gleich noch einmal versuchen.",
     "restoreFailed": "Das Asset konnte nicht wiederhergestellt werden. Bitte gleich noch einmal versuchen."
+  },
+  "tokens": {
+    "nav": "API-Tokens",
+    "title": "API-Tokens",
+    "intro": "Mit Tokens können Claude Code und andere MCP-Clients dieses Design-Gedächtnis durchsuchen, Referenzen ansehen und neue hinzufügen — in deinem Namen. Am besten ein Token pro Gerät oder Client.",
+    "name": "Name",
+    "namePlaceholder": "z. B. Claude Code, Laptop",
+    "create": "Token erstellen",
+    "failed": "Das hat nicht geklappt. Bitte gleich noch einmal versuchen.",
+    "createdTitle": "Token „{{ name }}“ erstellt",
+    "createdHint": "Jetzt kopieren — er wird nicht noch einmal angezeigt.",
+    "setup": "Diesen Server in Claude Code hinzufügen:",
+    "copyCommand": "Befehl kopieren",
+    "copied": "Kopiert",
+    "listTitle": "Deine Tokens",
+    "empty": "Noch keine Tokens.",
+    "createdAt": "erstellt",
+    "lastUsed": "zuletzt benutzt",
+    "neverUsed": "noch nie benutzt",
+    "revoke": "Widerrufen",
+    "confirmRevoke": "Den Token „{{ name }}“ widerrufen? Clients, die ihn benutzen, verlieren sofort den Zugriff.",
+    "usageTitle": "So verbindest du dich",
+    "usage": "Im Terminal ausführen, mit deinem Token statt <token>. In Claude Code zeigt /mcp danach die vier Tools: list_vocabulary, search_assets, get_asset, add_asset."
   }
 }
