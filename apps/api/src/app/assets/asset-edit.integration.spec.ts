@@ -80,7 +80,12 @@ async function reclassify(assetId: string, facetKeys: string[], tagNames: string
     }
     await tx
       .update(assets)
-      .set({ description: 'model description', descriptionOrigin: 'ai' })
+      .set({
+        description: 'model description',
+        descriptionOrigin: 'ai',
+        title: 'Model title',
+        titleOrigin: 'ai',
+      })
       .where(eq(assets.id, assetId));
   });
 }
@@ -219,7 +224,55 @@ describe('text edits', () => {
       title: 'Hero',
       description: 'A calm hero, by hand.',
       descriptionOrigin: 'human',
+      titleOrigin: 'human',
     });
+  });
+
+  it('gives a title nobody chose to the model, and keeps one a person chose (0007)', async () => {
+    const [unnamed] = await db
+      .insert(assets)
+      .values({ type: 'image', title: null, createdBy: ada.id, status: 'ready' })
+      .returning({ id: assets.id });
+    const [named] = await db
+      .insert(assets)
+      .values({
+        type: 'image',
+        title: 'Stripe pricing page',
+        titleOrigin: 'human',
+        createdBy: ada.id,
+        status: 'ready',
+      })
+      .returning({ id: assets.id });
+
+    await reclassify(unnamed.id, []);
+    await reclassify(named.id, []);
+
+    expect(await search.detail(unnamed.id)).toMatchObject({
+      title: 'Model title',
+      titleOrigin: 'ai',
+    });
+    expect(await search.detail(named.id)).toMatchObject({
+      title: 'Stripe pricing page',
+      titleOrigin: 'human',
+    });
+  });
+
+  it('hands a cleared title back to the model', async () => {
+    const id = await newAsset(ada);
+    await edit.updateText(id, { title: 'My name for it' }, ada);
+    await edit.updateText(id, { title: '' }, ada);
+    await reclassify(id, []);
+    expect(await search.detail(id)).toMatchObject({ title: 'Model title', titleOrigin: 'ai' });
+  });
+
+  it('does not let a model write take a person’s title, outside an edit', async () => {
+    const id = await newAsset(ada);
+    await edit.updateText(id, { title: 'Hand title' }, ada);
+    await db
+      .update(assets)
+      .set({ title: null, titleOrigin: 'ai' })
+      .where(eq(assets.id, id));
+    expect(await search.detail(id)).toMatchObject({ title: 'Hand title', titleOrigin: 'human' });
   });
 });
 

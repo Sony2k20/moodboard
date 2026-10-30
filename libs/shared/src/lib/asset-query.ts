@@ -151,6 +151,8 @@ export interface AssetDetail {
   readonly status: AssetStatus;
   readonly description: string | null;
   readonly descriptionOrigin: Origin;
+  /** A person's title (a chosen file name or an edit) or the model's (0007). */
+  readonly titleOrigin: Origin;
   readonly sourceUrl: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;

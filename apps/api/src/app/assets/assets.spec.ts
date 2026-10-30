@@ -75,6 +75,32 @@ describe('titleFromFileName', () => {
     expect(titleFromFileName(undefined)).toBeNull();
     expect(titleFromFileName('jpg')).toBeNull();
     expect(titleFromFileName('PNG.png')).toBeNull();
+    expect(titleFromFileName('image (3).png')).toBeNull();
+    expect(titleFromFileName('download-2.jpg')).toBeNull();
+  });
+
+  it('leaves screenshots, camera names and hashes to the model (0007)', () => {
+    for (const name of [
+      'Screenshot 2026-10-30 at 10.12.33.png',
+      'Screen Shot 2024-02-01 at 9.41.07 PM.png',
+      'Bildschirmfoto 2026-10-30 um 10.12.33.png',
+      'Screenshot_20261030-101233.png',
+      'IMG_4711.jpeg',
+      'PXL_20261030_101233123.jpg',
+      'WhatsApp Image 2026-10-30 at 10.12.33.jpeg',
+      '6f1c9a0e-2b7d-4c1a-9a51-0d2f3e4b5c6d.png',
+      'a8f3c9e01b7d4f2a9c6e.webp',
+      '20261030_101233.jpg',
+      'x1.png',
+    ]) {
+      expect(titleFromFileName(name)).toBeNull();
+    }
+  });
+
+  it('keeps names a person chose, also with a counter or digits in them', () => {
+    expect(titleFromFileName('Linear changelog (2).png')).toBe('Linear changelog (2)');
+    expect(titleFromFileName('Apple Vision Pro hero.webp')).toBe('Apple Vision Pro hero');
+    expect(titleFromFileName('Preisseite Kunde Müller.png')).toBe('Preisseite Kunde Müller');
   });
 });
 

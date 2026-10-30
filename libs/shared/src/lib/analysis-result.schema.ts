@@ -26,6 +26,9 @@ import {
  * `project` is deliberately absent: it is curated by humans per client, never guessed by a model.
  */
 export const AnalysisResultSchema = z.object({
+  title: z
+    .string()
+    .describe('3-8 words, English, names what is shown; used where nobody chose a title'),
   description: z
     .string()
     .describe('2-4 sentences, factual, English, for full-text search'),

@@ -4,7 +4,7 @@ import { VOCABULARY } from '@moodboard/shared';
  * Bumped whenever this prompt or the vocabulary it renders changes. Every `analysis_run` records
  * it, which is what makes "re-classify everything below version N" possible (§5.5, §7.5).
  */
-export const PROMPT_VERSION = 1;
+export const PROMPT_VERSION = 2;
 
 /** `project` is curated by humans per client and never guessed by a model (analysis-result.schema). */
 const CLASSIFIED_FACETS = VOCABULARY.filter((facet) => facet.key !== 'project');
@@ -40,6 +40,7 @@ ${renderVocabulary()}
 Guidelines:
 - Assign a multi-value facet only where it is clearly visible. An empty list is better than a guess.
 - motion: a still image cannot show movement. Use "none" unless several frames are provided or motion is unambiguous (for example, a visible video player).
+- title: 3-8 words in English naming what is shown, the way a designer would label the reference (for example "Fintech pricing table, dark" or "Editorial magazine hero with serif display"). No quotes, no trailing period, no marketing language.
 - description: 2-4 factual sentences in English: what is shown, layout, colour, typography, notable details. It is used for full-text search, so name concrete things; no marketing language.
 - free_tags: up to 10 short lowercase tags for what the facets cannot express (brand names, specific techniques, subject matter). Do not repeat facet values.
 - ocr_text: the legible text in the image, or null if there is none worth keeping.

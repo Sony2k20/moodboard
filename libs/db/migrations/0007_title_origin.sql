@@ -1,0 +1,1 @@
+ALTER TABLE "asset" ADD COLUMN "title_origin" "origin" DEFAULT 'ai' NOT NULL;

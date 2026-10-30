@@ -12,24 +12,37 @@ import { DATABASE } from '../database.module';
 import { PipelineQueue } from './pipeline.queue';
 
 /**
- * Names nobody chose as a title: what browsers call a pasted image (`image.png`), and a file
- * named after its own format (`jpg`), which some download dialogs produce.
+ * Names nobody chose (0007). Each pattern runs against the stem with a trailing counter like
+ * ` (3)` or `-2` removed. What matches is left to the model to name.
  */
-const GENERIC_NAMES = new Set([
-  'image',
-  'blob',
-  'clipboard',
-  'untitled',
-  'png',
-  'jpg',
-  'jpeg',
-  'webp',
-  'gif',
-]);
+const MACHINE_NAMES: readonly RegExp[] = [
+  // What browsers call a pasted image, and a file named after its own format.
+  /^(image|img|blob|clipboard|untitled|unbenannt|download|file|photo|picture|bild|png|jpe?g|webp|gif)$/i,
+  // Screenshot tools on macOS, Windows, GNOME, KDE and their German variants.
+  /^(screen ?shot|bildschirmfoto|bildschirmaufnahme|capture|snip(aste)?|screenshot_?\d)/i,
+  // Cameras, phones and messengers.
+  /^(img|dsc|dscn|pxl|mvimg|photo|whatsapp image|signal|telegram|pexels|unsplash)[ _-]?\d/i,
+  // UUIDs and hashes.
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  /^[0-9a-z_-]{20,}$/i,
+];
 
+const TRAILING_COUNTER = /(\s*\(\d+\)|[-_ ]\d{1,3})$/;
+
+/**
+ * A title only for a file name a person evidently chose (0004, sharpened in 0007). A screenshot
+ * name, a camera name or a hash is not a title; the model names those assets instead.
+ */
 export function titleFromFileName(name: string | undefined): string | null {
   const stem = (name ?? '').replace(/\.[^.]*$/, '').trim();
-  if (!stem || GENERIC_NAMES.has(stem.toLowerCase())) {
+  const bare = stem.replace(TRAILING_COUNTER, '').trim();
+  const letters = (bare.match(/\p{L}/gu) ?? []).length;
+  const digits = (bare.match(/\d/g) ?? []).length;
+  if (
+    letters < 3 ||
+    digits > letters ||
+    MACHINE_NAMES.some((pattern) => pattern.test(bare))
+  ) {
     return null;
   }
   return stem.slice(0, 200);
@@ -65,12 +78,15 @@ export class AssetsService {
     const path = assetFilePath(id, 'original', { extension });
     const stored = await this.storage.put(path, input.bytes, { mime });
 
+    const title = titleFromFileName(input.fileName);
     try {
       await this.db.transaction(async (tx) => {
         await tx.insert(assets).values({
           id,
           type: 'image',
-          title: titleFromFileName(input.fileName),
+          title,
+          // A chosen file name is a person's title; without one the model names the asset.
+          titleOrigin: title ? 'human' : 'ai',
           createdBy: input.userId,
           status: 'pending',
         });

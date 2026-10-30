@@ -45,6 +45,11 @@ export const assets = pgTable(
      */
     type: text('type').notNull(),
     title: text('title'),
+    /**
+     * Who chose the title (0007): a person (a file name they picked, or an edit) or the model.
+     * `asset_title_origin_guard` keeps a person's title through every re-analysis (§5.6).
+     */
+    titleOrigin: origin('title_origin').notNull().default('ai'),
     /** LLM-generated, English by decision (§13.3). Primary search material. */
     description: text('description'),
     /**

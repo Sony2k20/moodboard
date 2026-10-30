@@ -7,6 +7,7 @@ const facets = (OUTPUT_JSON_SCHEMA['properties'] as Node)['facets'] as Node;
 const facetProps = facets['properties'] as Record<string, Node>;
 
 const valid = {
+  title: 'Editorial hero, dark, serif display',
   description: 'A dark hero section with oversized serif type.',
   facets: {
     type: 'website',
@@ -65,6 +66,14 @@ describe('parseAnalysisResult', () => {
     expect(result.confidence).toBe(1);
   });
 
+  it('requires a title (0007)', () => {
+    const { title: _, ...withoutTitle } = structuredClone(valid);
+    expect(() => parseAnalysisResult(withoutTitle)).toThrow();
+    expect(
+      ((OUTPUT_JSON_SCHEMA['properties'] as Node)['title'] as Node)['type'],
+    ).toBe('string');
+  });
+
   it('rejects a value outside the vocabulary', () => {
     expect(() =>
       parseAnalysisResult({
@@ -81,6 +90,6 @@ describe('prompt', () => {
       expect(SYSTEM_PROMPT).toContain(`- ${key} —`);
     }
     expect(SYSTEM_PROMPT).not.toContain('- project —');
-    expect(PROMPT_VERSION).toBe(1);
+    expect(PROMPT_VERSION).toBe(2);
   });
 });

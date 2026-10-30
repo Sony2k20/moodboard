@@ -59,7 +59,11 @@ export class AssetEditService {
       const [before] = await this.live(tx, [id]);
       const change: Partial<typeof assets.$inferInsert> = { updatedAt: new Date() };
       if (patch.title !== undefined) {
-        change.title = patch.title;
+        const title = patch.title?.trim() || null;
+        change.title = title;
+        // Clearing the title hands it back to the model (0007); the guard allows that only
+        // because this transaction declared a human actor.
+        change.titleOrigin = title === null ? 'ai' : 'human';
       }
       if (patch.description !== undefined) {
         change.description = patch.description;

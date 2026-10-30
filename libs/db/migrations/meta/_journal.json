@@ -50,6 +50,20 @@
       "when": 1793354774395,
       "tag": "0006_actor_aware_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793359956346,
+      "tag": "0007_title_origin",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793359959064,
+      "tag": "0008_title_origin_guard",
+      "breakpoints": true
     }
   ]
 }

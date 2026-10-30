@@ -31,6 +31,7 @@ describe('vocabulary', () => {
   it('accepts every vocabulary value in the analysis result schema', () => {
     // The point of deriving the enums from the vocabulary: the contract cannot drift from it.
     const result = AnalysisResultSchema.safeParse({
+      title: 'Editorial hero, dark',
       description: 'A dark editorial hero with oversized type.',
       facets: {
         type: 'website',
