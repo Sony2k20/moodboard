@@ -913,7 +913,7 @@ readable by Claude Code.
 - [x] Transloco setup, `en.json` and `de.json`, language switcher, `user.locale` persisted (§13)
 
 **Access and Operations**
-- [ ] MCP server: `search_assets`, `get_asset`, `list_vocabulary`, `add_asset`
+- [x] MCP server: `search_assets`, `get_asset`, `list_vocabulary`, `add_asset`
 - [ ] Database restore rehearsed once (§4.3)
 
 ### Phase 2 — Sharpening

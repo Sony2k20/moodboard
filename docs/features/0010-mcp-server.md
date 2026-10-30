@@ -1,6 +1,6 @@
 # 0010 — MCP server
 
-> Status: implemented — not yet deployed
+> Status: done — deployed in v0.7.2 (2026-10-30)
 > Phase: 1
 > Created: 2026-10-30
 
@@ -123,3 +123,33 @@ None that block the start. Decided here:
    open them), the tools through a real MCP client over an in-memory transport against PGlite,
    and the HTTP path — Nest controller, stateless transport, body limit — with the SDK's
    streamable HTTP client against a listening test app.
+
+## Rollout
+
+Two releases broke something, both found during the production check, neither took the site down.
+
+1. **0.7.0 did not start.** `nx prune` builds the image's `package.json` from
+   `apps/api/package.json`, which did not list the MCP SDK and `express`. The new pod crashed on
+   `MODULE_NOT_FOUND`; the rolling update kept the 0.6.0 pod serving. CI's bundle check only
+   started `migrate.js`, which never loads them — it now starts `main.js` from the pruned install
+   too. Fixed in 0.7.1.
+2. **0.7.0 and 0.7.1 dropped every JSON body outside `/api/mcp`.** The larger parser for that
+   path was registered as an extra middleware; Nest skips its own global JSON parser when one
+   named `jsonParser` already exists. Editing, bulk actions, creating tokens and the language
+   switch answered `400`. The api now starts with `bodyParser: false` and registers all three
+   parsers itself (`body-parsers.ts`); the HTTP test uses the same setup and checks another
+   route's body. Fixed in 0.7.2.
+
+Also in 0.7.2: `original.jpg` and `thumb-*.webp` — our own file names, back through the download
+link — no longer count as a title.
+
+**Result (2026-10-30, v0.7.2):** without a token `/api/mcp` answers `401`, `GET` `405`, and a token
+opens no other route. With a temporary token created through the session and revoked right after:
+`initialize` and `tools/list` answer with the four tools; `list_vocabulary` returns 13 facets;
+`search_assets` with `imagery:photography` and `finish:soft-shadow` finds the leaf reference, an
+unknown value is a tool error with the reason; `get_asset` returns the metadata, the build prompt
+and the image (WebP, 105 kB). The token list showed only the prefix; after revocation the token
+got `401`. `PATCH /api/me` answers `200` again.
+
+Not run in production: `add_asset` (it would add a real asset — covered by the tests, including a
+2 MB image over HTTP) and a session in Claude Code itself.
