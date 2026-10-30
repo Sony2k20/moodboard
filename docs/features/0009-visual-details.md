@@ -1,6 +1,6 @@
 # 0009 — Visual details for the build prompt
 
-> Status: implemented — not yet deployed
+> Status: done — deployed in v0.6.0 (2026-10-30)
 > Phase: 1
 > Created: 2026-10-30
 
@@ -86,3 +86,18 @@ None.
 3. Copy image, paste into Claude with the prompt, build: compare with the reference again.
 4. `GET /api/vocabulary` lists `imagery` and `finish`; filtering by `imagery:photography` finds the
    asset.
+
+**Result (2026-10-30, v0.6.0):** the migration initContainer seeded `imagery` (6 values) and
+`finish` (8 values) on its own. The leaf reference was re-classified at prompt version 3 and now
+reads: `imagery` photography, icons, pattern; `finish` gradient, texture, soft-shadow, layered,
+outline. The notes name what the first rebuild missed — "top-down photographic leaves … a sunlit
+forest photo with warm backlit haze", "a diagonal paper-cut edge", "matte embossed leaf-vein
+texture … broad soft drop shadows", "tan gradient pill CTA", icons "inside circles" — and the
+prompt adds the photography and depth rules. `imagery:photography` finds the asset.
+
+- **Copy image could not be confirmed here.** The code path works in production — the original
+  (JPEG, 736 × 1308) loads and converts to a 1.2 MB PNG — but the embedded browser this was
+  tested in reports `clipboard-write: denied`, so the write is refused and the download fallback
+  appears, as designed. In a regular browser a click grants the permission; to be confirmed by
+  hand.
+- Still open: rebuilding with image + prompt and comparing with the reference.

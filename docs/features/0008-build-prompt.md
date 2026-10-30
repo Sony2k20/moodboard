@@ -1,6 +1,6 @@
 # 0008 — A build prompt per asset
 
-> Status: implemented — not yet deployed
+> Status: done — deployed in v0.5.0 (2026-10-30)
 > Phase: 1
 > Created: 2026-10-30
 

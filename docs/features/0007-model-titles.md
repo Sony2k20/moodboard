@@ -1,6 +1,6 @@
 # 0007 — Titles by the model
 
-> Status: implemented — not yet deployed
+> Status: done — deployed in v0.5.0 (2026-10-30)
 > Phase: 1
 > Created: 2026-10-30
 
@@ -80,3 +80,12 @@ None.
    step declares no actor, so it still cannot take a title from a person.
 2. **The classify step trims a trailing period** and caps the title at 200 characters, like the
    file-name path.
+
+**Result (2026-10-30, v0.5.0):** the existing asset and a fresh upload were both titled by the
+model — "Nature-themed landing page concept in green and brown", marked `by AI`.
+
+- **Rolling updates let the old worker take a new job.** During the rollout the 0.4.0 worker was
+  still draining when the 0.5.0 reconciler enqueued the re-classification, picked the job up and
+  ran it with the old prompt — recorded honestly as `prompt_version = 1`. Harmless: the next
+  reconcile tick finds no run at the current version and enqueues again. The same happened in
+  0.6.0. A `Recreate` strategy for the worker would close it; not worth a deploy gap today.

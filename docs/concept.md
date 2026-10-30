@@ -561,6 +561,8 @@ application logic.
 | `layout` | yes | centered, split, asymmetric, grid, full-bleed, sidebar, stacked, overlapping |
 | `motion` | yes | none, fade, slide, parallax, scroll-reveal, hover-transform, 3d, morphing, marquee, sticky-scroll, cursor-follow, video-bg |
 | `industry` | yes | saas, fashion, finance, food, health, education, agency, ecommerce, media, gaming, nonprofit, real-estate |
+| `imagery` | yes | photography, illustration, 3d-render, icons, pattern, none *(added in 0009)* |
+| `finish` | yes | flat, gradient, texture, grain, soft-shadow, layered, outline, glow *(added in 0009)* |
 | `project` | yes | *(free-form, curated per client or project by an admin)* |
 
 Note that `playful` appears in both `style` and `mood`. This is intentional, not an oversight:

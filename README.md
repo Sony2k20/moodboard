@@ -24,9 +24,9 @@ metadata, website capture and the MCP server are still to come.
 | i18n | done — Transloco with English and German, language switcher, `user.locale` persisted |
 | [`0005`](./docs/features/0005-overview-search.md) Overview: grid, facet filters, search | done — live in `v0.3.0` |
 | [`0006`](./docs/features/0006-editing-trash.md) Editing, bulk tagging, trash | done — live in `v0.4.0` |
-| [`0007`](./docs/features/0007-model-titles.md) Titles by the model | implemented — not yet deployed |
-| [`0008`](./docs/features/0008-build-prompt.md) Build prompt per asset | implemented — not yet deployed |
-| [`0009`](./docs/features/0009-visual-details.md) Visual details for the build prompt | implemented — not yet deployed |
+| [`0007`](./docs/features/0007-model-titles.md) Titles by the model | done — live in `v0.5.0` |
+| [`0008`](./docs/features/0008-build-prompt.md) Build prompt per asset | done — live in `v0.5.0` |
+| [`0009`](./docs/features/0009-visual-details.md) Visual details for the build prompt | done — live in `v0.6.0` |
 | MCP server | not started |
 
 **Authentication is on**: every data endpoint requires a session, and every row written from here
