@@ -1,0 +1,2 @@
+DROP INDEX "asset_created_at_idx";--> statement-breakpoint
+CREATE INDEX "asset_created_at_id_idx" ON "asset" USING btree ("created_at" DESC NULLS LAST,"id" DESC NULLS LAST) WHERE "asset"."deleted_at" is null;

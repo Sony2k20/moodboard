@@ -1,35 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { assetFiles, assets, auditLog, Database } from '@moodboard/db';
 import {
-  analysisRuns,
-  assetFiles,
-  assets,
-  auditLog,
-  Database,
-  users,
-} from '@moodboard/db';
-import {
-  AssetStatus,
   assetFilePath,
   STORAGE_SERVICE,
   StorageService,
   UPLOAD_FORMATS,
   UploadFormat,
 } from '@moodboard/shared';
-import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DATABASE } from '../database.module';
 import { PipelineQueue } from './pipeline.queue';
-
-export interface AssetSummary {
-  readonly id: string;
-  readonly title: string | null;
-  readonly status: AssetStatus;
-  readonly classified: boolean;
-  readonly createdAt: Date;
-  readonly createdBy: string;
-  /** `null` until the `thumbnails` step has run. */
-  readonly thumbnailUrl: string | null;
-}
 
 /**
  * Names nobody chose as a title: what browsers call a pasted image (`image.png`), and a file
@@ -121,52 +101,5 @@ export class AssetsService {
       );
     }
     return { id, enqueued };
-  }
-
-  async recent(limit: number): Promise<AssetSummary[]> {
-    const rows = await this.db
-      .select({
-        id: assets.id,
-        title: assets.title,
-        status: assets.status,
-        createdAt: assets.createdAt,
-        createdBy: users.displayName,
-      })
-      .from(assets)
-      .innerJoin(users, eq(users.id, assets.createdBy))
-      .where(isNull(assets.deletedAt))
-      .orderBy(desc(assets.createdAt))
-      .limit(limit);
-    if (rows.length === 0) {
-      return [];
-    }
-
-    const ids = rows.map((row) => row.id);
-    const thumbs = await this.db
-      .select({ assetId: assetFiles.assetId, path: assetFiles.path })
-      .from(assetFiles)
-      .where(
-        and(inArray(assetFiles.assetId, ids), eq(assetFiles.kind, 'thumb_sm')),
-      );
-    const classified = await this.db
-      .selectDistinct({ assetId: analysisRuns.assetId })
-      .from(analysisRuns)
-      .where(
-        and(
-          inArray(analysisRuns.assetId, ids),
-          eq(analysisRuns.status, 'succeeded'),
-        ),
-      );
-
-    const thumbByAsset = new Map(thumbs.map((t) => [t.assetId, t.path]));
-    const classifiedIds = new Set(classified.map((c) => c.assetId));
-    return rows.map((row) => {
-      const thumb = thumbByAsset.get(row.id);
-      return {
-        ...row,
-        classified: classifiedIds.has(row.id),
-        thumbnailUrl: thumb ? this.storage.url(thumb) : null,
-      };
-    });
   }
 }

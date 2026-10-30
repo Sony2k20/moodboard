@@ -8,6 +8,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { assetFileKind, assetStatus, locale, origin, userRole } from './enums';
 
 /** Shorthand: every timestamp is `timestamptz`. A design memory outlives one timezone. */
@@ -64,7 +65,10 @@ export const assets = pgTable(
     deletedAt: tstz('deleted_at'),
   },
   (table) => [
-    index('asset_created_at_idx').on(table.createdAt),
+    // The overview's keyset order (0005): newest first, id as tie-breaker, trash excluded.
+    index('asset_created_at_id_idx')
+      .on(table.createdAt.desc(), table.id.desc())
+      .where(sql`${table.deletedAt} is null`),
     index('asset_created_by_idx').on(table.createdBy),
     index('asset_status_idx').on(table.status),
     index('asset_deleted_at_idx').on(table.deletedAt),

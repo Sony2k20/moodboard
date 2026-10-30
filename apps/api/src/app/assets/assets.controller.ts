@@ -3,6 +3,9 @@ import {
   Controller,
   Get,
   HttpCode,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UnsupportedMediaTypeException,
@@ -10,10 +13,19 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { MAX_UPLOAD_BYTES, sniffUploadFormat } from '@moodboard/shared';
+import {
+  AssetDetail,
+  AssetQuerySchema,
+  AssetSearchResult,
+  MAX_UPLOAD_BYTES,
+  sniffUploadFormat,
+  VocabularyFacet,
+} from '@moodboard/shared';
+import { z } from 'zod';
 import { User } from '../auth/auth.guard';
 import type { CurrentUser } from '../auth/users.service';
-import { AssetsService, AssetSummary } from './assets.service';
+import { AssetSearchService } from './asset-search.service';
+import { AssetsService } from './assets.service';
 
 /**
  * One file per request (0004): several files are several requests, so one bad file does not
@@ -21,7 +33,10 @@ import { AssetsService, AssetSummary } from './assets.service';
  */
 @Controller('assets')
 export class AssetsController {
-  constructor(private readonly assets: AssetsService) {}
+  constructor(
+    private readonly assets: AssetsService,
+    private readonly assetSearch: AssetSearchService,
+  ) {}
 
   @Post()
   @HttpCode(202)
@@ -55,11 +70,35 @@ export class AssetsController {
     return { id };
   }
 
+  /** The search behind the overview and, later, `search_assets` (0005). */
   @Get()
-  recent(@Query('limit') limit?: string): Promise<AssetSummary[]> {
-    const n = Number(limit ?? 30);
-    return this.assets.recent(
-      Number.isInteger(n) && n > 0 && n <= 100 ? n : 30,
-    );
+  search(@Query() raw: Record<string, unknown>): Promise<AssetSearchResult> {
+    const parsed = AssetQuerySchema.safeParse(raw);
+    if (!parsed.success) {
+      throw new BadRequestException(z.prettifyError(parsed.error));
+    }
+    return this.assetSearch.search(parsed.data);
+  }
+
+  @Get(':id')
+  async detail(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<AssetDetail> {
+    const asset = await this.assetSearch.detail(id);
+    if (!asset) {
+      throw new NotFoundException();
+    }
+    return asset;
+  }
+}
+
+/** The controlled vocabulary with its labels — what the filters render, later `list_vocabulary`. */
+@Controller('vocabulary')
+export class VocabularyController {
+  constructor(private readonly search: AssetSearchService) {}
+
+  @Get()
+  list(): Promise<VocabularyFacet[]> {
+    return this.search.vocabulary();
   }
 }
