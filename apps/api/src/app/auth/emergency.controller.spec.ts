@@ -11,6 +11,9 @@ import { hashPassword } from './password';
 import { SessionStore } from './session.store';
 import { UsersService } from './users.service';
 
+// Hashes and verifies with scrypt several times per test; see password.spec.ts for the timeout.
+jest.setTimeout(30_000);
+
 describe('EmergencyController', () => {
   const password = 'correct horse battery staple';
   let passwordHash: string;

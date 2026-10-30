@@ -155,6 +155,28 @@ export const INDUSTRY_VALUES = [
 ] as const;
 
 /** Curated per client or project by an admin, so it ships with no values (§6). */
+/** 0009: what kind of pictures the design uses — the difference between a photo and a drawing. */
+export const IMAGERY_VALUES = [
+  'photography',
+  'illustration',
+  '3d-render',
+  'icons',
+  'pattern',
+  'none',
+] as const;
+
+/** 0009: how surfaces are rendered. `glass` is `style: glassmorphism`, not repeated here. */
+export const FINISH_VALUES = [
+  'flat',
+  'gradient',
+  'texture',
+  'grain',
+  'soft-shadow',
+  'layered',
+  'outline',
+  'glow',
+] as const;
+
 export const PROJECT_VALUES = [] as const;
 
 export const TypeEnum = z.enum(TYPE_VALUES);
@@ -167,6 +189,8 @@ export const TypographyEnum = z.enum(TYPOGRAPHY_VALUES);
 export const LayoutEnum = z.enum(LAYOUT_VALUES);
 export const MotionEnum = z.enum(MOTION_VALUES);
 export const IndustryEnum = z.enum(INDUSTRY_VALUES);
+export const ImageryEnum = z.enum(IMAGERY_VALUES);
+export const FinishEnum = z.enum(FINISH_VALUES);
 
 export type AssetType = z.infer<typeof TypeEnum>;
 export type UiPattern = z.infer<typeof UiPatternEnum>;
@@ -178,6 +202,8 @@ export type Typography = z.infer<typeof TypographyEnum>;
 export type Layout = z.infer<typeof LayoutEnum>;
 export type Motion = z.infer<typeof MotionEnum>;
 export type Industry = z.infer<typeof IndustryEnum>;
+export type Imagery = z.infer<typeof ImageryEnum>;
+export type Finish = z.infer<typeof FinishEnum>;
 
 export const TYPE_FACET = defineFacet({
   key: 'type',
@@ -402,6 +428,46 @@ export const INDUSTRY_FACET = defineFacet({
   },
 });
 
+export const IMAGERY_FACET = defineFacet({
+  key: 'imagery',
+  isMultiValue: true,
+  label: { en: 'Imagery', de: 'Bildsprache' },
+  description: {
+    en: 'The kind of pictures the design uses (0009). Decides whether a rebuild uses photos or drawings.',
+    de: 'Welche Art von Bildern das Design verwendet (0009). Entscheidet, ob ein Nachbau Fotos oder Zeichnungen nimmt.',
+  },
+  values: IMAGERY_VALUES,
+  valueLabels: {
+    photography: { en: 'Photography', de: 'Fotografie' },
+    illustration: { en: 'Illustration', de: 'Illustration' },
+    '3d-render': { en: '3D render', de: '3D-Rendering' },
+    icons: { en: 'Icons', de: 'Icons' },
+    pattern: { en: 'Pattern', de: 'Muster' },
+    none: { en: 'None', de: 'Keine' },
+  },
+});
+
+export const FINISH_FACET = defineFacet({
+  key: 'finish',
+  isMultiValue: true,
+  label: { en: 'Finish', de: 'Oberfläche' },
+  description: {
+    en: 'How surfaces are rendered: flat, gradients, textures, shadows and depth (0009).',
+    de: 'Wie Flächen gestaltet sind: flach, Verläufe, Texturen, Schatten und Tiefe (0009).',
+  },
+  values: FINISH_VALUES,
+  valueLabels: {
+    flat: { en: 'Flat', de: 'Flach' },
+    gradient: { en: 'Gradient', de: 'Verlauf' },
+    texture: { en: 'Texture', de: 'Textur' },
+    grain: { en: 'Grain', de: 'Körnung' },
+    'soft-shadow': { en: 'Soft shadow', de: 'Weicher Schatten' },
+    layered: { en: 'Layered depth', de: 'Ebenen und Tiefe' },
+    outline: { en: 'Outline', de: 'Kontur' },
+    glow: { en: 'Glow', de: 'Leuchten' },
+  },
+});
+
 export const PROJECT_FACET = defineFacet({
   key: 'project',
   isMultiValue: true,
@@ -426,6 +492,8 @@ export const VOCABULARY = [
   LAYOUT_FACET,
   MOTION_FACET,
   INDUSTRY_FACET,
+  IMAGERY_FACET,
+  FINISH_FACET,
   PROJECT_FACET,
 ] as const;
 

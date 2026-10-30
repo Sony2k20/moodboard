@@ -10,7 +10,12 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { AssetDetail, buildPrompt, VocabularyFacet } from '@moodboard/shared';
+import {
+  AssetDetail,
+  buildPrompt,
+  DESIGN_NOTE_KEYS,
+  VocabularyFacet,
+} from '@moodboard/shared';
 import { AssetsApi } from '../assets/assets-api.service';
 import { Vocabulary } from '../assets/vocabulary';
 import { SessionService } from '../auth/session.service';
@@ -97,6 +102,16 @@ export class AssetDetailPage {
     return asset ? buildPrompt(asset, this.vocabulary.facets()) : '';
   });
   protected readonly copied = signal(false);
+  protected readonly imageCopy = signal<'copy' | 'working' | 'copied' | 'failed'>('copy');
+
+  /** The visual details (0009) that have something to say, in the order the prompt reads them. */
+  protected readonly notes = computed(() => {
+    const notes = this.asset.value()?.designNotes;
+    return DESIGN_NOTE_KEYS.flatMap((key) => {
+      const text = notes?.[key]?.trim();
+      return text ? [{ key, text }] : [];
+    });
+  });
 
   /** Deleting: own assets, or any as an admin (§9). The api checks it again. */
   protected readonly mayDelete = computed(() => {
@@ -128,6 +143,41 @@ export class AssetDetailPage {
     } catch {
       // Clipboard refused (no permission, insecure context): the text is selectable in the preview.
     }
+  }
+
+  /**
+   * Puts the image on the clipboard so it can be pasted next to the prompt (0009). Browsers only
+   * take PNG there, so other formats are redrawn first. The PNG is handed over as a promise: the
+   * clipboard has to be written within the click, before the image has loaded.
+   */
+  protected async copyImage(url: string): Promise<void> {
+    this.imageCopy.set('working');
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': this.pngOf(url) }),
+      ]);
+      this.imageCopy.set('copied');
+      setTimeout(() => this.imageCopy.set('copy'), 2000);
+    } catch {
+      // Clipboard refused or the image could not be read: the template offers the download.
+      this.imageCopy.set('failed');
+    }
+  }
+
+  private async pngOf(url: string): Promise<Blob> {
+    const blob = await (await fetch(url)).blob();
+    if (blob.type === 'image/png') {
+      return blob;
+    }
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    canvas.getContext('2d')?.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    return new Promise((resolve, reject) =>
+      canvas.toBlob((png) => (png ? resolve(png) : reject(new Error('toBlob'))), 'image/png'),
+    );
   }
 
   protected editFacet(key: string): void {

@@ -2,6 +2,10 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { hashPassword, verifyPassword } from './password';
 
+// scrypt is deliberately slow, and the PGlite suites run in parallel workers: under that load the
+// default 5 s are not enough, without anything being wrong.
+jest.setTimeout(30_000);
+
 describe('password', () => {
   it('verifies the password it hashed and nothing else', async () => {
     const hash = await hashPassword('correct horse battery staple');

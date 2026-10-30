@@ -64,6 +64,20 @@
       "when": 1793359959064,
       "tag": "0008_title_origin_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793362944817,
+      "tag": "0009_design_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793362950128,
+      "tag": "0010_design_notes_guard",
+      "breakpoints": true
     }
   ]
 }

@@ -2,12 +2,14 @@ import {
   bigint,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { DesignNotes } from '@moodboard/shared';
 import { sql } from 'drizzle-orm';
 import { assetFileKind, assetStatus, locale, origin, userRole } from './enums';
 
@@ -58,6 +60,13 @@ export const assets = pgTable(
      * wins here exactly as on facets (§5.6), enforced by `asset_description_origin_guard`.
      */
     descriptionOrigin: origin('description_origin').notNull().default('ai'),
+    /**
+     * How the reference looks beyond the facets (0009) — composition, imagery, surfaces, shapes,
+     * typography, components, details. Model output a person may correct, so it carries its own
+     * provenance; `asset_design_notes_origin_guard` keeps a person's notes (§5.6).
+     */
+    designNotes: jsonb('design_notes').$type<DesignNotes>(),
+    designNotesOrigin: origin('design_notes_origin').notNull().default('ai'),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id),

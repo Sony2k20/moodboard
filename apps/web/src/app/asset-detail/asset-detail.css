@@ -265,3 +265,24 @@ textarea {
   white-space: pre-wrap;
   font-size: 0.8rem;
 }
+
+/* Visual details (0009) */
+.notes {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.notes dt {
+  color: #666;
+}
+
+.notes dd {
+  margin: 0;
+}
+
+.prompt .copy + .copy {
+  margin-left: 0.4rem;
+}

@@ -1,6 +1,7 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { resolve } from 'node:path';
 import { createDatabase } from './client';
+import { seedVocabulary } from './seed';
 
 /**
  * Session-level advisory lock held while migrating. The number is `moodboard` as ASCII
@@ -33,6 +34,10 @@ export async function runMigrations(
   try {
     await lockHolder.query('select pg_advisory_lock($1)', [MIGRATION_LOCK_KEY]);
     await migrate(handle.db, { migrationsFolder });
+    // The vocabulary follows the code on every deploy (0009): a new facet in `libs/shared` is in
+    // the database before the new version starts. Idempotent and never deleting — see
+    // `seedVocabulary` — and under the same lock, so two pods do not seed at once.
+    await seedVocabulary(handle.db);
   } finally {
     try {
       await lockHolder.query('select pg_advisory_unlock($1)', [

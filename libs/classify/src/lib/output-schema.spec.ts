@@ -20,6 +20,17 @@ const valid = {
     layout: ['centered'],
     motion: ['none'],
     industry: [],
+    imagery: ['photography'],
+    finish: ['soft-shadow'],
+  },
+  design_notes: {
+    composition: '',
+    imagery: '',
+    surfaces: '',
+    shapes: '',
+    typography: '',
+    components: '',
+    details: '',
   },
   free_tags: ['gold accents'],
   ocr_text: null,
@@ -35,7 +46,8 @@ describe('OUTPUT_JSON_SCHEMA', () => {
   });
 
   it('is strict: every object closed, every property required', () => {
-    for (const node of [OUTPUT_JSON_SCHEMA, facets]) {
+    const notes = (OUTPUT_JSON_SCHEMA['properties'] as Node)['design_notes'] as Node;
+    for (const node of [OUTPUT_JSON_SCHEMA, facets, notes]) {
       expect(node['additionalProperties']).toBe(false);
       expect(node['required']).toEqual(Object.keys(node['properties'] as Node));
     }
@@ -90,6 +102,6 @@ describe('prompt', () => {
       expect(SYSTEM_PROMPT).toContain(`- ${key} —`);
     }
     expect(SYSTEM_PROMPT).not.toContain('- project —');
-    expect(PROMPT_VERSION).toBe(2);
+    expect(PROMPT_VERSION).toBe(3);
   });
 });

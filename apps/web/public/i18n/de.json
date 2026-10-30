@@ -102,7 +102,25 @@
       "title": "Prompt für Claude Code",
       "copy": "Kopieren",
       "copied": "Kopiert",
-      "hint": "Aus den Metadaten oben gebaut, auf Englisch. Beim Einfügen das Originalbild mit anhängen."
+      "hint": "Aus den Metadaten gebaut, auf Englisch. Erst das Bild einfügen, dann den Prompt — das Bild trägt, was Worte nicht können.",
+      "image": {
+        "copy": "Bild kopieren",
+        "working": "Kopiere…",
+        "copied": "Bild kopiert",
+        "failed": "Nicht kopiert",
+        "fallback": "Der Browser hat das Kopieren des Bildes nicht erlaubt.",
+        "download": "Stattdessen herunterladen"
+      }
+    },
+    "notes": {
+      "title": "Visuelle Details",
+      "composition": "Komposition",
+      "imagery": "Bildsprache",
+      "surfaces": "Oberflächen",
+      "shapes": "Formen",
+      "typography": "Typografie",
+      "components": "Komponenten",
+      "details": "Details"
     }
   },
   "bulk": {

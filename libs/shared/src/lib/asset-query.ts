@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { LocalizedText } from './localized-text';
 import { AssetStatus, Origin } from './asset-file';
+import { DesignNotes } from './analysis-result.schema';
 
 /**
  * The one search query (0005). The web overview parses its URL into this schema, `GET
@@ -153,6 +154,9 @@ export interface AssetDetail {
   readonly descriptionOrigin: Origin;
   /** A person's title (a chosen file name or an edit) or the model's (0007). */
   readonly titleOrigin: Origin;
+  /** How it looks beyond the facets (0009); `null` until classified at prompt version 3. */
+  readonly designNotes: DesignNotes | null;
+  readonly designNotesOrigin: Origin;
   readonly sourceUrl: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;

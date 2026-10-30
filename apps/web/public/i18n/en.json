@@ -102,7 +102,25 @@
       "title": "Prompt for Claude Code",
       "copy": "Copy",
       "copied": "Copied",
-      "hint": "Built from the metadata above, in English. Attach the original image when you paste it."
+      "hint": "Built from the metadata, in English. Paste the image first, then the prompt — the image carries what words cannot.",
+      "image": {
+        "copy": "Copy image",
+        "working": "Copying…",
+        "copied": "Image copied",
+        "failed": "Not copied",
+        "fallback": "The browser did not allow copying the image.",
+        "download": "Download it instead"
+      }
+    },
+    "notes": {
+      "title": "Visual details",
+      "composition": "Composition",
+      "imagery": "Imagery",
+      "surfaces": "Surfaces",
+      "shapes": "Shapes",
+      "typography": "Typography",
+      "components": "Components",
+      "details": "Details"
     }
   },
   "bulk": {

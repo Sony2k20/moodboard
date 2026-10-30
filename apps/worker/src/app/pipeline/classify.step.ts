@@ -210,11 +210,13 @@ export class ClassifyStep {
       await tx
         .update(assets)
         .set({
-          // Both guarded: a person's description or title stays (0004, 0007).
+          // All guarded: a person's description, title or notes stay (0004, 0007, 0009).
           description: result.description,
           descriptionOrigin: 'ai',
           title: result.title.trim().replace(/\.$/, '').slice(0, 200),
           titleOrigin: 'ai',
+          designNotes: result.design_notes,
+          designNotesOrigin: 'ai',
           ...(typeRow ? { type: typeRow.value } : {}),
           updatedAt: new Date(),
         })

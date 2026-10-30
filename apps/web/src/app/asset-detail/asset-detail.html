@@ -60,10 +60,21 @@
     <details class="prompt">
       <summary>
         {{ 'detail.prompt.title' | transloco }}
+        @if (image().original ?? image().large; as file) {
+        <button type="button" class="copy" (click)="$event.preventDefault(); copyImage(file.url)">
+          {{ 'detail.prompt.image.' + imageCopy() | transloco }}
+        </button>
+        }
         <button type="button" class="copy" (click)="$event.preventDefault(); copyPrompt()">
           {{ (copied() ? 'detail.prompt.copied' : 'detail.prompt.copy') | transloco }}
         </button>
       </summary>
+      @if (imageCopy() === 'failed' && (image().original ?? image().large); as file) {
+      <p class="hint">
+        {{ 'detail.prompt.image.fallback' | transloco }}
+        <a [href]="file.url" download>{{ 'detail.prompt.image.download' | transloco }}</a>
+      </p>
+      }
       <pre>{{ prompt() }}</pre>
       <small class="hint">{{ 'detail.prompt.hint' | transloco }}</small>
     </details>
@@ -97,6 +108,23 @@
       <p class="none">—</p>
       }
     </section>
+
+    @if (notes().length > 0) {
+    <section>
+      <h2>
+        {{ 'detail.notes.title' | transloco }}
+        <span class="origin" [attr.data-origin]="asset.designNotesOrigin">
+          {{ 'detail.origin.' + asset.designNotesOrigin | transloco }}
+        </span>
+      </h2>
+      <dl class="notes">
+        @for (note of notes(); track note.key) {
+        <dt>{{ 'detail.notes.' + note.key | transloco }}</dt>
+        <dd>{{ note.text }}</dd>
+        }
+      </dl>
+    </section>
+    }
 
     <section>
       <h2>{{ 'detail.facets' | transloco }}</h2>

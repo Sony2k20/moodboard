@@ -32,6 +32,15 @@ import { AssetSearchService } from './asset-search.service';
  */
 
 const MIGRATIONS = join(__dirname, '../../../../../libs/db/migrations');
+const MODEL_NOTES = {
+  composition: 'model composition',
+  imagery: '',
+  surfaces: '',
+  shapes: '',
+  typography: '',
+  components: '',
+  details: '',
+};
 const storage = { url: (path: string) => `/files/${path}` } as StorageService;
 
 let client: PGlite;
@@ -85,6 +94,8 @@ async function reclassify(assetId: string, facetKeys: string[], tagNames: string
         descriptionOrigin: 'ai',
         title: 'Model title',
         titleOrigin: 'ai',
+        designNotes: MODEL_NOTES,
+        designNotesOrigin: 'ai',
       })
       .where(eq(assets.id, assetId));
   });
@@ -263,6 +274,21 @@ describe('text edits', () => {
     await edit.updateText(id, { title: '' }, ada);
     await reclassify(id, []);
     expect(await search.detail(id)).toMatchObject({ title: 'Model title', titleOrigin: 'ai' });
+  });
+
+  it('keeps a person’s design notes through a re-analysis (0009)', async () => {
+    const id = await newAsset(ada);
+    expect((await search.detail(id))?.designNotes).toEqual(MODEL_NOTES);
+    const mine = { ...MODEL_NOTES, surfaces: 'Sand relief, soft shadows — by hand.' };
+    await db
+      .update(assets)
+      .set({ designNotes: mine, designNotesOrigin: 'human' })
+      .where(eq(assets.id, id));
+    await reclassify(id, []);
+    expect(await search.detail(id)).toMatchObject({
+      designNotes: mine,
+      designNotesOrigin: 'human',
+    });
   });
 
   it('does not let a model write take a person’s title, outside an edit', async () => {

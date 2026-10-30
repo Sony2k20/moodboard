@@ -21,6 +21,8 @@ const vocabulary = [
   facet('typography', ['serif']),
   facet('layout', ['split']),
   facet('motion', ['none', 'parallax']),
+  facet('imagery', ['photography', 'illustration']),
+  facet('finish', ['flat', 'texture', 'layered']),
 ];
 
 const asset = (change: Partial<AssetDetail> = {}): AssetDetail => ({
@@ -50,6 +52,8 @@ const asset = (change: Partial<AssetDetail> = {}): AssetDetail => ({
   ],
   classification: null,
   decidedFacets: [],
+  designNotes: null,
+  designNotesOrigin: 'ai',
   ...change,
 });
 
@@ -63,9 +67,10 @@ describe('buildPrompt', () => {
         'Palette (by share): #0d1117 (background, 70%), #d9643a (accent, 20%).',
         'Motion: none — a static reference.',
         'What the reference shows: A dark editorial hero with a serif headline.',
-        'Details: gold accents.',
+        'Keywords: gold accents.',
         '',
         'Match the composition, colour proportions and type hierarchy. Do not copy its text, logos or images.',
+        'The reference image is attached: follow it wherever this text is unclear.',
       ].join('\n'),
     );
   });
@@ -84,6 +89,7 @@ describe('buildPrompt', () => {
         'Build a user interface in the visual style of the attached reference.',
         '',
         'Match the composition, colour proportions and type hierarchy. Do not copy its text, logos or images.',
+        'The reference image is attached: follow it wherever this text is unclear.',
       ].join('\n'),
     );
   });
@@ -101,5 +107,53 @@ describe('buildPrompt', () => {
     );
     expect(prompt).toMatch(/^Build a pricing and empty state layout/);
     expect(prompt).toContain('Motion: parallax.');
+  });
+
+  it('carries imagery, finish and the visual details, with the rules they imply (0009)', () => {
+    const prompt = buildPrompt(
+      asset({
+        facets: [
+          { facet: 'imagery', value: 'photography', origin: 'ai', confidence: 0.8 },
+          { facet: 'finish', value: 'texture', origin: 'ai', confidence: 0.8 },
+          { facet: 'finish', value: 'layered', origin: 'ai', confidence: 0.8 },
+        ],
+        designNotes: {
+          composition: 'Hero split by a diagonal from top right to bottom left.',
+          imagery: '',
+          surfaces: 'Sand-like relief texture; cards raised with soft drop shadows.',
+          shapes: '',
+          typography: '',
+          components: 'Glossy beige gradient pill button; icons in white circular badges.',
+          details: '',
+        },
+      }),
+      vocabulary,
+    );
+    expect(prompt).toContain('Imagery: photography. Finish: texture, layered.');
+    expect(prompt).toContain(
+      [
+        'Visual details:',
+        '- Composition: Hero split by a diagonal from top right to bottom left.',
+        '- Surfaces: Sand-like relief texture; cards raised with soft drop shadows.',
+        '- Components: Glossy beige gradient pill button; icons in white circular badges.',
+      ].join('\n'),
+    );
+    expect(prompt).toContain('use photographs too');
+    expect(prompt).toContain('do not flatten the design');
+  });
+
+  it('adds no photo or depth rule to a flat illustrated reference', () => {
+    const prompt = buildPrompt(
+      asset({
+        facets: [
+          { facet: 'imagery', value: 'illustration', origin: 'ai', confidence: 0.8 },
+          { facet: 'finish', value: 'flat', origin: 'ai', confidence: 0.8 },
+        ],
+      }),
+      vocabulary,
+    );
+    expect(prompt).not.toContain('photographs');
+    expect(prompt).not.toContain('flatten');
+    expect(prompt).not.toContain('Visual details');
   });
 });

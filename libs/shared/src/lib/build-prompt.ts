@@ -1,3 +1,4 @@
+import { DESIGN_NOTE_KEYS, DesignNoteKey } from './analysis-result.schema';
 import { AssetDetail, VocabularyFacet } from './asset-query';
 
 /**
@@ -50,25 +51,60 @@ export function buildPrompt(
         : line('Motion', motion.filter((m) => m !== 'none'));
 
   const tags = asset.tags.map((t) => t.name);
+  const imagery = asset.facets.filter((v) => v.facet === 'imagery').map((v) => v.value);
+  const finish = asset.facets.filter((v) => v.facet === 'finish').map((v) => v.value);
 
   const body = [
     pair(line('Layout', values('layout')), line('Density', values('density'))),
     pair(line('Style', values('style')), line('Mood', values('mood')), line('Theme', values('theme'))),
+    pair(line('Imagery', values('imagery')), line('Finish', values('finish'))),
     line('Typography', values('typography')),
     palette.length > 0 ? `Palette (by share): ${palette.join(', ')}.` : null,
     motionLine,
     line('Industry', values('industry')),
     asset.description ? `What the reference shows: ${asset.description}` : null,
-    tags.length > 0 ? `Details: ${tags.join(', ')}.` : null,
+    tags.length > 0 ? `Keywords: ${tags.join(', ')}.` : null,
+  ].filter((l): l is string => l !== null);
+
+  // 0009: how it looks, in the model's words — the part facets cannot carry.
+  const notes = DESIGN_NOTE_KEYS.flatMap((key) => {
+    const text = asset.designNotes?.[key]?.trim();
+    return text ? [`- ${NOTE_LABELS[key]}: ${text}`] : [];
+  });
+
+  // 0009: what a rebuild from text alone got wrong — photos drawn as illustrations, depth flattened.
+  const rules = [
+    imagery.includes('photography')
+      ? 'Where the reference uses photographs, use photographs too (placeholder photos are fine) — not illustrations or icons.'
+      : null,
+    imagery.includes('3d-render')
+      ? 'Where it uses 3D renders, keep their lighting and volume; do not replace them with flat vector art.'
+      : null,
+    finish.some((f) => ['texture', 'grain', 'soft-shadow', 'layered', 'gradient', 'glow'].includes(f))
+      ? 'Reproduce the textures, gradients, shadows and layering described above; do not flatten the design.'
+      : null,
+    'Match the composition, colour proportions and type hierarchy. Do not copy its text, logos or images.',
   ].filter((l): l is string => l !== null);
 
   return [
     `Build ${subject} in the visual style of the attached reference${asset.title ? ` ("${asset.title}")` : ''}.`,
     ...(body.length > 0 ? ['', ...body] : []),
+    ...(notes.length > 0 ? ['', 'Visual details:', ...notes] : []),
     '',
-    'Match the composition, colour proportions and type hierarchy. Do not copy its text, logos or images.',
+    ...rules,
+    'The reference image is attached: follow it wherever this text is unclear.',
   ].join('\n');
 }
+
+const NOTE_LABELS: Record<DesignNoteKey, string> = {
+  composition: 'Composition',
+  imagery: 'Imagery',
+  surfaces: 'Surfaces',
+  shapes: 'Shapes',
+  typography: 'Typography',
+  components: 'Components',
+  details: 'Details',
+};
 
 function joinNatural(items: string[]): string {
   return items.length <= 1
