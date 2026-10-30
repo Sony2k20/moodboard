@@ -3,6 +3,11 @@ import { Route } from '@angular/router';
 export const appRoutes: Route[] = [
   { path: '', loadComponent: () => import('./home/home').then((m) => m.Home) },
   {
+    path: 'assets/:id',
+    loadComponent: () =>
+      import('./asset-detail/asset-detail').then((m) => m.AssetDetailPage),
+  },
+  {
     path: 'login-failed',
     loadComponent: () =>
       import('./auth/login-failed').then((m) => m.LoginFailed),

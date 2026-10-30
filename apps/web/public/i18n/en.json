@@ -36,7 +36,7 @@
     }
   },
   "upload": {
-    "drop": "Drop images here, or paste a screenshot anywhere on this page.",
+    "drop": "Drop images anywhere on this page, or paste a screenshot.",
     "pick": "Choose files",
     "formats": "PNG, JPEG, WebP or GIF, up to 25 MB each.",
     "dismiss": "Dismiss",
@@ -46,16 +46,46 @@
       "failed": "Upload failed. Try again in a moment."
     }
   },
-  "recent": {
-    "title": "Latest uploads",
-    "empty": "Nothing uploaded yet.",
+  "asset": {
     "untitled": "Untitled",
-    "classified": "classified",
-    "unclassified": "not classified yet",
+    "unclassified": "Not classified yet",
     "status": {
       "pending": "Processing",
       "ready": "Ready",
       "failed": "Unreadable file"
     }
+  },
+  "overview": {
+    "search": "Search",
+    "searchPlaceholder": "Search descriptions and tags",
+    "author": "Author",
+    "allAuthors": "All authors",
+    "tags": "Tags",
+    "remove": "Remove filter",
+    "results": "{{ count }} assets",
+    "clear": "Clear all filters",
+    "empty": "Nothing uploaded yet. Drop images onto this page to start.",
+    "noMatch": "No asset matches these filters.",
+    "invalid": "This link contains a filter that does not exist.",
+    "failed": "The assets could not be loaded. Try again in a moment."
+  },
+  "detail": {
+    "back": "Overview",
+    "uploadedBy": "Uploaded by {{ name }}",
+    "openOriginal": "Open original",
+    "description": "Description",
+    "facets": "Facets",
+    "tags": "Tags",
+    "colors": "Palette",
+    "classification": "Classification",
+    "classifiedBy": "{{ model }}, prompt version {{ version }}",
+    "notClassified": "Not classified yet.",
+    "legend": "set by a person — a re-analysis never changes it",
+    "origin": {
+      "ai": "by AI",
+      "human": "by hand"
+    },
+    "notFound": "This asset does not exist or is in the trash.",
+    "failed": "The asset could not be loaded. Try again in a moment."
   }
 }

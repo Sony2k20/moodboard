@@ -1,0 +1,24 @@
+<div class="grid" #grid>
+  @for (item of items(); track item.id) {
+  <a
+    class="tile"
+    [routerLink]="['/assets', item.id]"
+    [style.grid-row-end]="'span ' + span(item)"
+    [style.aspect-ratio]="1 / ratio(item)"
+  >
+    @if (item.thumbnail) {
+    <img [src]="item.thumbnail.url" [alt]="item.title ?? ''" loading="lazy" />
+    }
+    @if (item.status === 'pending') {
+    <span class="badge">{{ 'asset.status.pending' | transloco }}</span>
+    } @else if (!item.classified) {
+    <span class="badge">{{ 'asset.unclassified' | transloco }}</span>
+    }
+    <span class="caption">
+      {{ item.title ?? ('asset.untitled' | transloco) }}
+      <small>{{ item.author.displayName }}</small>
+    </span>
+  </a>
+  }
+</div>
+<div class="sentinel" #sentinel aria-hidden="true"></div>

@@ -1,0 +1,122 @@
+<a class="back" [routerLink]="backLink()">
+  ← {{ 'detail.back' | transloco }}
+</a>
+
+@if (notFound()) {
+<p role="alert">{{ 'detail.notFound' | transloco }}</p>
+} @else if (asset.error()) {
+<p role="alert">{{ 'detail.failed' | transloco }}</p>
+} @else if (asset.value(); as asset) {
+<article>
+  <figure class="image">
+    @if (image().large; as large) {
+    <a [href]="image().original?.url ?? large.url" target="_blank" rel="noopener">
+      <img [src]="large.url" [alt]="asset.title ?? ''" />
+    </a>
+    } @else {
+    <div class="placeholder">{{ 'asset.status.pending' | transloco }}</div>
+    }
+    @if (image().original; as original) {
+    <figcaption>
+      <a [href]="original.url" target="_blank" rel="noopener">
+        {{ 'detail.openOriginal' | transloco }}
+      </a>
+      @if (original.width && original.height) {
+      · {{ original.width }} × {{ original.height }}
+      }
+    </figcaption>
+    }
+  </figure>
+
+  <div class="meta">
+    <h1>{{ asset.title ?? ('asset.untitled' | transloco) }}</h1>
+    <p class="byline">
+      {{ 'detail.uploadedBy' | transloco: { name: asset.author.displayName } }}
+      · {{ asset.createdAt | date: 'medium' }}
+    </p>
+
+    @if (asset.description) {
+    <section>
+      <h2>
+        {{ 'detail.description' | transloco }}
+        <span class="origin" [attr.data-origin]="asset.descriptionOrigin">
+          {{ 'detail.origin.' + asset.descriptionOrigin | transloco }}
+        </span>
+      </h2>
+      <p>{{ asset.description }}</p>
+    </section>
+    }
+
+    @if (groups().length > 0) {
+    <section>
+      <h2>{{ 'detail.facets' | transloco }}</h2>
+      <dl class="facets">
+        @for (group of groups(); track group.facet) {
+        <dt>{{ vocabulary.facetLabel(group.facet) }}</dt>
+        <dd>
+          @for (value of group.values; track value.value) {
+          <a
+            class="chip"
+            [attr.data-origin]="value.origin"
+            [routerLink]="['/']"
+            [queryParams]="facetLink(group.facet, value.value)"
+            [title]="'detail.origin.' + value.origin | transloco"
+          >
+            {{ vocabulary.valueLabel(group.facet, value.value) }}
+          </a>
+          }
+        </dd>
+        }
+      </dl>
+      <p class="legend">
+        <span class="chip" data-origin="human">{{ 'detail.origin.human' | transloco }}</span>
+        {{ 'detail.legend' | transloco }}
+      </p>
+    </section>
+    }
+
+    @if (asset.tags.length > 0) {
+    <section>
+      <h2>{{ 'detail.tags' | transloco }}</h2>
+      <p class="tags">
+        @for (tag of asset.tags; track tag.name) {
+        <a
+          class="chip"
+          [attr.data-origin]="tag.origin"
+          [routerLink]="['/']"
+          [queryParams]="{ tag: tag.name }"
+        >{{ tag.name }}</a>
+        }
+      </p>
+    </section>
+    }
+
+    @if (asset.colors.length > 0) {
+    <section>
+      <h2>{{ 'detail.colors' | transloco }}</h2>
+      <div class="palette">
+        @for (color of asset.colors; track color.hex) {
+        <div class="swatch" [style.flex-grow]="color.ratio" [title]="color.hex">
+          <span [style.background]="color.hex"></span>
+          <code>{{ color.hex }}</code>
+          <small>{{ color.ratio | percent }}</small>
+        </div>
+        }
+      </div>
+    </section>
+    }
+
+    <section class="classification">
+      <h2>{{ 'detail.classification' | transloco }}</h2>
+      @if (asset.classification; as run) {
+      <p>
+        {{ 'detail.classifiedBy' | transloco: { model: run.model, version: run.promptVersion } }}
+        · {{ run.createdAt | date: 'medium' }}
+      </p>
+      } @else {
+      <p>{{ 'detail.notClassified' | transloco }}</p>
+      }
+    </section>
+  </div>
+</article>
+}

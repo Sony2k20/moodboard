@@ -1,11 +1,5 @@
-<section
-  class="dropzone"
-  [class.dragging]="dragging()"
-  (dragover)="onDragOver($event)"
-  (dragleave)="dragging.set(false)"
-  (drop)="onDrop($event)"
->
-  <p>{{ 'upload.drop' | transloco }}</p>
+<section class="upload" [class.dragging]="dragging()">
+  <span>{{ 'upload.drop' | transloco }}</span>
   <label class="pick">
     {{ 'upload.pick' | transloco }}
     <input
@@ -38,36 +32,37 @@
 </ul>
 }
 
-<h2>{{ 'recent.title' | transloco }}</h2>
-@if (uploads.recent().length === 0) {
-<p class="empty">{{ 'recent.empty' | transloco }}</p>
-} @else {
-<ul class="recent">
-  @for (asset of uploads.recent(); track asset.id) {
-  <li>
-    <div class="thumb">
-      @if (asset.thumbnailUrl) {
-      <img
-        [src]="asset.thumbnailUrl"
-        [alt]="asset.title ?? ''"
-        loading="lazy"
-      />
-      }
-    </div>
-    <div class="meta">
-      <span class="title"
-        >{{ asset.title ?? ('recent.untitled' | transloco) }}</span
-      >
-      <span class="status" [attr.data-status]="asset.status">
-        {{ 'recent.status.' + asset.status | transloco }} @if (asset.status ===
-        'ready') { · {{ (asset.classified ? 'recent.classified' :
-        'recent.unclassified') | transloco }} }
+<div class="layout">
+  <aside>
+    <mb-filter-panel />
+  </aside>
+
+  <section class="results" [attr.aria-busy]="store.loading()">
+    <header>
+      <span role="status">
+        {{ 'overview.results' | transloco: { count: store.total() } }}
       </span>
-      <small
-        >{{ asset.createdBy }} · {{ asset.createdAt | date: 'short' }}</small
-      >
-    </div>
-  </li>
-  }
-</ul>
-}
+      @if (store.hasFilters()) {
+      <button type="button" class="link" (click)="store.clear()">
+        {{ 'overview.clear' | transloco }}
+      </button>
+      }
+    </header>
+
+    @switch (store.error()) { @case ('invalid') {
+    <p role="alert">{{ 'overview.invalid' | transloco }}</p>
+    } @case ('failed') {
+    <p role="alert">{{ 'overview.failed' | transloco }}</p>
+    } @default { @if (store.items().length === 0 && !store.loading()) {
+    <p class="empty">
+      {{ (store.hasFilters() ? 'overview.noMatch' : 'overview.empty') | transloco }}
+    </p>
+    } @else {
+    <mb-asset-grid
+      [items]="store.items()"
+      [hasMore]="!!store.nextCursor()"
+      (more)="store.loadMore()"
+    />
+    } } }
+  </section>
+</div>

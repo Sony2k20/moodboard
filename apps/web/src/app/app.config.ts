@@ -6,7 +6,11 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import {
+  provideRouter,
+  withComponentInputBinding,
+  withInMemoryScrolling,
+} from '@angular/router';
 import { provideTransloco } from '@jsverse/transloco';
 import { appRoutes } from './app.routes';
 import { SessionService } from './auth/session.service';
@@ -20,7 +24,11 @@ function browserLocale(): 'en' | 'de' {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(appRoutes),
+    provideRouter(
+      appRoutes,
+      withComponentInputBinding(),
+      withInMemoryScrolling({ scrollPositionRestoration: 'enabled' }),
+    ),
     provideHttpClient(withFetch()),
     provideTransloco({
       config: {

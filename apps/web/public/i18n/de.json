@@ -36,7 +36,7 @@
     }
   },
   "upload": {
-    "drop": "Bilder hierher ziehen oder einen Screenshot irgendwo auf der Seite einfügen.",
+    "drop": "Bilder irgendwo auf diese Seite ziehen oder einen Screenshot einfügen.",
     "pick": "Dateien auswählen",
     "formats": "PNG, JPEG, WebP oder GIF, jeweils bis 25 MB.",
     "dismiss": "Schließen",
@@ -46,16 +46,46 @@
       "failed": "Upload fehlgeschlagen. Bitte gleich noch einmal versuchen."
     }
   },
-  "recent": {
-    "title": "Letzte Uploads",
-    "empty": "Noch nichts hochgeladen.",
+  "asset": {
     "untitled": "Ohne Titel",
-    "classified": "klassifiziert",
-    "unclassified": "noch nicht klassifiziert",
+    "unclassified": "Noch nicht klassifiziert",
     "status": {
       "pending": "Wird verarbeitet",
       "ready": "Bereit",
       "failed": "Datei nicht lesbar"
     }
+  },
+  "overview": {
+    "search": "Suche",
+    "searchPlaceholder": "Beschreibungen und Tags durchsuchen",
+    "author": "Autor",
+    "allAuthors": "Alle Autoren",
+    "tags": "Tags",
+    "remove": "Filter entfernen",
+    "results": "{{ count }} Assets",
+    "clear": "Alle Filter zurücksetzen",
+    "empty": "Noch nichts hochgeladen. Bilder auf diese Seite ziehen, um anzufangen.",
+    "noMatch": "Kein Asset passt zu diesen Filtern.",
+    "invalid": "Dieser Link enthält einen Filter, den es nicht gibt.",
+    "failed": "Die Assets konnten nicht geladen werden. Bitte gleich noch einmal versuchen."
+  },
+  "detail": {
+    "back": "Übersicht",
+    "uploadedBy": "Hochgeladen von {{ name }}",
+    "openOriginal": "Original öffnen",
+    "description": "Beschreibung",
+    "facets": "Facetten",
+    "tags": "Tags",
+    "colors": "Palette",
+    "classification": "Klassifizierung",
+    "classifiedBy": "{{ model }}, Prompt-Version {{ version }}",
+    "notClassified": "Noch nicht klassifiziert.",
+    "legend": "von einem Menschen gesetzt — eine erneute Analyse ändert es nie",
+    "origin": {
+      "ai": "von der KI",
+      "human": "von Hand"
+    },
+    "notFound": "Dieses Asset gibt es nicht, oder es liegt im Papierkorb.",
+    "failed": "Das Asset konnte nicht geladen werden. Bitte gleich noch einmal versuchen."
   }
 }
