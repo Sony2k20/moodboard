@@ -31,6 +31,7 @@ const asset = (change: Partial<AssetDetail> = {}): AssetDetail => ({
   titleOrigin: 'ai',
   type: 'image',
   status: 'ready',
+  statusReason: null,
   description: 'A dark editorial hero with a serif headline.',
   descriptionOrigin: 'ai',
   sourceUrl: null,

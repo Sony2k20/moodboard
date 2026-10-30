@@ -2,10 +2,10 @@
 #
 # The worker image: the BullMQ consumer that produces thumbnails, captures and classifications.
 #
-# Playwright and ffmpeg are deliberately absent for now. They belong to the capture step, and the
-# Playwright base image is large enough that carrying it before anything uses it would slow every
-# build for nothing. When it arrives, the runtime stage changes base image — the rest of this
-# file does not.
+# Chromium comes from `playwright install` on node:24-slim rather than from the Playwright base
+# image: that one pins its own Node version, and this one has to match the build stage (0011).
+# The full Chromium, not the headless shell — bot detection spots the shell more easily. ffmpeg
+# arrives with the scroll video, not before.
 
 FROM node:24-slim AS build
 WORKDIR /src
@@ -25,6 +25,13 @@ WORKDIR /app
 
 COPY --from=build /src/dist/apps/worker/package.json /src/dist/apps/worker/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
+
+# Outside the home directory, which UID 1000 does not have here, and readable by it. The version
+# is the one in package-lock.json, so the browser always matches the library driving it.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN npx playwright install --with-deps chromium \
+    && rm -rf /var/lib/apt/lists/* \
+    && chmod -R a+rX /ms-playwright
 
 COPY --from=build /src/dist/apps/worker/ ./
 

@@ -3,6 +3,7 @@ import { assetColors, assetFiles, assets, Database } from '@moodboard/db';
 import {
   AssetFileKind,
   assetFilePath,
+  CaptureFailure,
   STORAGE_SERVICE,
   StorageService,
   THUMBNAIL_WIDTHS,
@@ -56,6 +57,28 @@ export class ImageSteps {
     return { path: file.path, bytes: await readAll(this.storage, file.path) };
   }
 
+  /**
+   * What thumbnails, colours and the model are made from: the original of an upload, the poster
+   * of a website (0011) — whose original is the full page, up to 16,000 px tall, which would make
+   * a strip of a thumbnail and a palette of the footer.
+   */
+  async source(assetId: string): Promise<Buffer> {
+    const files = await this.db
+      .select({ kind: assetFiles.kind, path: assetFiles.path })
+      .from(assetFiles)
+      .where(
+        and(
+          eq(assetFiles.assetId, assetId),
+          inArray(assetFiles.kind, ['poster', 'original']),
+        ),
+      );
+    const file = files.find((f) => f.kind === 'poster') ?? files.find((f) => f.kind === 'original');
+    if (!file) {
+      throw new UnrecoverableError(`Asset ${assetId} has no image to work from`);
+    }
+    return readAll(this.storage, file.path);
+  }
+
   /** Decodes the whole file. A file the api's signature check let through but that is broken further in ends here, as `failed`. */
   async normalize(assetId: string): Promise<void> {
     const { path, bytes } = await this.original(assetId);
@@ -84,7 +107,7 @@ export class ImageSteps {
   }
 
   async thumbnails(assetId: string): Promise<void> {
-    const { bytes } = await this.original(assetId);
+    const bytes = await this.source(assetId);
     const kinds = Object.keys(THUMBNAIL_WIDTHS) as Array<
       keyof typeof THUMBNAIL_WIDTHS
     >;
@@ -120,7 +143,7 @@ export class ImageSteps {
 
   /** The last cheap step: afterwards the asset is viewable, classified or not (0004). */
   async colors(assetId: string): Promise<void> {
-    const { bytes } = await this.original(assetId);
+    const bytes = await this.source(assetId);
     const { data } = await sharp(bytes, { animated: false })
       .rotate()
       .resize(64, 64, { fit: 'inside' })
@@ -154,7 +177,7 @@ export class ImageSteps {
 
   /** The image the model sees: 1568 px on the long edge, WebP, no metadata (0004). */
   async modelImage(assetId: string): Promise<Buffer> {
-    const { bytes } = await this.original(assetId);
+    const bytes = await this.source(assetId);
     return sharp(bytes, { animated: false })
       .rotate()
       .resize(1568, 1568, { fit: 'inside', withoutEnlargement: true })
@@ -162,10 +185,11 @@ export class ImageSteps {
       .toBuffer();
   }
 
-  async markFailed(assetId: string): Promise<void> {
+  /** `reason` only for websites: why the capture failed (0011). An unreadable upload needs none. */
+  async markFailed(assetId: string, reason: CaptureFailure | null = null): Promise<void> {
     await this.db
       .update(assets)
-      .set({ status: 'failed', updatedAt: new Date() })
+      .set({ status: 'failed', statusReason: reason, updatedAt: new Date() })
       .where(eq(assets.id, assetId));
   }
 }

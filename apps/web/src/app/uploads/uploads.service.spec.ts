@@ -45,4 +45,21 @@ describe('UploadsService', () => {
     expect(service.uploads()[0].error).toBe('tooLarge');
     expect(service.completed()).toBe(0);
   });
+
+  it('hands a URL to the api for capture, and counts it like an upload (0011)', () => {
+    service.capture('https://example.com/');
+    const request = http.expectOne({ method: 'POST', url: '/api/assets/websites' });
+    expect(request.request.body).toEqual({ url: 'https://example.com/' });
+    request.flush({ id: 'site' });
+    expect(service.uploads()).toEqual([]);
+    expect(service.completed()).toBe(1);
+  });
+
+  it('maps 400 on a URL to "invalid URL"', () => {
+    service.capture('https://intranet/');
+    http
+      .expectOne('/api/assets/websites')
+      .flush(null, { status: 400, statusText: 'Bad Request' });
+    expect(service.uploads()[0].error).toBe('invalidUrl');
+  });
 });

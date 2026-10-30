@@ -54,6 +54,7 @@ let ada: CurrentUser;
 let bob: CurrentUser;
 let leaf: string;
 const ingestUpload = jest.fn(async () => ({ id: 'new-asset', enqueued: true }));
+const ingestUrl = jest.fn(async () => ({ id: 'new-site', enqueued: true }));
 
 const storage = {
   url: (path: string) => `/files/${path}`,
@@ -66,7 +67,7 @@ const storage = {
 async function connect(user: CurrentUser): Promise<Client> {
   const factory = new McpServerFactory(
     new AssetSearchService(db, storage),
-    { ingestUpload } as unknown as AssetsService,
+    { ingestUpload, ingestUrl } as unknown as AssetsService,
     storage,
   );
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
@@ -177,7 +178,7 @@ describe('MCP over HTTP', () => {
           provide: McpServerFactory,
           useValue: new McpServerFactory(
             new AssetSearchService(db, storage),
-            { ingestUpload } as unknown as AssetsService,
+            { ingestUpload, ingestUrl } as unknown as AssetsService,
             storage,
           ),
         },
@@ -375,5 +376,32 @@ describe('MCP tools', () => {
       arguments: { image_base64: Buffer.from('<svg/>').toString('base64') },
     });
     expect(refused.isError).toBe(true);
+  });
+
+  it('adds a website to capture from a URL (0011)', async () => {
+    const mcp = await connect(bob);
+    const added = await mcp.callTool({
+      name: 'add_asset',
+      arguments: { url: 'linear.app/pricing', title: 'Linear pricing' },
+    });
+    expect(JSON.parse(textOf(added))).toMatchObject({ id: 'new-site', status: 'pending' });
+    expect(ingestUrl).toHaveBeenCalledWith({
+      url: 'https://linear.app/pricing',
+      title: 'Linear pricing',
+      source: 'mcp',
+      userId: bob.id,
+    });
+  });
+
+  it('wants exactly one of image and URL, and only a web URL', async () => {
+    const mcp = await connect(bob);
+    for (const args of [
+      {},
+      { url: 'https://example.com', image_base64: PNG.toString('base64') },
+      { url: 'file:///etc/passwd' },
+    ]) {
+      const result = await mcp.callTool({ name: 'add_asset', arguments: args });
+      expect(result.isError).toBe(true);
+    }
   });
 });

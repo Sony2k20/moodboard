@@ -5,6 +5,7 @@ import {
   AssetQuerySchema,
   buildPrompt,
   MAX_UPLOAD_BYTES,
+  parseCaptureUrl,
   sniffUploadFormat,
   STORAGE_SERVICE,
   StorageService,
@@ -167,14 +168,42 @@ export class McpServerFactory {
       {
         title: 'Add a design reference',
         description:
-          'Adds an image (PNG, JPEG, WebP or GIF, base64, at most 25 MB) to the design memory under your name. It is classified within about a minute; get_asset then shows the result. Without a title the model names it.',
+          'Adds a design reference under your name: either an image (PNG, JPEG, WebP or GIF, base64, at most 25 MB) or the URL of a website, which is then captured — screenshot of the viewport and of the full page. Pass exactly one of the two. An image is classified within about a minute, a website within about two; get_asset then shows the result, or why a capture failed. Without a title the model names it.',
         inputSchema: {
-          image_base64: z.string().min(1).describe('The image file, base64-encoded, without a data: prefix'),
+          image_base64: z
+            .string()
+            .min(1)
+            .optional()
+            .describe('The image file, base64-encoded, without a data: prefix'),
+          url: z
+            .string()
+            .optional()
+            .describe('An http or https URL of a public website to capture'),
           title: z.string().max(200).optional().describe('A title, if you have a meaningful one'),
         },
       },
-      async ({ image_base64, title }) => {
-        const bytes = Buffer.from(image_base64, 'base64');
+      async ({ image_base64, url, title }) => {
+        if (Boolean(image_base64) === Boolean(url)) {
+          return failure('Pass exactly one of image_base64 and url');
+        }
+        if (url) {
+          const parsed = parseCaptureUrl(url);
+          if (!parsed) {
+            return failure('url must be an http or https URL with a host name');
+          }
+          const { id } = await this.assets.ingestUrl({
+            url: parsed,
+            title,
+            source: 'mcp',
+            userId: user.id,
+          });
+          return text({
+            id,
+            status: 'pending',
+            note: 'The capture and classification take up to two minutes; call get_asset afterwards. A capture can fail — get_asset then shows status "failed" and a statusReason.',
+          });
+        }
+        const bytes = Buffer.from(image_base64 ?? '', 'base64');
         if (bytes.length === 0) {
           return failure('image_base64 is empty or not base64');
         }

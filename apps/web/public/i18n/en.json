@@ -36,13 +36,19 @@
     }
   },
   "upload": {
-    "drop": "Drop images anywhere on this page, or paste a screenshot.",
+    "drop": "Drop images anywhere on this page, or paste a screenshot or a link.",
     "pick": "Choose files",
     "formats": "PNG, JPEG, WebP or GIF, up to 25 MB each.",
     "dismiss": "Dismiss",
+    "capture": {
+      "label": "Or capture a website:",
+      "placeholder": "https://example.com",
+      "submit": "Capture"
+    },
     "error": {
       "tooLarge": "Too large — 25 MB at most.",
       "unsupported": "Not a supported image. PNG, JPEG, WebP or GIF only.",
+      "invalidUrl": "Not a web address. Use an http or https URL.",
       "failed": "Upload failed. Try again in a moment."
     }
   },
@@ -53,6 +59,19 @@
       "pending": "Processing",
       "ready": "Ready",
       "failed": "Unreadable file"
+    },
+    "capture": {
+      "pending": "Capturing",
+      "failedBadge": "Capture failed",
+      "failed": {
+        "blocked": "The site blocked the capture with a bot check.",
+        "unreachable": "The site could not be reached.",
+        "http-error": "The site answered with an error page.",
+        "timeout": "The site took too long to load.",
+        "blank": "The page came out empty — a single colour.",
+        "forbidden-target": "This address is not a public website, so it is not captured.",
+        "unknown": "The capture failed."
+      }
     }
   },
   "overview": {
@@ -74,6 +93,7 @@
     "back": "Overview",
     "uploadedBy": "Uploaded by {{ name }}",
     "openOriginal": "Open original",
+    "openFullPage": "Open full page",
     "description": "Description",
     "facets": "Facets",
     "tags": "Tags",
@@ -98,6 +118,9 @@
     "delete": "Move to trash",
     "deleteHint": "Restorable from the trash until the date shown there.",
     "confirmDelete": "Move this asset to the trash?",
+    "capture": {
+      "retry": "Capture again"
+    },
     "prompt": {
       "title": "Prompt for Claude Code",
       "copy": "Copy",

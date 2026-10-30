@@ -26,6 +26,11 @@ jobs:
 
       - run: npm ci
 
+      - name: Chromium for the capture tests
+        # The worker's capture tests drive a real browser against a local server (0011): the
+        # egress guard is only proven where Chromium actually makes the requests.
+        run: npx playwright install --with-deps chromium
+
       - name: Lint, test, build
         run: npx nx run-many -t lint,test,build
 
@@ -242,3 +247,15 @@ jobs:
         run: |
           helm template moodboard deploy/chart \
             | grep -q 'medium: Memory'
+
+      - name: The worker egress policy keeps private ranges out, and only when asked for
+        # Off by default, because without the database among its destinations it would cut the
+        # worker off from Postgres (0011). When on, private ranges must stay excluded.
+        run: |
+          ! helm template moodboard deploy/chart | grep -q 'kind: NetworkPolicy'
+          policy=$(helm template moodboard deploy/chart --set worker.egress.restrict=true \
+            | awk '/^kind: NetworkPolicy/,/^---/')
+          echo "$policy" | grep -q 'policyTypes: \[Egress\]'
+          for range in 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 fc00::/7; do
+            echo "$policy" | grep -q -- "- $range" || { echo "::error::$range is not excluded"; exit 1; }
+          done

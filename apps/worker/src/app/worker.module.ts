@@ -5,7 +5,9 @@ import {
   AssetClassifier,
 } from '@moodboard/classify';
 import { DEFAULT_TRASH_RETENTION_DAYS } from '@moodboard/shared';
+import { WebsiteCapturer } from './capture/website-capturer';
 import { DatabaseModule } from './database.module';
+import { CaptureStep, WEBSITE_CAPTURER } from './pipeline/capture.step';
 import { ClassifyStep, LLM_COST_LIMIT } from './pipeline/classify.step';
 import { ImageSteps } from './pipeline/image.steps';
 import { PipelineRunner } from './pipeline/pipeline.runner';
@@ -50,6 +52,8 @@ function classifierFromEnv(): AssetClassifier | null {
       useFactory: () => Number(process.env['LLM_MONTHLY_COST_LIMIT_USD'] ?? 25),
     },
     ImageSteps,
+    { provide: WEBSITE_CAPTURER, useFactory: () => new WebsiteCapturer() },
+    CaptureStep,
     ClassifyStep,
     PipelineRunner,
     Reconciler,

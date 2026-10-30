@@ -11,6 +11,23 @@
     />
   </label>
   <small>{{ 'upload.formats' | transloco }}</small>
+  <!-- novalidate: the browser's own check refuses "example.com", which parseCaptureUrl takes. -->
+  <form class="capture" novalidate (submit)="$event.preventDefault(); onCapture(url)">
+    <label for="capture-url">{{ 'upload.capture.label' | transloco }}</label>
+    <input
+      #url
+      id="capture-url"
+      type="url"
+      inputmode="url"
+      [placeholder]="'upload.capture.placeholder' | transloco"
+      [attr.aria-invalid]="urlInvalid()"
+      (input)="urlInvalid.set(false)"
+    />
+    <button type="submit">{{ 'upload.capture.submit' | transloco }}</button>
+    @if (urlInvalid()) {
+    <small role="alert" class="invalid">{{ 'upload.error.invalidUrl' | transloco }}</small>
+    }
+  </form>
 </section>
 
 @if (uploads.uploads().length > 0) {

@@ -24,6 +24,24 @@
   text-decoration: underline;
 }
 
+.capture {
+  display: flex;
+  flex-wrap: wrap;
+  flex-basis: 100%;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.capture input {
+  width: min(28rem, 100%);
+}
+
+.capture .invalid {
+  flex-basis: 100%;
+  color: #a00;
+}
+
 .in-flight {
   list-style: none;
   padding: 0;

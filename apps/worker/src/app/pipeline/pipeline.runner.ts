@@ -5,10 +5,13 @@ import {
   OnApplicationShutdown,
 } from '@nestjs/common';
 import {
+  CAPTURE_QUEUE,
   nextPipelineStep,
   PIPELINE_QUEUE,
   PipelineJobData,
   pipelineJobId,
+  PipelineKind,
+  pipelineQueueOf,
   PipelineStep,
   valkeyPrefix,
 } from '@moodboard/shared';
@@ -19,6 +22,8 @@ import {
   UnrecoverableError,
   Worker,
 } from 'bullmq';
+import { CaptureError } from '../capture/website-capturer';
+import { CaptureStep, FinalCaptureError } from './capture.step';
 import { ClassifyStep } from './classify.step';
 import { ImageSteps } from './image.steps';
 
@@ -35,6 +40,12 @@ const JOB_OPTIONS = {
   removeOnFail: true,
 };
 
+/**
+ * One Chromium at a time (0011). Two parallel captures would double the worker's memory peak
+ * (§4.6), and image jobs keep their own concurrency next to it.
+ */
+const CAPTURE_CONCURRENCY = 1;
+
 export function connectionFromEnv(): ConnectionOptions {
   return {
     host: process.env['VALKEY_HOST'] ?? 'localhost',
@@ -45,7 +56,7 @@ export function connectionFromEnv(): ConnectionOptions {
 }
 
 /**
- * Consumes the pipeline queue (§7.1). Each step, on success, enqueues the next one; so a failed
+ * Consumes the pipeline queues (§7.1). Each step, on success, enqueues the next one; so a failed
  * `classify` leaves thumbnails and colours in place, and the asset usable.
  */
 @Injectable()
@@ -53,48 +64,68 @@ export class PipelineRunner
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
   private readonly logger = new Logger(PipelineRunner.name);
-  readonly queue = new Queue<PipelineJobData>(PIPELINE_QUEUE, {
-    connection: connectionFromEnv(),
-    prefix: valkeyPrefix(process.env),
-  });
-  private worker: Worker<PipelineJobData> | null = null;
+  private readonly queues = new Map(
+    [PIPELINE_QUEUE, CAPTURE_QUEUE].map((name) => [
+      name,
+      new Queue<PipelineJobData>(name, {
+        connection: connectionFromEnv(),
+        prefix: valkeyPrefix(process.env),
+      }),
+    ]),
+  );
+  private workers: Worker<PipelineJobData>[] = [];
 
   constructor(
     private readonly images: ImageSteps,
+    private readonly capture: CaptureStep,
     private readonly classify: ClassifyStep,
   ) {}
 
   onApplicationBootstrap(): void {
-    this.worker = new Worker<PipelineJobData>(
-      PIPELINE_QUEUE,
-      (job) => this.process(job),
-      {
-        connection: connectionFromEnv(),
-        prefix: valkeyPrefix(process.env),
-        // Capped so two heavy jobs do not double the memory peak (§4.6).
-        concurrency: Number(process.env['WORKER_CONCURRENCY'] ?? 2),
-      },
-    );
-    this.worker.on('failed', (job, error) => void this.onFailed(job, error));
-    this.worker.on('error', (error) =>
-      this.logger.warn(`Queue connection: ${error.message}`),
-    );
+    this.workers = [
+      // Capped so two heavy jobs do not double the memory peak (§4.6).
+      this.consume(PIPELINE_QUEUE, Number(process.env['WORKER_CONCURRENCY'] ?? 2)),
+      this.consume(CAPTURE_QUEUE, CAPTURE_CONCURRENCY),
+    ];
   }
 
-  async enqueue(assetId: string, step: PipelineStep): Promise<void> {
-    await this.queue.add(
-      step,
-      { assetId },
-      { ...JOB_OPTIONS, jobId: pipelineJobId(assetId, step) },
+  private consume(name: string, concurrency: number): Worker<PipelineJobData> {
+    const worker = new Worker<PipelineJobData>(name, (job) => this.process(job), {
+      connection: connectionFromEnv(),
+      prefix: valkeyPrefix(process.env),
+      concurrency,
+    });
+    worker.on('failed', (job, error) => void this.onFailed(job, error));
+    worker.on('error', (error) =>
+      this.logger.warn(`Queue connection: ${error.message}`),
     );
+    return worker;
+  }
+
+  async enqueue(
+    assetId: string,
+    step: PipelineStep,
+    pipeline: PipelineKind = 'image',
+  ): Promise<void> {
+    await this.queues
+      .get(pipelineQueueOf(step))
+      ?.add(
+        step,
+        { assetId, pipeline },
+        { ...JOB_OPTIONS, jobId: pipelineJobId(assetId, step) },
+      );
   }
 
   private async process(job: Job<PipelineJobData>): Promise<void> {
     const step = job.name as PipelineStep;
     const { assetId } = job.data;
+    const pipeline = job.data.pipeline ?? 'image';
     switch (step) {
       case 'normalize':
         await this.images.normalize(assetId);
+        break;
+      case 'capture':
+        await this.capture.run(assetId);
         break;
       case 'thumbnails':
         await this.images.thumbnails(assetId);
@@ -109,13 +140,17 @@ export class PipelineRunner
         throw new UnrecoverableError(`Unknown pipeline step ${String(step)}`);
     }
 
-    const next = nextPipelineStep(step);
+    const next = nextPipelineStep(step, pipeline);
     if (next && !(next === 'classify' && !this.classify.enabled)) {
-      await this.enqueue(assetId, next);
+      await this.enqueue(assetId, next, pipeline);
     }
   }
 
-  /** Only a broken file fails the asset. A failed late step leaves it usable (§7.1). */
+  /**
+   * Only the first step fails the asset: a broken upload, or a website that could not be
+   * captured — with the reason, so the person sees why (0011). A failed late step leaves it
+   * usable (§7.1).
+   */
   private async onFailed(
     job: Job<PipelineJobData> | undefined,
     error: Error,
@@ -132,6 +167,15 @@ export class PipelineRunner
     if (final && job.name === 'normalize') {
       await this.images.markFailed(job.data.assetId);
     }
+    if (final && job.name === 'capture') {
+      // A retryable reason that ran out of attempts arrives as a plain CaptureError; anything
+      // else (a crashed browser, a full disk) has no reason a person could act on.
+      const reason =
+        error instanceof FinalCaptureError || error instanceof CaptureError
+          ? error.reason
+          : null;
+      await this.images.markFailed(job.data.assetId, reason);
+    }
   }
 
   /**
@@ -141,14 +185,18 @@ export class PipelineRunner
    */
   async onApplicationShutdown(): Promise<void> {
     const graceful = (async () => {
-      await this.worker?.close();
-      await this.queue.close();
+      await Promise.all(this.workers.map((worker) => worker.close()));
+      await Promise.all([...this.queues.values()].map((queue) => queue.close()));
     })();
     const deadline = new Promise<void>((resolve) =>
       setTimeout(resolve, SHUTDOWN_GRACE_MS).unref(),
     );
     await Promise.race([graceful, deadline]);
-    await this.worker?.disconnect().catch(() => undefined);
-    await this.queue.disconnect().catch(() => undefined);
+    for (const worker of this.workers) {
+      await worker.disconnect().catch(() => undefined);
+    }
+    for (const queue of this.queues.values()) {
+      await queue.disconnect().catch(() => undefined);
+    }
   }
 }

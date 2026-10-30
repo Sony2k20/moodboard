@@ -104,6 +104,15 @@ export class AssetGrid {
     return width && height ? height / width : FALLBACK_RATIO;
   }
 
+  /** A website without a picture yet, or whose capture failed, is recognised by its host (0011). */
+  protected host(url: string): string {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return url;
+    }
+  }
+
   protected span(item: AssetCard): number {
     return Math.ceil((this.column() * this.ratio(item) + GAP) / ROW);
   }

@@ -14,13 +14,20 @@
     }
     @if (selecting()) {
     <span class="check" aria-hidden="true">{{ selected().has(item.id) ? '✓' : '' }}</span>
+    } @else if (item.status === 'failed') {
+    <span class="badge failed">{{ 'asset.capture.failedBadge' | transloco }}</span>
     } @else if (item.status === 'pending') {
-    <span class="badge">{{ 'asset.status.pending' | transloco }}</span>
+    <span class="badge">
+      {{ (item.type === 'website' && !item.thumbnail ? 'asset.capture.pending' : 'asset.status.pending') | transloco }}
+    </span>
     } @else if (!item.classified) {
     <span class="badge">{{ 'asset.unclassified' | transloco }}</span>
     }
+    @if (!item.thumbnail && item.sourceUrl) {
+    <span class="host">{{ host(item.sourceUrl) }}</span>
+    }
     <span class="caption">
-      {{ item.title ?? ('asset.untitled' | transloco) }}
+      {{ item.title ?? (item.sourceUrl ? host(item.sourceUrl) : ('asset.untitled' | transloco)) }}
       <small>{{ item.author.displayName }}</small>
     </span>
   </a>

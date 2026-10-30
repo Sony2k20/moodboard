@@ -1,5 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { assetFiles, assets, auditLog, Database } from '@moodboard/db';
+import {
+  assetFacetDecisions,
+  assetFacetValues,
+  assetFiles,
+  assets,
+  auditLog,
+  Database,
+  facets,
+  facetValues,
+} from '@moodboard/db';
+import { and, eq, isNull } from 'drizzle-orm';
 import {
   assetFilePath,
   STORAGE_SERVICE,
@@ -122,5 +132,96 @@ export class AssetsService {
       );
     }
     return { id, enqueued };
+  }
+
+  /**
+   * A website to capture (0011). Nothing is fetched here — the worker does that, behind its
+   * egress guard — so this only records the asset and starts the pipeline at `capture`.
+   *
+   * `type: website` goes in as the person's decision: they handed in a URL, so what the asset is
+   * is not the model's to guess. A screenshot of a website would otherwise easily come back as
+   * `image`, and the facet guard keeps a decided facet through every re-analysis (0006).
+   */
+  async ingestUrl(input: {
+    url: string;
+    source?: 'upload' | 'mcp';
+    title?: string;
+    userId: string;
+  }): Promise<{ id: string; enqueued: boolean }> {
+    const id = randomUUID();
+    const title = input.title?.trim().slice(0, 200) || null;
+    await this.db.transaction(async (tx) => {
+      await tx.insert(assets).values({
+        id,
+        type: 'website',
+        title,
+        titleOrigin: title ? 'human' : 'ai',
+        sourceUrl: input.url,
+        createdBy: input.userId,
+        status: 'pending',
+      });
+      const [type] = await tx
+        .select({ facetId: facets.id, valueId: facetValues.id })
+        .from(facetValues)
+        .innerJoin(facets, eq(facets.id, facetValues.facetId))
+        .where(and(eq(facets.key, 'type'), eq(facetValues.value, 'website')))
+        .limit(1);
+      if (type) {
+        await tx.insert(assetFacetValues).values({
+          assetId: id,
+          facetValueId: type.valueId,
+          origin: 'human',
+          setBy: input.userId,
+        });
+        await tx
+          .insert(assetFacetDecisions)
+          .values({ assetId: id, facetId: type.facetId, decidedBy: input.userId });
+      }
+      await tx.insert(auditLog).values({
+        userId: input.userId,
+        action: 'asset.created',
+        entity: 'asset',
+        entityId: id,
+        diff: { source: input.source ?? 'upload', url: input.url },
+      });
+    });
+
+    const enqueued = await this.queue.startPipeline(id, 'website');
+    if (!enqueued) {
+      this.logger.warn(
+        `Asset ${id} recorded, but the queue is unreachable; the reconciler will pick it up`,
+      );
+    }
+    return { id, enqueued };
+  }
+
+  /**
+   * Another attempt at a website whose capture failed (0011). Only for a failed website: anything
+   * else either has nothing to capture or is already on its way.
+   */
+  async retryCapture(assetId: string, userId: string): Promise<boolean> {
+    const [asset] = await this.db
+      .update(assets)
+      .set({ status: 'pending', statusReason: null, updatedAt: new Date() })
+      .where(
+        and(
+          eq(assets.id, assetId),
+          eq(assets.type, 'website'),
+          eq(assets.status, 'failed'),
+          isNull(assets.deletedAt),
+        ),
+      )
+      .returning({ id: assets.id });
+    if (!asset) {
+      return false;
+    }
+    await this.db.insert(auditLog).values({
+      userId,
+      action: 'asset.capture_retried',
+      entity: 'asset',
+      entityId: assetId,
+    });
+    await this.queue.startPipeline(assetId, 'website');
+    return true;
   }
 }

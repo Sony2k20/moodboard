@@ -14,6 +14,8 @@ const card = (id: string, change: Partial<AssetCard> = {}): AssetCard => ({
   title: id,
   type: 'image',
   status: 'ready',
+  statusReason: null,
+  sourceUrl: null,
   classified: true,
   createdAt: '2026-10-30T08:00:00.000Z',
   author: { id: 'u1', displayName: 'Ada' },

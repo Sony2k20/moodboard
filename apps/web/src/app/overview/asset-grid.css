@@ -35,6 +35,23 @@
   font-size: 0.75rem;
 }
 
+.badge.failed {
+  background: #a00;
+}
+
+/* A website without a picture: its host in the middle of the empty tile (0011). */
+.host {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 0.75rem;
+  color: #555;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
 .caption {
   position: absolute;
   inset: auto 0 0 0;

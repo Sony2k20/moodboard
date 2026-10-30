@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { LocalizedText } from './localized-text';
 import { AssetStatus, Origin } from './asset-file';
 import { DesignNotes } from './analysis-result.schema';
+import { CaptureFailure } from './capture';
 
 /**
  * The one search query (0005). The web overview parses its URL into this schema, `GET
@@ -105,6 +106,10 @@ export interface AssetCard {
   readonly title: string | null;
   readonly type: string;
   readonly status: AssetStatus;
+  /** Why a failed website capture failed (0011); `null` otherwise. */
+  readonly statusReason: CaptureFailure | null;
+  /** The captured URL of a website (0011), so a failed one without a picture is recognisable. */
+  readonly sourceUrl: string | null;
   /** A succeeded classification run exists. Unclassified assets have no facets yet. */
   readonly classified: boolean;
   readonly createdAt: string;
@@ -150,6 +155,8 @@ export interface AssetDetail {
   readonly title: string | null;
   readonly type: string;
   readonly status: AssetStatus;
+  /** Why a failed website capture failed (0011); `null` otherwise. */
+  readonly statusReason: CaptureFailure | null;
   readonly description: string | null;
   readonly descriptionOrigin: Origin;
   /** A person's title (a chosen file name or an edit) or the model's (0007). */

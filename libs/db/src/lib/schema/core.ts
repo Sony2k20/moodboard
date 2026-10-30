@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { DesignNotes } from '@moodboard/shared';
+import { CaptureFailure, DesignNotes } from '@moodboard/shared';
 import { sql } from 'drizzle-orm';
 import { assetFileKind, assetStatus, locale, origin, userRole } from './enums';
 
@@ -75,6 +75,11 @@ export const assets = pgTable(
     sourceUrl: text('source_url'),
     license: text('license'),
     status: assetStatus('status').notNull().default('pending'),
+    /**
+     * Why a website capture failed (0011): one of `CAPTURE_FAILURES`. Text rather than an enum,
+     * because the list will grow with what real sites do, and an enum value cannot be dropped.
+     */
+    statusReason: text('status_reason').$type<CaptureFailure>(),
     /** Soft delete, 30-day trash (§9). Every query filters on this. */
     deletedAt: tstz('deleted_at'),
   },

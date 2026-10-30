@@ -13,16 +13,33 @@
     <a [href]="image().original?.url ?? large.url" target="_blank" rel="noopener">
       <img [src]="large.url" [alt]="asset.title ?? ''" />
     </a>
+    } @else if (asset.status === 'failed') {
+    <div class="placeholder failed" role="alert">
+      <p>{{ 'asset.capture.failed.' + (asset.statusReason ?? 'unknown') | transloco }}</p>
+      @if (asset.type === 'website') {
+      <button type="button" [disabled]="retrying()" (click)="retryCapture()">
+        {{ 'detail.capture.retry' | transloco }}
+      </button>
+      }
+    </div>
     } @else {
-    <div class="placeholder">{{ 'asset.status.pending' | transloco }}</div>
+    <div class="placeholder">
+      {{ (asset.type === 'website' ? 'asset.capture.pending' : 'asset.status.pending') | transloco }}
+    </div>
     }
-    @if (image().original; as original) {
+    @if (image().original || asset.sourceUrl) {
     <figcaption>
+      @if (asset.sourceUrl) {
+      <a [href]="asset.sourceUrl" target="_blank" rel="noopener noreferrer">{{ asset.sourceUrl }}</a>
+      }
+      @if (image().original; as original) {
+      @if (asset.sourceUrl) { · }
       <a [href]="original.url" target="_blank" rel="noopener">
-        {{ 'detail.openOriginal' | transloco }}
+        {{ (asset.type === 'website' ? 'detail.openFullPage' : 'detail.openOriginal') | transloco }}
       </a>
       @if (original.width && original.height) {
       · {{ original.width }} × {{ original.height }}
+      }
       }
     </figcaption>
     }

@@ -135,6 +135,16 @@ worker:
   resources:
     requests: { memory: 512Mi, cpu: 250m }
     limits: { memory: 2.5Gi, cpu: "2" }
+  # The worker opens websites people hand in (0011). Its own egress proxy refuses non-public
+  # addresses; this NetworkPolicy is the layer below it. Off by default because it needs to know
+  # where the database lives — a policy without that entry cuts the worker off from Postgres.
+  egress:
+    restrict: false
+    # Further destinations as NetworkPolicy peers with ports, at least the database, e.g.
+    #   - to: [{ podSelector: { matchLabels: { cnpg.io/cluster: moodboard-database } } }]
+    #     ports: [{ port: 5432, protocol: TCP }]
+    # DNS, the bundled Valkey and public web traffic (80, 443) are allowed without listing.
+    allow: []
 
 cloudflared:
   # The tunnel may already exist in the cluster; then leave this off and add the hostname to the

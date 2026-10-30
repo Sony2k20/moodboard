@@ -5,7 +5,7 @@ import {
 } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 
-export type UploadError = 'tooLarge' | 'unsupported' | 'failed';
+export type UploadError = 'tooLarge' | 'unsupported' | 'invalidUrl' | 'failed';
 
 export interface UploadItem {
   readonly key: number;
@@ -66,6 +66,25 @@ export class UploadsService {
           },
         });
     }
+  }
+
+  /**
+   * A website to capture (0011). The request only records it; the capture itself takes a minute
+   * and shows up in the overview as a pending asset, like an upload being processed.
+   */
+  capture(url: string): void {
+    const key = this.nextKey++;
+    this.uploads.update((list) => [...list, { key, name: url, progress: 0, error: null }]);
+    this.http.post<{ id: string }>('/api/assets/websites', { url }).subscribe({
+      complete: () => {
+        this.uploads.update((list) => list.filter((item) => item.key !== key));
+        this.completed.update((n) => n + 1);
+      },
+      error: (error: unknown) => {
+        const status = error instanceof HttpErrorResponse ? error.status : 0;
+        this.patch(key, { error: status === 400 ? 'invalidUrl' : 'failed' });
+      },
+    });
   }
 
   dismiss(key: number): void {

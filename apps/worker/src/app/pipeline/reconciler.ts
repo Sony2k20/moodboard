@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PROMPT_VERSION } from '@moodboard/classify';
 import { analysisRuns, assets, Database } from '@moodboard/db';
+import { firstPipelineStep, pipelineKindOf } from '@moodboard/shared';
 import { and, eq, isNull, lt, sql } from 'drizzle-orm';
 import { DATABASE } from '../database.module';
 import { ClassifyStep } from './classify.step';
@@ -51,7 +52,7 @@ export class Reconciler
 
   async run(): Promise<{ pending: number; unclassified: number }> {
     const pending = await this.db
-      .select({ id: assets.id })
+      .select({ id: assets.id, type: assets.type })
       .from(assets)
       .where(
         and(
@@ -64,14 +65,15 @@ export class Reconciler
         ),
       )
       .limit(BATCH);
-    for (const { id } of pending) {
-      await this.runner.enqueue(id, 'normalize');
+    for (const { id, type } of pending) {
+      const pipeline = pipelineKindOf(type);
+      await this.runner.enqueue(id, firstPipelineStep(pipeline), pipeline);
     }
 
-    let unclassified: Array<{ id: string }> = [];
+    let unclassified: Array<{ id: string; type: string }> = [];
     if (this.classify.enabled) {
       unclassified = await this.db
-        .select({ id: assets.id })
+        .select({ id: assets.id, type: assets.type })
         .from(assets)
         .where(
           and(
@@ -87,8 +89,8 @@ export class Reconciler
           ),
         )
         .limit(BATCH);
-      for (const { id } of unclassified) {
-        await this.runner.enqueue(id, 'classify');
+      for (const { id, type } of unclassified) {
+        await this.runner.enqueue(id, 'classify', pipelineKindOf(type));
       }
     }
 

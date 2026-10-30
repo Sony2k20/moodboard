@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  Body,
+  ConflictException,
   Controller,
   Get,
   HttpCode,
@@ -18,10 +20,16 @@ import {
   AssetQuerySchema,
   AssetSearchResult,
   MAX_UPLOAD_BYTES,
+  parseCaptureUrl,
   sniffUploadFormat,
   VocabularyFacet,
 } from '@moodboard/shared';
 import { z } from 'zod';
+
+const WebsiteRequestSchema = z.object({
+  url: z.string(),
+  title: z.string().max(200).optional(),
+});
 import { User } from '../auth/auth.guard';
 import type { CurrentUser } from '../auth/users.service';
 import { AssetSearchService } from './asset-search.service';
@@ -67,6 +75,39 @@ export class AssetsController {
       fileName: file.originalname,
       userId: user.id,
     });
+    return { id };
+  }
+
+  /** A website to capture (0011). Answers before anything is fetched; the worker captures. */
+  @Post('websites')
+  @HttpCode(202)
+  async captureWebsite(
+    @Body() body: unknown,
+    @User() user: CurrentUser,
+  ): Promise<{ id: string }> {
+    const parsed = WebsiteRequestSchema.safeParse(body);
+    const url = parsed.success ? parseCaptureUrl(parsed.data.url) : null;
+    if (!parsed.success || !url) {
+      throw new BadRequestException('Expected an http or https URL in the field "url"');
+    }
+    const { id } = await this.assets.ingestUrl({
+      url,
+      title: parsed.data.title,
+      userId: user.id,
+    });
+    return { id };
+  }
+
+  /** Another attempt at a failed capture (0011). */
+  @Post(':id/capture')
+  @HttpCode(202)
+  async retryCapture(
+    @Param('id', ParseUUIDPipe) id: string,
+    @User() user: CurrentUser,
+  ): Promise<{ id: string }> {
+    if (!(await this.assets.retryCapture(id, user.id))) {
+      throw new ConflictException('Only a website whose capture failed can be captured again');
+    }
     return { id };
   }
 

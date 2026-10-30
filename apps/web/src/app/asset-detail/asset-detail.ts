@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   computed,
+  effect,
   inject,
   input,
   resource,
@@ -26,6 +27,8 @@ interface FacetRow {
   readonly values: AssetDetail['facets'];
   readonly decided: boolean;
 }
+
+const PENDING_POLL_MS = 4000;
 
 /** What is open for editing: one field at a time. */
 type Editing = 'title' | 'description' | `facet:${string}` | null;
@@ -60,6 +63,19 @@ export class AssetDetailPage {
     params: () => this.id(),
     loader: ({ params }) => this.api.detail(params),
   });
+
+  protected readonly retrying = signal(false);
+
+  constructor() {
+    // A capture takes a minute (0011); follow it until it is ready or failed, as the overview does.
+    effect((onCleanup) => {
+      if (this.asset.value()?.status !== 'pending') {
+        return;
+      }
+      const timer = setTimeout(() => this.asset.reload(), PENDING_POLL_MS);
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
 
   protected readonly editing = signal<Editing>(null);
   protected readonly saving = signal(false);
@@ -231,6 +247,19 @@ export class AssetDetailPage {
         current.filter((t) => t !== name),
       ),
     );
+  }
+
+  /** Another capture attempt (0011); the page then follows it like any pending asset. */
+  protected async retryCapture(): Promise<void> {
+    this.retrying.set(true);
+    try {
+      await this.api.retryCapture(this.id());
+      this.asset.reload();
+    } catch {
+      this.saveError.set(true);
+    } finally {
+      this.retrying.set(false);
+    }
   }
 
   protected async remove(): Promise<void> {

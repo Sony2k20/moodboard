@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { parseCaptureUrl } from '@moodboard/shared';
 import { AssetGrid } from '../overview/asset-grid';
 import { BulkBar } from '../overview/bulk-bar';
 import { FilterPanel } from '../overview/filter-panel';
@@ -30,6 +31,7 @@ export class Home {
   protected readonly uploads = inject(UploadsService);
   protected readonly store = inject(OverviewStore);
   protected readonly dragging = signal(false);
+  protected readonly urlInvalid = signal(false);
 
   constructor() {
     const subscription = inject(ActivatedRoute).queryParamMap.subscribe(
@@ -69,6 +71,25 @@ export class Home {
     if (files.length > 0) {
       event.preventDefault();
       this.uploads.upload(files);
+      return;
+    }
+    // A copied link from the address bar: the page behind it is captured (0011). Only a text
+    // that is nothing but one URL, so pasting a sentence somewhere does not start a capture.
+    const text = event.clipboardData?.getData('text/plain').trim() ?? '';
+    const url = /^https?:\/\/\S+$/i.test(text) ? parseCaptureUrl(text) : null;
+    if (url) {
+      event.preventDefault();
+      this.uploads.capture(url);
+    }
+  }
+
+  /** The URL field next to the drop zone. Anything the api would refuse is refused here first. */
+  protected onCapture(input: HTMLInputElement): void {
+    const url = parseCaptureUrl(input.value);
+    this.urlInvalid.set(!url);
+    if (url) {
+      this.uploads.capture(url);
+      input.value = '';
     }
   }
 

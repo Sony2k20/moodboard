@@ -74,6 +74,10 @@ export class AssetsApi {
     return firstValueFrom(this.http.post<AssetDetail>(`${this.url(id)}/restore`, {}));
   }
 
+  retryCapture(id: string): Promise<{ id: string }> {
+    return firstValueFrom(this.http.post<{ id: string }>(`${this.url(id)}/capture`, {}));
+  }
+
   trashList(): Promise<TrashItem[]> {
     return firstValueFrom(this.http.get<TrashItem[]>('/api/trash'));
   }

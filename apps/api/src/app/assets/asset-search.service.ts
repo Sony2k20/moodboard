@@ -38,6 +38,7 @@ import {
   isNull,
   ne,
   notInArray,
+  or,
   SQL,
   sql,
 } from 'drizzle-orm';
@@ -109,6 +110,8 @@ export class AssetSearchService {
         title: assets.title,
         type: assets.type,
         status: assets.status,
+        statusReason: assets.statusReason,
+        sourceUrl: assets.sourceUrl,
         createdAt: assets.createdAt,
         micros: sql<string>`(extract(epoch from ${assets.createdAt}) * 1000000)::bigint::text`,
         authorId: users.id,
@@ -153,6 +156,7 @@ export class AssetSearchService {
         title: assets.title,
         type: assets.type,
         status: assets.status,
+        statusReason: assets.statusReason,
         description: assets.description,
         descriptionOrigin: assets.descriptionOrigin,
         titleOrigin: assets.titleOrigin,
@@ -230,6 +234,7 @@ export class AssetSearchService {
       title: asset.title,
       type: asset.type,
       status: asset.status,
+      statusReason: asset.statusReason,
       description: asset.description,
       descriptionOrigin: asset.descriptionOrigin,
       titleOrigin: asset.titleOrigin,
@@ -261,6 +266,8 @@ export class AssetSearchService {
         title: assets.title,
         type: assets.type,
         status: assets.status,
+        statusReason: assets.statusReason,
+        sourceUrl: assets.sourceUrl,
         createdAt: assets.createdAt,
         deletedAt: assets.deletedAt,
         authorId: users.id,
@@ -318,10 +325,15 @@ export class AssetSearchService {
 
   /**
    * Values within one facet are OR (one `exists` per facet over all its selected values), facets
-   * with each other AND. Pending assets are listed, failed ones are not (0005).
+   * with each other AND. Pending assets are listed, failed uploads are not (0005) — a broken file
+   * is nothing to look at. A failed website is: its capture can be retried, and it is the only
+   * place the person learns why it failed (0011).
    */
   private conditions(query: AssetQuery, groups: readonly FacetGroup[], except: Except): SQL[] {
-    const conditions: SQL[] = [isNull(assets.deletedAt), ne(assets.status, 'failed')];
+    const conditions: SQL[] = [
+      isNull(assets.deletedAt),
+      or(ne(assets.status, 'failed'), eq(assets.type, 'website')) as SQL,
+    ];
 
     for (const group of groups) {
       if (except !== null && except !== 'author' && except.facet === group.facet) {
@@ -406,6 +418,8 @@ export class AssetSearchService {
       title: string | null;
       type: string;
       status: AssetCard['status'];
+      statusReason: AssetCard['statusReason'];
+      sourceUrl: string | null;
       createdAt: Date;
       authorId: string;
       authorName: string;
@@ -468,6 +482,8 @@ export class AssetSearchService {
         title: row.title,
         type: row.type,
         status: row.status,
+        statusReason: row.statusReason,
+        sourceUrl: row.sourceUrl,
         classified: classifiedIds.has(row.id),
         createdAt: row.createdAt.toISOString(),
         author: { id: row.authorId, displayName: row.authorName },

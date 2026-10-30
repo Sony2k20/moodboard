@@ -2,18 +2,24 @@
  * The contract between the api, which enqueues, and the worker, which processes (concept §7.1,
  * 0004). Both sides import it from here so a renamed step cannot leave one of them behind.
  *
- * One BullMQ queue, one job per step, job name = step. Each step enqueues the next on success,
- * so a failure in a late step never undoes an early one: an asset whose classification fails
- * keeps its thumbnails and colours.
+ * One job per step, job name = step. Each step enqueues the next on success, so a failure in a
+ * late step never undoes an early one: an asset whose classification fails keeps its thumbnails
+ * and colours.
  *
  * The queue is a schedule, not a record. Valkey runs without persistence, so the database is
  * the source of truth and the worker's reconciler re-enqueues from it.
  */
 export const PIPELINE_QUEUE = 'pipeline';
 
-/** In order. `capture` slots in between `colors` and `classify` with website capture (§8). */
+/**
+ * `capture` runs in a queue of its own with concurrency 1 (0011): one Chromium at a time, and a
+ * minute-long capture never holds up the image jobs behind it.
+ */
+export const CAPTURE_QUEUE = 'capture';
+
 export const PIPELINE_STEPS = [
   'normalize',
+  'capture',
   'thumbnails',
   'colors',
   'classify',
@@ -21,13 +27,43 @@ export const PIPELINE_STEPS = [
 
 export type PipelineStep = (typeof PIPELINE_STEPS)[number];
 
+/**
+ * Which way an asset goes through the steps. An upload starts with `normalize`; a website has no
+ * upload to check — its images come out of `capture`, made by the worker itself (0011).
+ */
+export type PipelineKind = 'image' | 'website';
+
+const PIPELINES: Record<PipelineKind, readonly PipelineStep[]> = {
+  image: ['normalize', 'thumbnails', 'colors', 'classify'],
+  website: ['capture', 'thumbnails', 'colors', 'classify'],
+};
+
 export interface PipelineJobData {
   readonly assetId: string;
+  /** Absent on jobs enqueued before 0011, which were all uploads. */
+  readonly pipeline?: PipelineKind;
 }
 
-export function nextPipelineStep(step: PipelineStep): PipelineStep | null {
-  const index = PIPELINE_STEPS.indexOf(step);
-  return PIPELINE_STEPS[index + 1] ?? null;
+/** The pipeline an asset of this `asset.type` goes through. */
+export function pipelineKindOf(type: string): PipelineKind {
+  return type === 'website' ? 'website' : 'image';
+}
+
+export function firstPipelineStep(kind: PipelineKind): PipelineStep {
+  return PIPELINES[kind][0];
+}
+
+export function nextPipelineStep(
+  step: PipelineStep,
+  kind: PipelineKind = 'image',
+): PipelineStep | null {
+  const steps = PIPELINES[kind];
+  const index = steps.indexOf(step);
+  return index === -1 ? null : (steps[index + 1] ?? null);
+}
+
+export function pipelineQueueOf(step: PipelineStep): string {
+  return step === 'capture' ? CAPTURE_QUEUE : PIPELINE_QUEUE;
 }
 
 /**

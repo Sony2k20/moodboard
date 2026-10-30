@@ -36,13 +36,19 @@
     }
   },
   "upload": {
-    "drop": "Bilder irgendwo auf diese Seite ziehen oder einen Screenshot einfügen.",
+    "drop": "Bilder irgendwo auf diese Seite ziehen oder einen Screenshot oder Link einfügen.",
     "pick": "Dateien auswählen",
     "formats": "PNG, JPEG, WebP oder GIF, jeweils bis 25 MB.",
     "dismiss": "Schließen",
+    "capture": {
+      "label": "Oder eine Website erfassen:",
+      "placeholder": "https://example.com",
+      "submit": "Erfassen"
+    },
     "error": {
       "tooLarge": "Zu groß — höchstens 25 MB.",
       "unsupported": "Kein unterstütztes Bild. Nur PNG, JPEG, WebP oder GIF.",
+      "invalidUrl": "Keine Webadresse. Bitte eine http- oder https-URL angeben.",
       "failed": "Upload fehlgeschlagen. Bitte gleich noch einmal versuchen."
     }
   },
@@ -53,6 +59,19 @@
       "pending": "Wird verarbeitet",
       "ready": "Bereit",
       "failed": "Datei nicht lesbar"
+    },
+    "capture": {
+      "pending": "Wird erfasst",
+      "failedBadge": "Erfassung fehlgeschlagen",
+      "failed": {
+        "blocked": "Die Website hat die Erfassung mit einer Bot-Prüfung blockiert.",
+        "unreachable": "Die Website war nicht erreichbar.",
+        "http-error": "Die Website hat mit einer Fehlerseite geantwortet.",
+        "timeout": "Die Website hat zu lange zum Laden gebraucht.",
+        "blank": "Die Seite war leer — eine einzige Farbe.",
+        "forbidden-target": "Diese Adresse ist keine öffentliche Website und wird deshalb nicht erfasst.",
+        "unknown": "Die Erfassung ist fehlgeschlagen."
+      }
     }
   },
   "overview": {
@@ -74,6 +93,7 @@
     "back": "Übersicht",
     "uploadedBy": "Hochgeladen von {{ name }}",
     "openOriginal": "Original öffnen",
+    "openFullPage": "Ganze Seite öffnen",
     "description": "Beschreibung",
     "facets": "Facetten",
     "tags": "Tags",
@@ -98,6 +118,9 @@
     "delete": "In den Papierkorb",
     "deleteHint": "Bis zum dort angezeigten Datum aus dem Papierkorb wiederherstellbar.",
     "confirmDelete": "Dieses Asset in den Papierkorb verschieben?",
+    "capture": {
+      "retry": "Erneut erfassen"
+    },
     "prompt": {
       "title": "Prompt für Claude Code",
       "copy": "Kopieren",
