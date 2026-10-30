@@ -27,7 +27,7 @@ metadata, website capture and the MCP server are still to come.
 | [`0007`](./docs/features/0007-model-titles.md) Titles by the model | done — live in `v0.5.0` |
 | [`0008`](./docs/features/0008-build-prompt.md) Build prompt per asset | done — live in `v0.5.0` |
 | [`0009`](./docs/features/0009-visual-details.md) Visual details for the build prompt | done — live in `v0.6.0` |
-| MCP server | not started |
+| [`0010`](./docs/features/0010-mcp-server.md) MCP server: search, get, vocabulary, add | draft |
 
 **Authentication is on**: every data endpoint requires a session, and every row written from here
 on can name the human who acted — which is what `origin = 'human'` (concept §5.6) rests on.
