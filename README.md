@@ -10,8 +10,9 @@ design references straight into development — instead of "looks good", an answ
 
 ## Status
 
-**Phase 1 in progress.** Deployed, signing in through Authentik works, and images can be uploaded
-and are classified by the worker — but there is no overview yet to browse or filter them.
+**Phase 1 in progress.** Deployed and usable: sign in through Authentik, upload images, and find
+them again by facet, full-text search or author once the worker has classified them. Editing
+metadata, website capture and the MCP server are still to come.
 
 | Step | State |
 |---|---|
@@ -21,7 +22,7 @@ and are classified by the worker — but there is no overview yet to browse or f
 | [`0004`](./docs/features/0004-upload-job-pipeline.md) Upload and the job pipeline | done — upload, thumbnails and classification verified end to end on `v0.2.2` |
 | Website capture | not started |
 | i18n | done — Transloco with English and German, language switcher, `user.locale` persisted |
-| [`0005`](./docs/features/0005-overview-search.md) Overview: grid, facet filters, search | implemented — not yet deployed |
+| [`0005`](./docs/features/0005-overview-search.md) Overview: grid, facet filters, search | done — live in `v0.3.0` |
 | MCP server | not started |
 
 **Authentication is on**: every data endpoint requires a session, and every row written from here

@@ -903,7 +903,7 @@ readable by Claude Code.
 - [ ] Video player in the detail view
 
 **Overview**
-- [ ] Masonry grid, facet filters, full-text search, author filter
+- [x] Masonry grid, facet filters, full-text search, author filter
 - [ ] Detail view: editable metadata, colours, capture technique
 - [ ] Multi-select + bulk tagging
 

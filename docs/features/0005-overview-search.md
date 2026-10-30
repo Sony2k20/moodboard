@@ -1,6 +1,6 @@
 # 0005 — Overview: grid, facet filters and search
 
-> Status: implemented — not yet deployed
+> Status: done — deployed in v0.3.0 (2026-10-30)
 > Phase: 1
 > Created: 2026-10-30
 
@@ -173,3 +173,21 @@ None that block the start. Decided here, so they are not re-opened during implem
 7. `GET /api/assets?facet=nonsense:value`: `400` with the reason, not an empty result —
    otherwise an agent cannot tell a bad filter from an empty one.
 8. `GET /api/assets` and `/api/vocabulary` without a session: `401`.
+
+**Result (2026-10-30, v0.3.0):** the production corpus holds one classified asset, which is enough
+for the shapes and the edges but not for paging or for OR over many values. Those were covered
+before the release instead: by the PGlite integration tests against the real migrations, and by
+clicking through the UI locally against 75 fixture assets.
+
+- In production: the start page shows the grid and ten facets with counts; `mood:calm` finds the
+  asset, `mood:calm` + `theme:dark` finds none, `mood:calm` + `mood:playful` finds it (OR).
+  `q=nature` and `q=landing pages` find it through the stemmed description. The detail endpoint
+  returns 17 facets, 6 colours and the run. `facet=nonsense:value` answers `400` with the reason;
+  `/api/assets`, `/api/assets/<id>` and `/api/vocabulary` answer `401` without a session.
+- Locally, against fixtures: counts before a click matched the result after it (9 → 9, +6 → 15,
+  dark 5 → 5); scrolling appended the second page without duplicates; the detail page linked
+  back to the same search; switching to German translated facet labels while the URL kept the
+  keys.
+- Found on the way, fixed before the release: the grid loaded the second page right away,
+  because the end-of-grid flag was still set from the empty grid.
+- Found in production, fixed after it: the count read "1 assets". Ships with the next release.
