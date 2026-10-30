@@ -122,3 +122,52 @@ export const assetTags = pgTable(
     index('asset_tag_tag_id_idx').on(table.tagId),
   ],
 );
+
+/**
+ * This facet of this asset is a person's (0006). The facet guard discards every `ai` write into
+ * it — also when the person left the facet empty, which leaves no `human` value row to go by.
+ * Without this row, "no motion worth naming" would be filled again by the next re-analysis.
+ */
+export const assetFacetDecisions = pgTable(
+  'asset_facet_decision',
+  {
+    assetId: uuid('asset_id')
+      .notNull()
+      .references(() => assets.id, { onDelete: 'cascade' }),
+    facetId: uuid('facet_id')
+      .notNull()
+      .references(() => facets.id, { onDelete: 'cascade' }),
+    decidedBy: uuid('decided_by').references(() => users.id),
+    decidedAt: tstz('decided_at').notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: 'asset_facet_decision_pkey',
+      columns: [table.assetId, table.facetId],
+    }),
+  ],
+);
+
+/**
+ * A tag a person removed from an asset (0006). The tag guard discards an `ai` insert of it, so a
+ * re-analysis does not bring it back. Adding the tag again by hand deletes the rejection.
+ */
+export const assetTagRejections = pgTable(
+  'asset_tag_rejection',
+  {
+    assetId: uuid('asset_id')
+      .notNull()
+      .references(() => assets.id, { onDelete: 'cascade' }),
+    tagId: uuid('tag_id')
+      .notNull()
+      .references(() => tags.id, { onDelete: 'cascade' }),
+    rejectedBy: uuid('rejected_by').references(() => users.id),
+    rejectedAt: tstz('rejected_at').notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: 'asset_tag_rejection_pkey',
+      columns: [table.assetId, table.tagId],
+    }),
+  ],
+);

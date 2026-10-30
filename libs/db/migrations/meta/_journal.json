@@ -36,6 +36,20 @@
       "when": 1793351300336,
       "tag": "0004_overview_keyset_index",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793354772457,
+      "tag": "0005_facet_decisions_tag_rejections",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793354774395,
+      "tag": "0006_actor_aware_guards",
+      "breakpoints": true
     }
   ]
 }

@@ -176,6 +176,11 @@ export interface AssetDetail {
     readonly promptVersion: number;
     readonly createdAt: string;
   } | null;
+  /**
+   * Facets a person has decided (0006) — including ones they left empty, which `facets` cannot
+   * show. A re-analysis does not change these.
+   */
+  readonly decidedFacets: readonly string[];
 }
 
 /** `GET /api/vocabulary`, and later `list_vocabulary`. Ordered by `sort_order`. */

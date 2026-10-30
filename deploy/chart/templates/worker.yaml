@@ -31,6 +31,9 @@ spec:
             {{- include "moodboard.queueEnv" . | trim | nindent 12 }}
             - name: STORAGE_ROOT
               value: {{ .Values.storage.hostPath | quote }}
+            # The api shows when an asset leaves the trash; the worker purges it then (0006).
+            - name: TRASH_RETENTION_DAYS
+              value: {{ .Values.trash.retentionDays | quote }}
             # Capped so two parallel video captures do not double the memory peak (§4.6).
             - name: WORKER_CONCURRENCY
               value: {{ .Values.worker.concurrency | quote }}

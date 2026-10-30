@@ -4,12 +4,14 @@ import {
   ASSET_CLASSIFIER,
   AssetClassifier,
 } from '@moodboard/classify';
+import { DEFAULT_TRASH_RETENTION_DAYS } from '@moodboard/shared';
 import { DatabaseModule } from './database.module';
 import { ClassifyStep, LLM_COST_LIMIT } from './pipeline/classify.step';
 import { ImageSteps } from './pipeline/image.steps';
 import { PipelineRunner } from './pipeline/pipeline.runner';
 import { Reconciler } from './pipeline/reconciler';
 import { StorageModule } from './storage.module';
+import { Purger, TRASH_RETENTION_DAYS } from './trash/purger';
 
 /**
  * `null` with the LLM switched off (`llm.enabled: false`): uploads still get thumbnails and colours
@@ -51,6 +53,14 @@ function classifierFromEnv(): AssetClassifier | null {
     ClassifyStep,
     PipelineRunner,
     Reconciler,
+    {
+      provide: TRASH_RETENTION_DAYS,
+      useFactory: () =>
+        Number(
+          process.env['TRASH_RETENTION_DAYS'] ?? DEFAULT_TRASH_RETENTION_DAYS,
+        ),
+    },
+    Purger,
   ],
 })
 export class WorkerModule {}

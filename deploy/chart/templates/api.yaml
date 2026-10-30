@@ -88,6 +88,9 @@ spec:
               value: {{ printf "https://%s" .Values.ingress.host | quote }}
             - name: STORAGE_ROOT
               value: {{ .Values.storage.hostPath | quote }}
+            # The api shows when an asset leaves the trash; the worker purges it then (0006).
+            - name: TRASH_RETENTION_DAYS
+              value: {{ .Values.trash.retentionDays | quote }}
             - name: DEFAULT_LOCALE
               value: {{ .Values.i18n.defaultLocale | quote }}
             - name: AVAILABLE_LOCALES

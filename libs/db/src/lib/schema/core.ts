@@ -71,7 +71,10 @@ export const assets = pgTable(
       .where(sql`${table.deletedAt} is null`),
     index('asset_created_by_idx').on(table.createdBy),
     index('asset_status_idx').on(table.status),
-    index('asset_deleted_at_idx').on(table.deletedAt),
+    // The trash and the purge (0006) read only deleted rows.
+    index('asset_deleted_at_idx')
+      .on(table.deletedAt)
+      .where(sql`${table.deletedAt} is not null`),
   ],
 );
 

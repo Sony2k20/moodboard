@@ -79,6 +79,11 @@ storage:
   # holds the files. Empty means no pinning, which is only safe on a single node.
   nodeName: ""
 
+# Soft-deleted assets stay this many days in the trash before the worker removes them for good,
+# rows and files (0006, §9).
+trash:
+  retentionDays: 30
+
 llm:
   # Off until the classification pipeline exists. Uploads then still work and assets stay
   # status=pending; they are classified once it is on, which is the same path a failed classify

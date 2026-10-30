@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import {
   analysisRuns,
   assetColors,
+  assetFacetDecisions,
   assetFacetValues,
   assetFiles,
   assets,
@@ -23,6 +24,7 @@ import {
   FacetValueCount,
   STORAGE_SERVICE,
   StorageService,
+  TrashItem,
   VocabularyFacet,
 } from '@moodboard/shared';
 import {
@@ -32,6 +34,7 @@ import {
   desc,
   eq,
   inArray,
+  isNotNull,
   isNull,
   ne,
   notInArray,
@@ -165,7 +168,7 @@ export class AssetSearchService {
       return null;
     }
 
-    const [files, facetRows, tagRows, colors, [run]] = await Promise.all([
+    const [files, facetRows, tagRows, colors, [run], decisions] = await Promise.all([
       this.db
         .select({
           kind: assetFiles.kind,
@@ -211,6 +214,12 @@ export class AssetSearchService {
         .where(and(eq(analysisRuns.assetId, id), eq(analysisRuns.status, 'succeeded')))
         .orderBy(desc(analysisRuns.createdAt))
         .limit(1),
+      this.db
+        .select({ facet: facets.key })
+        .from(assetFacetDecisions)
+        .innerJoin(facets, eq(facets.id, assetFacetDecisions.facetId))
+        .where(eq(assetFacetDecisions.assetId, id))
+        .orderBy(asc(facets.sortOrder)),
     ]);
 
     return {
@@ -231,7 +240,46 @@ export class AssetSearchService {
       classification: run
         ? { ...run, createdAt: run.createdAt.toISOString() }
         : null,
+      decidedFacets: decisions.map((d) => d.facet),
     };
+  }
+
+  /** The trash (0006): own assets for members, everyone's for admins (§9), newest deletion first. */
+  async trash(
+    user: { id: string; role: string },
+    retentionDays: number,
+  ): Promise<TrashItem[]> {
+    const rows = await this.db
+      .select({
+        id: assets.id,
+        title: assets.title,
+        type: assets.type,
+        status: assets.status,
+        createdAt: assets.createdAt,
+        deletedAt: assets.deletedAt,
+        authorId: users.id,
+        authorName: users.displayName,
+      })
+      .from(assets)
+      .innerJoin(users, eq(users.id, assets.createdBy))
+      .where(
+        and(
+          isNotNull(assets.deletedAt),
+          user.role === 'admin' ? undefined : eq(assets.createdBy, user.id),
+        ),
+      )
+      .orderBy(desc(assets.deletedAt))
+      .limit(500);
+
+    const cards = new Map((await this.cards(rows)).map((c) => [c.id, c]));
+    return rows.map((row) => {
+      const deletedAt = row.deletedAt as Date;
+      return {
+        ...(cards.get(row.id) as AssetCard),
+        deletedAt: deletedAt.toISOString(),
+        purgeAt: new Date(deletedAt.getTime() + retentionDays * 86_400_000).toISOString(),
+      };
+    });
   }
 
   /**
