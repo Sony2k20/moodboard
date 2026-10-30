@@ -11,6 +11,11 @@
   margin-right: auto;
 }
 
+.bar a {
+  color: inherit;
+  text-decoration: none;
+}
+
 main {
   padding: 1rem;
 }

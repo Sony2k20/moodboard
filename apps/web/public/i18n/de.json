@@ -87,6 +87,42 @@
       "human": "von Hand"
     },
     "notFound": "Dieses Asset gibt es nicht, oder es liegt im Papierkorb.",
-    "failed": "Das Asset konnte nicht geladen werden. Bitte gleich noch einmal versuchen."
+    "failed": "Das Asset konnte nicht geladen werden. Bitte gleich noch einmal versuchen.",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "saveFailed": "Die Änderung konnte nicht gespeichert werden. Bitte gleich noch einmal versuchen.",
+    "descriptionHint": "Bitte auf Englisch — die Volltextsuche liest Beschreibungen als Englisch.",
+    "addTag": "+ Tag",
+    "removeTag": "Tag {{ tag }} entfernen",
+    "delete": "In den Papierkorb",
+    "deleteHint": "Bis zum dort angezeigten Datum aus dem Papierkorb wiederherstellbar.",
+    "confirmDelete": "Dieses Asset in den Papierkorb verschieben?"
+  },
+  "bulk": {
+    "start": "Auswählen",
+    "title": "Aktionen für die Auswahl",
+    "selected": "{{ count }} ausgewählt (höchstens {{ max }})",
+    "tag": "Tag",
+    "facet": "Facette…",
+    "add": "Hinzufügen",
+    "remove": "Entfernen",
+    "trash": "In den Papierkorb",
+    "done": "Fertig",
+    "confirmTrash": "{{ count }} Assets in den Papierkorb verschieben?",
+    "error": {
+      "forbidden": "Nur eigene Assets können in den Papierkorb verschoben werden.",
+      "failed": "Die Aktion ist fehlgeschlagen. Bitte gleich noch einmal versuchen."
+    }
+  },
+  "trash": {
+    "title": "Papierkorb",
+    "intro": "Gelöschte Assets bleiben bis zum angezeigten Datum hier und lassen sich bis dahin wiederherstellen. Danach werden sie endgültig entfernt, samt Dateien.",
+    "empty": "Der Papierkorb ist leer.",
+    "deletedAt": "gelöscht",
+    "purgeAt": "Endgültig entfernt am",
+    "restore": "Wiederherstellen",
+    "failed": "Der Papierkorb konnte nicht geladen werden. Bitte gleich noch einmal versuchen.",
+    "restoreFailed": "Das Asset konnte nicht wiederhergestellt werden. Bitte gleich noch einmal versuchen."
   }
 }

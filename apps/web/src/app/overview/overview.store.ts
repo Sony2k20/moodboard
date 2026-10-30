@@ -7,8 +7,9 @@ import {
   assetQueryParams,
   AssetQuerySchema,
   AssetSearchResult,
+  MAX_BULK_ASSETS,
 } from '@moodboard/shared';
-import { AssetsApi } from '../assets/assets-api.service';
+import { AssetsApi, BulkRequest } from '../assets/assets-api.service';
 
 /** After an upload, how long to keep polling for the classification to arrive. */
 const CLASSIFY_WINDOW_MS = 3 * 60 * 1000;
@@ -41,6 +42,11 @@ export class OverviewStore {
   readonly error = signal<'invalid' | 'failed' | null>(null);
   /** Where "back to the overview" goes from a detail page: the last search, not a blank one. */
   readonly lastUrl = signal('/');
+
+  /** Multi-select (0006): tiles toggle selection instead of opening the detail page. */
+  readonly selecting = signal(false);
+  readonly selected = signal<ReadonlySet<string>>(new Set());
+  readonly bulkError = signal<'forbidden' | 'failed' | null>(null);
 
   readonly hasFilters = computed(() => {
     const q = this.query();
@@ -206,6 +212,51 @@ export class OverviewStore {
 
   clear(): void {
     void this.router.navigate(['/']);
+  }
+
+  setSelecting(on: boolean): void {
+    this.selecting.set(on);
+    this.selected.set(new Set());
+    this.bulkError.set(null);
+  }
+
+  toggleSelected(id: string): void {
+    this.selected.update((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < MAX_BULK_ASSETS) {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  /** Runs a bulk action on the selection, then reloads: counts and the grid both change. */
+  async bulk(
+    request:
+      | { action: 'tags'; add?: string[]; remove?: string[] }
+      | { action: 'facets'; add?: string[]; remove?: string[] }
+      | { action: 'trash' },
+  ): Promise<boolean> {
+    const ids = [...this.selected()];
+    if (ids.length === 0) {
+      return false;
+    }
+    this.bulkError.set(null);
+    try {
+      await this.api.bulk({ ...request, ids } as BulkRequest);
+      if (request.action === 'trash') {
+        this.selected.set(new Set());
+      }
+      await this.load();
+      return true;
+    } catch (error) {
+      this.bulkError.set(
+        error instanceof HttpErrorResponse && error.status === 403 ? 'forbidden' : 'failed',
+      );
+      return false;
+    }
   }
 
   private navigate(change: Partial<AssetQuery>): void {

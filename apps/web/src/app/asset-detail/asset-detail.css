@@ -138,3 +138,100 @@ h2 {
   color: #666;
   font-size: 0.9rem;
 }
+
+/* Editing (0006) */
+.edit {
+  margin-left: 0.4rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #666;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.inline {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.title-input {
+  flex: 1;
+  font-size: 1.2rem;
+}
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.hint {
+  display: block;
+  color: #777;
+}
+
+.actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.facet-editor .options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.none {
+  color: #999;
+}
+
+.none[data-origin='human'] {
+  color: #8a5a00;
+}
+
+.chip .remove {
+  margin-left: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #888;
+  cursor: pointer;
+}
+
+.chip a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.add-tag input {
+  width: 8rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px dashed #bbb;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.error {
+  color: #a00;
+}
+
+.danger {
+  display: grid;
+  justify-items: start;
+  gap: 0.25rem;
+  margin-top: 2rem;
+  color: #777;
+  font-size: 0.85rem;
+}
+
+.danger button {
+  color: #a00;
+}

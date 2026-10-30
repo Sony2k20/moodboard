@@ -1,6 +1,7 @@
 <header class="bar">
-  <span class="brand">{{ 'app.title' | transloco }}</span>
+  <a class="brand" routerLink="/">{{ 'app.title' | transloco }}</a>
   @if (session.user(); as user) {
+  <a routerLink="/trash">{{ 'trash.title' | transloco }}</a>
   <span class="user">
     {{ user.displayName }} @if (user.role === 'admin') {
     <small>· {{ 'auth.roleAdmin' | transloco }}</small>

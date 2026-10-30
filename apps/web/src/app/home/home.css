@@ -73,3 +73,7 @@
 .empty {
   color: #777;
 }
+
+.select {
+  margin-left: auto;
+}

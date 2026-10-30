@@ -130,4 +130,31 @@ describe('OverviewStore', () => {
     jest.advanceTimersByTime(10_000);
     http.expectNone('/api/assets');
   });
+
+  it('sends a bulk action for the selection and reloads the grid', async () => {
+    const done = store.follow({});
+    await flush(search(), result([card('a'), card('b')]));
+    await done;
+
+    store.setSelecting(true);
+    store.toggleSelected('a');
+    store.toggleSelected('b');
+    store.toggleSelected('b');
+    const bulk = store.bulk({ action: 'tags', add: ['client x'] });
+    const req = http.expectOne('/api/assets/bulk');
+    expect(req.request.body).toEqual({ action: 'tags', add: ['client x'], ids: ['a'] });
+    req.flush({ changed: 1 });
+    await Promise.resolve();
+    await flush(search(), result([card('a'), card('b')]));
+    expect(await bulk).toBe(true);
+  });
+
+  it('reports a refused trash action as forbidden', async () => {
+    store.setSelecting(true);
+    store.toggleSelected('a');
+    const bulk = store.bulk({ action: 'trash' });
+    http.expectOne('/api/assets/bulk').flush(null, { status: 403, statusText: 'Forbidden' });
+    expect(await bulk).toBe(false);
+    expect(store.bulkError()).toBe('forbidden');
+  });
 });

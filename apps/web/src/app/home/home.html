@@ -47,6 +47,11 @@
         {{ 'overview.clear' | transloco }}
       </button>
       }
+      @if (!store.selecting() && store.items().length > 0) {
+      <button type="button" class="link select" (click)="store.setSelecting(true)">
+        {{ 'bulk.start' | transloco }}
+      </button>
+      }
     </header>
 
     @switch (store.error()) { @case ('invalid') {
@@ -61,8 +66,14 @@
     <mb-asset-grid
       [items]="store.items()"
       [hasMore]="!!store.nextCursor()"
+      [selecting]="store.selecting()"
+      [selected]="store.selected()"
       (more)="store.loadMore()"
+      (toggle)="store.toggleSelected($event)"
     />
     } } }
+    @if (store.selecting()) {
+    <mb-bulk-bar />
+    }
   </section>
 </div>

@@ -1,0 +1,34 @@
+<h1>{{ 'trash.title' | transloco }}</h1>
+<p class="intro">{{ 'trash.intro' | transloco }}</p>
+
+@if (restoreFailed()) {
+<p role="alert" class="error">{{ 'trash.restoreFailed' | transloco }}</p>
+}
+
+@if (items.error()) {
+<p role="alert">{{ 'trash.failed' | transloco }}</p>
+} @else if (items.value(); as items) {
+@if (items.length === 0) {
+<p class="empty">{{ 'trash.empty' | transloco }}</p>
+} @else {
+<ul>
+  @for (item of items; track item.id) {
+  <li>
+    <div class="thumb">
+      @if (item.thumbnail) {
+      <img [src]="item.thumbnail.url" [alt]="item.title ?? ''" loading="lazy" />
+      }
+    </div>
+    <div class="meta">
+      <strong>{{ item.title ?? ('asset.untitled' | transloco) }}</strong>
+      <small>{{ item.author.displayName }} · {{ 'trash.deletedAt' | transloco }} {{ item.deletedAt | date: 'medium' }}</small>
+      <small>{{ 'trash.purgeAt' | transloco }} {{ item.purgeAt | date: 'mediumDate' }}</small>
+    </div>
+    <button type="button" [disabled]="restoring() === item.id" (click)="restore(item.id)">
+      {{ 'trash.restore' | transloco }}
+    </button>
+  </li>
+  }
+</ul>
+}
+}

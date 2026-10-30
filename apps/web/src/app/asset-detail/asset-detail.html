@@ -28,42 +28,105 @@
     }
   </figure>
 
-  <div class="meta">
-    <h1>{{ asset.title ?? ('asset.untitled' | transloco) }}</h1>
+  <div class="meta" [attr.aria-busy]="saving()">
+    @if (saveError()) {
+    <p role="alert" class="error">{{ 'detail.saveFailed' | transloco }}</p>
+    }
+
+    @if (editing() === 'title') {
+    <form class="inline" (submit)="$event.preventDefault(); saveTitle(title.value)">
+      <input #title class="title-input" [value]="asset.title ?? ''" maxlength="200" />
+      <button type="submit" [disabled]="saving()">{{ 'detail.save' | transloco }}</button>
+      <button type="button" (click)="edit(null)">{{ 'detail.cancel' | transloco }}</button>
+    </form>
+    } @else {
+    <h1>
+      {{ asset.title ?? ('asset.untitled' | transloco) }}
+      <button type="button" class="edit" (click)="edit('title')">
+        {{ 'detail.edit' | transloco }}
+      </button>
+    </h1>
+    }
     <p class="byline">
       {{ 'detail.uploadedBy' | transloco: { name: asset.author.displayName } }}
       · {{ asset.createdAt | date: 'medium' }}
     </p>
 
-    @if (asset.description) {
     <section>
       <h2>
         {{ 'detail.description' | transloco }}
+        @if (asset.description) {
         <span class="origin" [attr.data-origin]="asset.descriptionOrigin">
           {{ 'detail.origin.' + asset.descriptionOrigin | transloco }}
         </span>
+        }
+        @if (editing() !== 'description') {
+        <button type="button" class="edit" (click)="edit('description')">
+          {{ 'detail.edit' | transloco }}
+        </button>
+        }
       </h2>
+      @if (editing() === 'description') {
+      <form (submit)="$event.preventDefault(); saveDescription(description.value)">
+        <textarea #description rows="5" maxlength="4000">{{ asset.description ?? '' }}</textarea>
+        <small class="hint">{{ 'detail.descriptionHint' | transloco }}</small>
+        <div class="actions">
+          <button type="submit" [disabled]="saving()">{{ 'detail.save' | transloco }}</button>
+          <button type="button" (click)="edit(null)">{{ 'detail.cancel' | transloco }}</button>
+        </div>
+      </form>
+      } @else if (asset.description) {
       <p>{{ asset.description }}</p>
+      } @else {
+      <p class="none">—</p>
+      }
     </section>
-    }
 
-    @if (groups().length > 0) {
     <section>
       <h2>{{ 'detail.facets' | transloco }}</h2>
       <dl class="facets">
-        @for (group of groups(); track group.facet) {
-        <dt>{{ vocabulary.facetLabel(group.facet) }}</dt>
+        @for (row of rows(); track row.facet.key) {
+        <dt>{{ vocabulary.text(row.facet.label) }}</dt>
         <dd>
-          @for (value of group.values; track value.value) {
+          @if (editing() === 'facet:' + row.facet.key) {
+          <form class="facet-editor" (submit)="$event.preventDefault(); saveFacet(row.facet)">
+            <div class="options">
+              @for (option of row.facet.values; track option.value) {
+              <label>
+                <input
+                  [type]="row.facet.isMultiValue ? 'checkbox' : 'radio'"
+                  [name]="'facet-' + row.facet.key"
+                  [checked]="draftValues().has(option.value)"
+                  (click)="toggleDraft(row.facet, option.value)"
+                />
+                {{ vocabulary.text(option.label) }}
+              </label>
+              }
+            </div>
+            <div class="actions">
+              <button type="submit" [disabled]="saving()">{{ 'detail.save' | transloco }}</button>
+              <button type="button" (click)="edit(null)">{{ 'detail.cancel' | transloco }}</button>
+            </div>
+          </form>
+          } @else {
+          @for (value of row.values; track value.value) {
           <a
             class="chip"
             [attr.data-origin]="value.origin"
             [routerLink]="['/']"
-            [queryParams]="facetLink(group.facet, value.value)"
+            [queryParams]="facetLink(row.facet.key, value.value)"
             [title]="'detail.origin.' + value.origin | transloco"
           >
-            {{ vocabulary.valueLabel(group.facet, value.value) }}
+            {{ vocabulary.valueLabel(row.facet.key, value.value) }}
           </a>
+          } @empty {
+          <span class="none" [attr.data-origin]="row.decided ? 'human' : null">
+            — @if (row.decided) { {{ 'detail.origin.human' | transloco }} }
+          </span>
+          }
+          <button type="button" class="edit" (click)="editFacet(row.facet.key)">
+            {{ 'detail.edit' | transloco }}
+          </button>
           }
         </dd>
         }
@@ -73,23 +136,27 @@
         {{ 'detail.legend' | transloco }}
       </p>
     </section>
-    }
 
-    @if (asset.tags.length > 0) {
     <section>
       <h2>{{ 'detail.tags' | transloco }}</h2>
-      <p class="tags">
+      <div class="tags">
         @for (tag of asset.tags; track tag.name) {
-        <a
-          class="chip"
-          [attr.data-origin]="tag.origin"
-          [routerLink]="['/']"
-          [queryParams]="{ tag: tag.name }"
-        >{{ tag.name }}</a>
+        <span class="chip" [attr.data-origin]="tag.origin">
+          <a [routerLink]="['/']" [queryParams]="{ tag: tag.name }">{{ tag.name }}</a>
+          <button
+            type="button"
+            class="remove"
+            [disabled]="saving()"
+            (click)="removeTag(tag.name)"
+            [attr.aria-label]="'detail.removeTag' | transloco: { tag: tag.name }"
+          >×</button>
+        </span>
         }
-      </p>
+        <form class="add-tag" (submit)="$event.preventDefault(); addTag(newTag)">
+          <input #newTag [placeholder]="'detail.addTag' | transloco" maxlength="64" />
+        </form>
+      </div>
     </section>
-    }
 
     @if (asset.colors.length > 0) {
     <section>
@@ -117,6 +184,15 @@
       <p>{{ 'detail.notClassified' | transloco }}</p>
       }
     </section>
+
+    @if (mayDelete()) {
+    <section class="danger">
+      <button type="button" [disabled]="saving()" (click)="remove()">
+        {{ 'detail.delete' | transloco }}
+      </button>
+      <small>{{ 'detail.deleteHint' | transloco }}</small>
+    </section>
+    }
   </div>
 </article>
 }

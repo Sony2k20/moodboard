@@ -1,10 +1,10 @@
 import { Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Locale, SessionService } from './auth/session.service';
 
 @Component({
-  imports: [RouterOutlet, TranslocoPipe],
+  imports: [RouterLink, RouterOutlet, TranslocoPipe],
   selector: 'mb-root',
   templateUrl: './app.html',
   styleUrl: './app.css',

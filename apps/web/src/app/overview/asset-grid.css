@@ -55,3 +55,28 @@
 .sentinel {
   height: 1px;
 }
+
+/* Multi-select (0006) */
+.tile.selected {
+  outline: 3px solid #2f6fed;
+  outline-offset: -3px;
+}
+
+.check {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.35);
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.tile.selected .check {
+  background: #2f6fed;
+}

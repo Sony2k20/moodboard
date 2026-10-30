@@ -39,6 +39,10 @@ export class AssetGrid {
   readonly hasMore = input(false);
   /** The end of the grid came into view. */
   readonly more = output<void>();
+  /** In multi-select (0006) a click toggles the tile instead of opening it. */
+  readonly selecting = input(false);
+  readonly selected = input<ReadonlySet<string>>(new Set());
+  readonly toggle = output<string>();
 
   private readonly grid = viewChild.required<ElementRef<HTMLElement>>('grid');
   private readonly sentinel =
@@ -85,6 +89,14 @@ export class AssetGrid {
         intersect.disconnect();
       });
     });
+  }
+
+  /** RouterLink ignores `preventDefault`, so in multi-select the template drops the link instead. */
+  protected onClick(event: MouseEvent, id: string): void {
+    if (this.selecting()) {
+      event.preventDefault();
+      this.toggle.emit(id);
+    }
   }
 
   protected ratio(item: AssetCard): number {

@@ -11,6 +11,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AssetGrid } from '../overview/asset-grid';
+import { BulkBar } from '../overview/bulk-bar';
 import { FilterPanel } from '../overview/filter-panel';
 import { OverviewStore } from '../overview/overview.store';
 import { UploadsService } from '../uploads/uploads.service';
@@ -21,7 +22,7 @@ import { UploadsService } from '../uploads/uploads.service';
  */
 @Component({
   selector: 'mb-home',
-  imports: [TranslocoPipe, PercentPipe, AssetGrid, FilterPanel],
+  imports: [TranslocoPipe, PercentPipe, AssetGrid, BulkBar, FilterPanel],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })

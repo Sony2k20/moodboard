@@ -1,0 +1,59 @@
+<div class="bar" role="toolbar" [attr.aria-label]="'bulk.title' | transloco" [attr.aria-busy]="busy()">
+  <strong>{{ 'bulk.selected' | transloco: { count: store.selected().size, max } }}</strong>
+
+  <form class="group" (submit)="$event.preventDefault(); tag(tagName.value, 'add')">
+    <input #tagName [placeholder]="'bulk.tag' | transloco" maxlength="64" />
+    <button type="submit" [disabled]="busy() || store.selected().size === 0">
+      {{ 'bulk.add' | transloco }}
+    </button>
+    <button
+      type="button"
+      [disabled]="busy() || store.selected().size === 0"
+      (click)="tag(tagName.value, 'remove')"
+    >
+      {{ 'bulk.remove' | transloco }}
+    </button>
+  </form>
+
+  <div class="group">
+    <select (change)="facetKey.set($any($event.target).value)">
+      <option value="">{{ 'bulk.facet' | transloco }}</option>
+      @for (facet of facets(); track facet.key) {
+      <option [value]="facet.key">{{ vocabulary.text(facet.label) }}</option>
+      }
+    </select>
+    <select #facetValue [disabled]="!facetKey()">
+      @for (option of values(); track option.value) {
+      <option [value]="option.value">{{ vocabulary.text(option.label) }}</option>
+      }
+    </select>
+    <button
+      type="button"
+      [disabled]="busy() || !facetKey() || store.selected().size === 0"
+      (click)="facet(facetValue.value, 'add')"
+    >
+      {{ 'bulk.add' | transloco }}
+    </button>
+    <button
+      type="button"
+      [disabled]="busy() || !facetKey() || store.selected().size === 0"
+      (click)="facet(facetValue.value, 'remove')"
+    >
+      {{ 'bulk.remove' | transloco }}
+    </button>
+  </div>
+
+  <button
+    type="button"
+    class="trash"
+    [disabled]="busy() || store.selected().size === 0"
+    (click)="trash()"
+  >
+    {{ 'bulk.trash' | transloco }}
+  </button>
+  <button type="button" (click)="store.setSelecting(false)">{{ 'bulk.done' | transloco }}</button>
+
+  @if (store.bulkError(); as error) {
+  <p role="alert" class="error">{{ 'bulk.error.' + error | transloco }}</p>
+  }
+</div>

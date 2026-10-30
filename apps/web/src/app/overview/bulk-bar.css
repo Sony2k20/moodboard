@@ -1,0 +1,39 @@
+:host {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: block;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 8px 8px 0 0;
+  background: #fff;
+  box-shadow: 0 -4px 12px rgb(0 0 0 / 0.08);
+  font-size: 0.9rem;
+}
+
+.group {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.group input {
+  width: 9rem;
+}
+
+.trash {
+  color: #a00;
+}
+
+.error {
+  flex-basis: 100%;
+  margin: 0;
+  color: #a00;
+}

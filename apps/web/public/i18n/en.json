@@ -87,6 +87,42 @@
       "human": "by hand"
     },
     "notFound": "This asset does not exist or is in the trash.",
-    "failed": "The asset could not be loaded. Try again in a moment."
+    "failed": "The asset could not be loaded. Try again in a moment.",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saveFailed": "The change could not be saved. Try again in a moment.",
+    "descriptionHint": "Write it in English — the full-text search reads descriptions as English.",
+    "addTag": "+ tag",
+    "removeTag": "Remove tag {{ tag }}",
+    "delete": "Move to trash",
+    "deleteHint": "Restorable from the trash until the date shown there.",
+    "confirmDelete": "Move this asset to the trash?"
+  },
+  "bulk": {
+    "start": "Select",
+    "title": "Actions on the selection",
+    "selected": "{{ count }} selected (at most {{ max }})",
+    "tag": "Tag",
+    "facet": "Facet…",
+    "add": "Add",
+    "remove": "Remove",
+    "trash": "Move to trash",
+    "done": "Done",
+    "confirmTrash": "Move {{ count }} assets to the trash?",
+    "error": {
+      "forbidden": "Only your own assets can be moved to the trash.",
+      "failed": "The action failed. Try again in a moment."
+    }
+  },
+  "trash": {
+    "title": "Trash",
+    "intro": "Deleted assets stay here until the date shown and can be restored until then. After that they are removed for good, files included.",
+    "empty": "The trash is empty.",
+    "deletedAt": "deleted",
+    "purgeAt": "Removed for good on",
+    "restore": "Restore",
+    "failed": "The trash could not be loaded. Try again in a moment.",
+    "restoreFailed": "The asset could not be restored. Try again in a moment."
   }
 }
