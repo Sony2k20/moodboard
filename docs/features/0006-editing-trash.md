@@ -1,6 +1,6 @@
 # 0006 — Editing, bulk tagging and the trash
 
-> Status: implemented — not yet deployed
+> Status: done — deployed in v0.4.0 (2026-10-30); re-analysis after an edit verified in tests, not yet in production
 > Phase: 1
 > Created: 2026-10-30
 
@@ -154,3 +154,23 @@ None that block the start. Decided here:
 7. With the purge window shortened for the test, the purge removes the asset's rows and files —
    also for an asset with `human` facets, which the guard blocked so far.
 8. Every write endpoint without a session: `401`.
+
+**Result (2026-10-30, v0.4.0):** run in production on the four `0004` test assets, restored from
+the trash for the purpose and moved back afterwards; the one real asset was left alone.
+
+- Passed: restore from `/trash`; `mood` set to `calm` shows as `human`, `motion` emptied shows
+  as decided; removing the AI tag `blue-accent` and adding `verify-0006` turned the rest of the
+  list `human`; the description saved as `human`. A bulk tag on three assets made
+  `tag=verify 0006 bulk` find exactly them; a bulk `style:editorial` kept the other `style`
+  values. Two values on `theme` and the value `mood:grumpy` were refused with `400` and the
+  reason. Bulk trash put all three back. Every write endpoint and `/api/trash` answer `401`
+  without a session.
+- **Not run in production: steps 1–4 after a re-analysis, and step 7.** Forcing the
+  re-classification takes a write to `analysis_run` in SQL, which was not permitted this time;
+  the purge needs `trash.retentionDays` lowered. Both are covered by the PGlite tests against
+  the real migrations — a replay of the classify step's writes after each kind of edit, and a
+  purge across `human` rows — and remain open for production.
+- Step 6 for a member needs a member account; the rule is covered by the tests, the admin side
+  passed in production.
+- Found in production, fixed after it: `POST …/restore` answered `201` instead of `200`. Ships
+  with the next release.

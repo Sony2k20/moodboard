@@ -905,7 +905,7 @@ readable by Claude Code.
 **Overview**
 - [x] Masonry grid, facet filters, full-text search, author filter
 - [ ] Detail view: editable metadata, colours, capture technique
-- [ ] Multi-select + bulk tagging
+- [x] Multi-select + bulk tagging
 
 **Internationalisation**
 - [x] Transloco setup, `en.json` and `de.json`, language switcher, `user.locale` persisted (§13)

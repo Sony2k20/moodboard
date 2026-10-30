@@ -97,6 +97,7 @@ export class AssetEditController {
   }
 
   @Post(':id/restore')
+  @HttpCode(200)
   async restore(
     @Param('id', ParseUUIDPipe) id: string,
     @User() user: CurrentUser,

@@ -23,7 +23,7 @@ metadata, website capture and the MCP server are still to come.
 | Website capture | not started |
 | i18n | done — Transloco with English and German, language switcher, `user.locale` persisted |
 | [`0005`](./docs/features/0005-overview-search.md) Overview: grid, facet filters, search | done — live in `v0.3.0` |
-| [`0006`](./docs/features/0006-editing-trash.md) Editing, bulk tagging, trash | implemented — not yet deployed |
+| [`0006`](./docs/features/0006-editing-trash.md) Editing, bulk tagging, trash | done — live in `v0.4.0` |
 | MCP server | not started |
 
 **Authentication is on**: every data endpoint requires a session, and every row written from here
