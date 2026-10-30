@@ -1,6 +1,6 @@
 # 0011 — Website capture
 
-> Status: draft
+> Status: accepted — release 1 of 3 implemented, not yet deployed
 > Phase: 1
 > Created: 2026-10-30
 
@@ -74,13 +74,14 @@ hand-made screenshot is a poor archive of it.
   asset gets a **Retry capture** button.
 - **Egress guard.** The worker runs inside the cluster, so a URL can point at internal services.
   There are two layers:
-  1. **In the app:** before navigating, resolve the host and refuse loopback, private, link-local
-     and CGNAT addresses. Then refuse every request the page makes to such addresses through
-     `page.route`. That covers subresources, not only the top-level URL. The refusal reason is
-     `forbidden-target`.
+  1. **In the app:** a forward proxy in the worker process that every connection of the capture
+     browser goes through. It resolves each host itself, refuses loopback, private, link-local
+     and CGNAT addresses, and connects to exactly the address it checked. That covers
+     subresources, redirects, WebSockets and DNS rebinding. The refusal reason is
+     `forbidden-target`. (The draft said `page.route`; see "Decided during implementation".)
   2. **In the cluster:** an optional egress NetworkPolicy for the worker in the chart, with an
-     allow list for the database, Valkey and DNS. It catches DNS rebinding, which the app-level
-     check cannot catch.
+     allow list for the database, Valkey and DNS, and only public addresses on ports 80 and 443.
+     It is the layer below, for anything Chromium might do outside its proxy settings.
 - **Classification with frames.** `classify` sends the poster and the 8 keyframes, labelled in
   order. The user message also carries the capture context: host, page `<title>`, fonts,
   detected libraries, and the most frequent transition and animation values. The system prompt
@@ -190,17 +191,17 @@ The doc says so here so that nobody re-runs them by reflex later.
 
 ## Open questions
 
-1. **Chromium sandbox.** Chromium's sandbox needs unprivileged user namespaces. The container
-   runtime's default seccomp profile blocks them, so the usual container setup runs
-   `--no-sandbox`.
-   **Recommendation:** accept `--no-sandbox` for phase 1, because:
+1. **Chromium sandbox — decided 2026-10-30: `--no-sandbox` for phase 1.** Chromium's sandbox
+   needs unprivileged user namespaces. The container runtime's default seccomp profile blocks
+   them, so the usual container setup runs `--no-sandbox` (Playwright's default). Accepted
+   because:
    - only authenticated users can submit URLs
    - the team is small
    - Renovate keeps Chromium current
    - the egress policy limits what a compromised worker can reach
 
    Revisit by moving capture into its own Deployment, without the database secret and with only
-   a write-only drop directory. That is additive later. *The user decides.*
+   a write-only drop directory. That is additive later.
 2. **Egress NetworkPolicy in this cluster.** It needs the CIDRs and selectors for Postgres and
    Valkey. Those go in the ArgoCD values and in `infra.local.md`, not here. Before relying on the
    policy, check that the cluster's network setup actually enforces NetworkPolicies.
@@ -239,3 +240,61 @@ In the running application, after release 3:
    the technique, the build prompt with its technique section, the poster and 8 frames.
 6. During two parallel URL captures, `kubectl top pod` shows the worker below its limit. The
    second capture waits in the queue instead of running alongside the first.
+
+## Decided during implementation (release 1)
+
+1. **The egress guard is a proxy, not `page.route`.** The first version used `route` and the
+   capture test caught it letting a redirect through: a public page answering
+   `302 Location: http://localhost/…` was followed, because Playwright hands only the first
+   request of a redirect chain to `route`. `EgressProxy` (`apps/worker/src/app/capture/egress-guard.ts`)
+   now sits on loopback, and Chromium is launched with it as its proxy. Playwright already
+   routes loopback through the proxy rather than bypassing it. CONNECT carries https and
+   WebSockets, plain http is forwarded, and both go only to the address the proxy checked.
+   IPv4-mapped IPv6 addresses are unpacked and judged as IPv4: a `::ffff:0:0/96` rule in
+   Node's `BlockList` matches every IPv4 address too.
+2. **`type: website` is the submitter's decision** (`origin = 'human'` plus an
+   `asset_facet_decision`), set at ingest. The model sees a screenshot and could call it
+   `image`; the guard keeps the type through every re-analysis.
+3. **Failed websites stay in the overview,** with a red badge and their host in place of a
+   picture. Failed uploads stay hidden as before (0005). The detail page shows the reason and
+   **Capture again** (`POST /api/assets/:id/capture`, only for a failed website).
+4. **Job data carries the pipeline** (`image` or `website`), so the worker knows the next step
+   without asking the database. Jobs from before 0011 have none and count as `image`. The
+   reconciler restarts a pending website at `capture`.
+5. **The poster feeds thumbnails, colours and the model** (`ImageSteps.source`): poster first,
+   original otherwise. Nothing changes for uploads.
+6. **Not in release 1:** `capture_tech` stays empty (the page `<title>` is captured but not yet
+   stored), and ffmpeg is not in the image yet. Both come with releases 2 and 3.
+7. **The URL field skips the browser's own URL check** (`novalidate`), which refuses
+   `example.com` without a scheme; `parseCaptureUrl` accepts it and adds `https://`. Pasting
+   a text that is nothing but one URL starts a capture too.
+8. **The NetworkPolicy allows public traffic on 80 and 443 only.** A site on another port is
+   reported as unreachable when the policy is on.
+
+### Known limit found on the way
+
+The user agent no longer says `HeadlessChrome`, but the `sec-ch-ua` client hints still do.
+That is a bot signal like the user agent was. Rewriting the client hints is stealth territory,
+which is out of scope (see "Not in scope"); reconsider if `blocked` turns out to be frequent.
+
+### Verified so far
+
+- **Capture against real Chromium** (`website-capturer.integration.spec.ts`, also in CI):
+  - poster 2880×1800, full page 1440×2700
+  - a redirect into the inside is refused, and the inside never receives a request
+  - a page's requests to the inside are dropped
+  - challenge → `blocked`, 410 → `http-error`, single colour → `blank`, closed port →
+    `unreachable`
+- **The proxy's CONNECT path** and the address ranges (`egress-guard.spec.ts`).
+- **Ingest against Postgres with the real guards** (`website-ingest.integration.spec.ts`):
+  - a re-analysis that says `image` keeps `website`
+  - failed websites are listed, failed uploads are not
+  - only a failed website can be retried
+- **`add_asset` with `url`** through a real MCP client.
+- **The web UI against a stub api:** badges, the URL field with its error, the reason on the
+  detail page, Capture again, and the polling while a capture is pending.
+
+Not verified: the worker image itself. Docker is not installed on the development machine, so
+the image is first built by the publish workflow after the push. Also not verified: a capture in the cluster
+(`/dev/shm`, memory, real sites) and the NetworkPolicy under the cluster's network setup. Those
+are the production check after the rollout.
