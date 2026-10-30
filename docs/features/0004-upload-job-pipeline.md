@@ -1,6 +1,6 @@
 # 0004 — Upload and the job pipeline
 
-> Status: deployed in v0.2.0 (2026-10-30) — end-to-end verification with a real upload pending
+> Status: done — deployed in v0.2.0, verified end to end on v0.2.2 (2026-10-30)
 > Phase: 1
 > Created: 2026-10-29
 
@@ -167,3 +167,22 @@ None directly. Two things prepared for it:
    stays, the run completes.
 7. Restart Valkey while an asset is `pending`: within 10 minutes it is `ready` anyway.
 8. `GET /files/<asset-id>/thumb-sm.webp` without a session: 401.
+
+**Result (2026-10-30, v0.2.2):** all eight pass. Four test images went from upload to a succeeded
+`analysis_run` in about six seconds each, at roughly $0.026 per classification. How the steps
+were run, so the next verification can repeat them:
+
+- Drop and paste were dispatched as synthetic events in the signed-in browser. A paste event
+  dispatched on `document` itself fails in `onPaste` (`document` has no `closest`); a real paste
+  always targets an element, so this does not happen in use.
+- Step 6 has no endpoint yet: the facet and the description were set to `human` in SQL, and the
+  run marked `failed` so the reconciler picked the asset up. Afterwards the facet held only the
+  two human values, the description was unchanged, and the run succeeded.
+- Step 7 set an asset to `pending` with an `updated_at` older than the grace period, then
+  restarted Valkey. The worker logged connection timeouts while Valkey was gone and recovered on
+  its own; the next reconcile tick re-enqueued the asset and it was `ready` again. Re-running
+  `normalize` also re-runs `classify`, so a lost job costs one more classification.
+- The test assets were soft-deleted (`deleted_at`). A hard delete is impossible once an asset
+  carries a `human` facet: the cascade fires the origin guard, which refuses to delete human
+  assignments. The delete endpoint will have to soft-delete, or the guard needs to exempt the
+  cascade.

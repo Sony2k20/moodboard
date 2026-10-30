@@ -18,7 +18,7 @@ and are classified by the worker — but there is no overview yet to browse or f
 | [`0001`](./docs/features/0001-foundation-data-model.md) Workspace, data model, vocabulary | done — schema and 93 vocabulary values live in the cluster database |
 | [`0002`](./docs/features/0002-deployment-foundation.md) Images, CI, Helm chart | done — three images on GHCR, synced by ArgoCD |
 | [`0003`](./docs/features/0003-oidc-login.md) OIDC login, BFF session, emergency admin | done — login through Authentik is live; emergency admin implemented, not enabled |
-| [`0004`](./docs/features/0004-upload-job-pipeline.md) Upload and the job pipeline | deployed in `v0.2.0` — first real upload not yet verified |
+| [`0004`](./docs/features/0004-upload-job-pipeline.md) Upload and the job pipeline | done — upload, thumbnails and classification verified end to end on `v0.2.2` |
 | Website capture | not started |
 | i18n | done — Transloco with English and German, language switcher, `user.locale` persisted |
 | Overview UI | not started |
