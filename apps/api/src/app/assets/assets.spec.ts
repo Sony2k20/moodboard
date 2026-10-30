@@ -77,6 +77,9 @@ describe('titleFromFileName', () => {
     expect(titleFromFileName('PNG.png')).toBeNull();
     expect(titleFromFileName('image (3).png')).toBeNull();
     expect(titleFromFileName('download-2.jpg')).toBeNull();
+    // Our own stored names, back through the download link.
+    expect(titleFromFileName('original.jpg')).toBeNull();
+    expect(titleFromFileName('thumb-lg.webp')).toBeNull();
   });
 
   it('leaves screenshots, camera names and hashes to the model (0007)', () => {

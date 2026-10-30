@@ -16,8 +16,9 @@ import { PipelineQueue } from './pipeline.queue';
  * ` (3)` or `-2` removed. What matches is left to the model to name.
  */
 const MACHINE_NAMES: readonly RegExp[] = [
-  // What browsers call a pasted image, and a file named after its own format.
-  /^(image|img|blob|clipboard|untitled|unbenannt|download|file|photo|picture|bild|png|jpe?g|webp|gif)$/i,
+  // What browsers call a pasted image, a file named after its own format, and the names of our
+  // own stored files (`original.jpg`, `thumb-lg.webp`), which come back through the download link.
+  /^(image|img|blob|clipboard|untitled|unbenannt|download|file|photo|picture|bild|png|jpe?g|webp|gif|original|thumb-(sm|md|lg))$/i,
   // Screenshot tools on macOS, Windows, GNOME, KDE and their German variants.
   /^(screen ?shot|bildschirmfoto|bildschirmaufnahme|capture|snip(aste)?|screenshot_?\d)/i,
   // Cameras, phones and messengers.
