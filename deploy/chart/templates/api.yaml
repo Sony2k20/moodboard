@@ -14,7 +14,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "moodboard.labels" . | nindent 8 }}
+        {{- include "moodboard.podLabels" . | nindent 8 }}
         app.kubernetes.io/component: api
       {{- if not .Values.oidc.enabled }}
       annotations:

@@ -206,6 +206,19 @@ jobs:
           ! echo "$route" | grep -q -- '- internet' || exit 1
           ! helm template moodboard deploy/chart --set emergencyAdmin.enabled=true --set ingress.kind=Ingress || exit 1
 
+      - name: A release does not restart Valkey
+        # Valkey runs without persistence and holds the sessions, so a restart logs everyone out.
+        # Its pod template must not change when only the release version does — a version label
+        # in the template did exactly that on every deploy.
+        run: |
+          template() {
+            helm template moodboard "$1" \
+              | yq 'select(.kind == "Deployment" and .metadata.name == "moodboard-valkey") | .spec.template'
+          }
+          cp -r deploy/chart /tmp/chart-next
+          sed -i 's/^version: .*/version: 99.0.0/; s/^appVersion: .*/appVersion: "99.0.0"/' /tmp/chart-next/Chart.yaml
+          diff <(template deploy/chart) <(template /tmp/chart-next)
+
       - name: Image references are lower-cased
         # An OCI repository name may only contain lower case. A registry written ghcr.io/Owner
         # renders a pod stuck in InvalidImageName while the image is sitting there under the

@@ -15,6 +15,17 @@ security context and the node pinning.
 {{- end -}}
 {{- end -}}
 
+{{/*
+Labels for pod templates: only what never changes between releases. Version and chart belong on
+the workload, not in its pod template — there they change the template on every release, and
+Kubernetes restarts the pod even when nothing else changed. For Valkey, which runs without
+persistence, that meant every deploy dropped all sessions and queued jobs.
+*/}}
+{{- define "moodboard.podLabels" -}}
+app.kubernetes.io/name: {{ include "moodboard.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
+
 {{- define "moodboard.labels" -}}
 app.kubernetes.io/name: {{ include "moodboard.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
