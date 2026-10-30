@@ -16,7 +16,7 @@ import {
   facetValues,
   tags,
 } from '@moodboard/db';
-import { AnalysisResult } from '@moodboard/shared';
+import { AnalysisResult, normaliseTags } from '@moodboard/shared';
 import { UnrecoverableError } from 'bullmq';
 import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { DATABASE } from '../database.module';
@@ -39,15 +39,6 @@ export function facetAssignments(
   );
 }
 
-export function normaliseTags(raw: readonly string[]): string[] {
-  return [
-    ...new Set(
-      raw
-        .map((t) => t.trim().toLowerCase().replace(/\s+/g, ' '))
-        .filter((t) => t.length > 0 && t.length <= 64),
-    ),
-  ];
-}
 
 /**
  * `classify` (§7.1). Every attempt leaves an `analysis_run` row — failed ones included — so cost
