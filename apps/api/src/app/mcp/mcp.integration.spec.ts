@@ -3,14 +3,18 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import {
+  Body,
+  Controller,
   ExecutionContext,
+  HttpCode,
   INestApplication,
   NotFoundException,
+  Post,
   UnauthorizedException,
 } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
-import { json } from 'express';
+
 import {
   assetFacetValues,
   assetFiles,
@@ -31,7 +35,8 @@ import { AssetSearchService } from '../assets/asset-search.service';
 import { AssetsService } from '../assets/assets.service';
 import { ApiTokensService } from '../auth/api-tokens.service';
 import { CurrentUser, UsersService } from '../auth/users.service';
-import { MCP_BODY_LIMIT, McpController } from './mcp.controller';
+import { configureBodyParsers } from '../body-parsers';
+import { McpController } from './mcp.controller';
 import { McpServerFactory } from './mcp.server';
 
 /**
@@ -166,7 +171,7 @@ describe('MCP over HTTP', () => {
   beforeAll(async () => {
     const tokenOwner = ada;
     const module = await Test.createTestingModule({
-      controllers: [McpController],
+      controllers: [McpController, EchoController],
       providers: [
         {
           provide: McpServerFactory,
@@ -181,7 +186,11 @@ describe('MCP over HTTP', () => {
           useValue: {
             canActivate: (ctx: ExecutionContext) => {
               const req = ctx.switchToHttp().getRequest();
-              if (req.method === 'POST' && req.headers.authorization !== 'Bearer mb_test') {
+              if (
+                req.method === 'POST' &&
+                req.path.endsWith('/mcp') &&
+                req.headers.authorization !== 'Bearer mb_test'
+              ) {
                 throw new UnauthorizedException();
               }
               req.user = tokenOwner;
@@ -191,9 +200,10 @@ describe('MCP over HTTP', () => {
         },
       ],
     }).compile();
-    app = module.createNestApplication();
+    // The same wiring as main.ts — what broke every other route's body in 0.7.0.
+    app = module.createNestApplication({ bodyParser: false });
     app.setGlobalPrefix('api');
-    app.use('/api/mcp', json({ limit: MCP_BODY_LIMIT }));
+    configureBodyParsers(app, 'api');
     await app.listen(0);
     url = new URL(`${await app.getUrl()}/api/mcp`.replace('[::1]', 'localhost'));
   });
@@ -247,7 +257,40 @@ describe('MCP over HTTP', () => {
   it('answers GET with 405: no server-initiated stream in stateless mode', async () => {
     expect((await fetch(url)).status).toBe(405);
   });
+
+  it('still parses JSON and form bodies on every other route, with the small limit', async () => {
+    const echo = new URL('/api/echo', url);
+    const asJson = await fetch(echo, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'probe' }),
+    });
+    expect(await asJson.json()).toEqual({ name: 'probe' });
+
+    const asForm = await fetch(echo, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: 'logout_token=abc',
+    });
+    expect(await asForm.json()).toEqual({ logout_token: 'abc' });
+
+    const tooLarge = await fetch(echo, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ blob: 'x'.repeat(200 * 1024) }),
+    });
+    expect(tooLarge.status).toBe(413);
+  });
 });
+
+@Controller('echo')
+class EchoController {
+  @Post()
+  @HttpCode(200)
+  echo(@Body() body: unknown): unknown {
+    return body;
+  }
+}
 
 describe('MCP tools', () => {
   it('offers the four tools of phase 1', async () => {

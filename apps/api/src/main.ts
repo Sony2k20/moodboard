@@ -2,24 +2,23 @@ import { Logger, RequestMethod } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
-import { json } from 'express';
 import { createServer } from 'node:http';
-import { MCP_BODY_LIMIT } from './app/mcp/mcp.controller';
 import { AppModule } from './app/app.module';
+import { configureBodyParsers } from './app/body-parsers';
 import { AUTH_CONFIG, AuthConfig } from './app/auth/auth.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Body parsers are registered by hand below — see `configureBodyParsers`.
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
   const globalPrefix = 'api';
   // Stored files keep the `/files/…` URLs the storage port builds (§4.2); the ingress routes
   // that prefix to the api as well.
   app.setGlobalPrefix(globalPrefix, {
     exclude: [{ path: 'files/{*path}', method: RequestMethod.GET }],
   });
-  // `add_asset` sends an image of up to 25 MB as base64 (0010). Only this route gets the larger
-  // limit; registered before Nest's own parsers, which then find the body already read. Every
-  // other route keeps the 100 kB default, so a large body cannot be pushed at them unauthenticated.
-  app.use(`/${globalPrefix}/mcp`, json({ limit: MCP_BODY_LIMIT }));
+  configureBodyParsers(app, globalPrefix);
   app.use(cookieParser());
   app.enableShutdownHooks();
   // The api sees one proxy hop (Traefik); without this `req.protocol` would read http.
