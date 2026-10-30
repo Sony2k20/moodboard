@@ -16,7 +16,9 @@
     "ioredis": "^6.0.0",
     "jose": "^6.2.12",
     "openid-client": "^6.8.8",
-    "bullmq": "6.3.15"
+    "bullmq": "6.3.15",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0"

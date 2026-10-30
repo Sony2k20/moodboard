@@ -79,6 +79,16 @@ jobs:
             echo "::error::The migration bundle did not run as expected."
             exit 1
           fi
+          # The api itself too: migrate.js loads only the database code, so a dependency of the
+          # application (0.7.0 shipped without the MCP SDK) passed the check above and crashed
+          # the pod. It has no exit of its own; a few seconds are enough to load every module.
+          output=$(DATABASE_URL=postgresql://u:p@127.0.0.1:1/none VALKEY_PORT=1 AUTH_MODE=disabled timeout -k 30 10 node main.js 2>&1 || true)
+          echo "$output" | head -5
+          if echo "$output" | grep -q MODULE_NOT_FOUND; then
+            echo "::error::The api image is missing a runtime dependency. Declare it in apps/api/package.json."
+            exit 1
+          fi
+          echo "$output" | grep -q 'Nest application successfully started'
 
       - name: The same for the worker
         # The worker carries sharp, a native module whose Linux binaries come in as optional
