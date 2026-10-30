@@ -1,6 +1,6 @@
 # Mood Board App — Concept
 
-> Last updated: 2026-10-26 · Status: phase 1 in progress
+> Last updated: 2026-10-30 · Status: phase 1 in progress
 
 ## 1. Core Idea
 
@@ -874,24 +874,27 @@ and is findable through facets. By the end of this phase the application is usab
 readable by Claude Code.
 
 **Foundation**
-- [ ] Nx monorepo, Dockerfiles, GitHub Actions → GHCR (§4.8)
-- [ ] Helm chart with the `IngressRoute`/`Ingress` switch, optional cloudflared (§4.12)
-- [ ] Wiring to external Postgres and Authentik via values (§4.3)
-- [ ] Valkey with its `deploy` flag
-- [ ] HostPath volume + nodeAffinity + UID 1000 (§4.2)
-- [ ] OIDC login (BFF pattern, HttpOnly cookie) + emergency admin
-- [ ] `StorageService` interface (HostPath adapter)
+- [x] Nx monorepo, Dockerfiles, GitHub Actions → GHCR (§4.8)
+- [x] Helm chart with the `IngressRoute`/`Ingress` switch, optional cloudflared (§4.12)
+- [x] Wiring to external Postgres and Authentik via values (§4.3)
+- [x] Valkey with its `deploy` flag
+- [x] HostPath volume + nodeAffinity + UID 1000 (§4.2) — writability proven only by the first
+  real upload (0004)
+- [x] OIDC login (BFF pattern, HttpOnly cookie) + emergency admin — emergency admin implemented,
+  not enabled
+- [x] `StorageService` interface (HostPath adapter)
 
 **Data**
-- [ ] Data model §5.1-5.3, §5.5 — including `origin` and `analysis_run` from day one
-- [ ] Migration as an initContainer in front of api and worker, with an advisory lock (§4.11)
-- [ ] Facet vocabulary as a seed, with English and German labels (§13)
+- [x] Data model §5.1-5.3, §5.5 — including `origin` and `analysis_run` from day one
+- [x] Migration as an initContainer in front of api and worker, with an advisory lock (§4.11)
+- [x] Facet vocabulary as a seed, with English and German labels (§13)
 - [ ] Admin maintenance for the vocabulary
 
 **Ingest and Classification**
-- [ ] Upload: drag & drop, clipboard paste, multi-upload
-- [ ] Job pipeline: normalize → thumbnails → colors → capture → classify → index
-- [ ] Anthropic adapter + provider interface
+- [x] Upload: drag & drop, clipboard paste, multi-upload
+- [ ] Job pipeline: normalize → thumbnails → colors → capture → classify → index — all but
+  `capture` and `index` run since 0004
+- [x] Anthropic adapter + provider interface
 
 **Website Capture**
 - [ ] Playwright in the worker image, `/dev/shm` mount, resource limits (§4.6)
@@ -906,7 +909,7 @@ readable by Claude Code.
 - [ ] Multi-select + bulk tagging
 
 **Internationalisation**
-- [ ] Transloco setup, `en.json` and `de.json`, language switcher, `user.locale` persisted (§13)
+- [x] Transloco setup, `en.json` and `de.json`, language switcher, `user.locale` persisted (§13)
 
 **Access and Operations**
 - [ ] MCP server: `search_assets`, `get_asset`, `list_vocabulary`, `add_asset`

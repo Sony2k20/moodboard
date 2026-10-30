@@ -10,8 +10,8 @@ design references straight into development — instead of "looks good", an answ
 
 ## Status
 
-**Phase 1 in progress.** Deployed, and signing in through Authentik works — but there is nothing
-to do once signed in yet: no upload, no assets.
+**Phase 1 in progress.** Deployed, signing in through Authentik works, and images can be uploaded
+and are classified by the worker — but there is no overview yet to browse or filter them.
 
 | Step | State |
 |---|---|
@@ -20,7 +20,8 @@ to do once signed in yet: no upload, no assets.
 | [`0003`](./docs/features/0003-oidc-login.md) OIDC login, BFF session, emergency admin | done — login through Authentik is live; emergency admin implemented, not enabled |
 | [`0004`](./docs/features/0004-upload-job-pipeline.md) Upload and the job pipeline | deployed in `v0.2.0` — first real upload not yet verified |
 | Website capture | not started |
-| Overview UI and i18n | not started |
+| i18n | done — Transloco with English and German, language switcher, `user.locale` persisted |
+| Overview UI | not started |
 | MCP server | not started |
 
 **Authentication is on**: every data endpoint requires a session, and every row written from here
