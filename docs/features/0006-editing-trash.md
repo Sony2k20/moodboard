@@ -1,6 +1,6 @@
 # 0006 — Editing, bulk tagging and the trash
 
-> Status: draft
+> Status: implemented — not yet deployed
 > Phase: 1
 > Created: 2026-10-30
 
@@ -123,6 +123,21 @@ None that block the start. Decided here:
 2. **Rejections per tag, not ownership of the tag list.** See data model, point 2.
 3. **The actor is declared per transaction rather than the guard being relaxed.** It keeps the
    rule "a model never deletes a person's value" in the database, where §5.6 puts it.
+
+## Decided during implementation
+
+1. **A saved tag list confirms the tags left in it**, like a saved facet: they become `human`. A
+   bulk action does not — it adds or removes one tag across assets and says nothing about the
+   others.
+2. **The retention period is a chart value**, `trash.retentionDays` (default 30), read by the api
+   (to show the purge date) and the worker (to purge). Verification step 7 sets it to 0.
+3. **Tag normalisation moved to `libs/shared`**, so a person's tags are stored like the model's:
+   lower-case, whitespace collapsed, at most 64 characters. `Client X` and `client x` are one tag.
+4. **In select mode a tile carries no link.** `RouterLink` navigates even after
+   `preventDefault`, so a selecting click opened the detail page. Found while clicking through.
+5. **The guards are tested against PGlite with a replay of the classify step's writes** — the
+   rule that matters is what a re-analysis does after an edit. PGlite has one connection: a test
+   that queries `db` inside an open transaction waits for itself.
 
 ## Verification
 
