@@ -1,6 +1,6 @@
 # 0005 — Overview: grid, facet filters and search
 
-> Status: draft
+> Status: implemented — not yet deployed
 > Phase: 1
 > Created: 2026-10-30
 
@@ -39,15 +39,17 @@ The **read side** of the overview: finding and looking. Editing is `0006`.
   of the vector by decision (§13.4).
 - **Order: newest first, always.** Keyset pagination on `(created_at, id)`, so appending new
   uploads never shifts or duplicates a page while someone scrolls.
-- **Facet counts in the response.** For every facet value, how many assets the result would have
-  if that value were added — computed with the facet's own selection removed, so selecting
-  `editorial` does not hide `swiss`. Values with a count of 0 are shown disabled, not hidden.
-  Same for authors. Without counts, every second filter click ends in an empty grid.
+- **Facet counts in the response.** For every facet value, how many matching assets carry it —
+  computed with the facet's own selection removed, so selecting `editorial` does not drop `swiss`
+  to zero. For a facet without a selection that is exactly the result after the click; within a
+  facet that has one, it is how many assets the value adds at most (OR). Values with a count of 0
+  are shown disabled, not hidden. Same for authors. Without counts, every second filter click
+  ends in an empty grid.
 - **`GET /api/vocabulary`** — facets and values with their `jsonb` labels, ordered by
   `sort_order`. The filter UI renders from it; it is the shape `list_vocabulary` will return.
 - **Grid:** the overview becomes the start page. The drop zone shrinks to a bar above the grid;
   paste anywhere keeps working. Tiles in a CSS grid with `grid-auto-rows` and a row span computed
-  from the original's aspect ratio (`asset_file.width/height`) — a masonry look, but filled in
+  from the thumbnail's aspect ratio (`asset_file.width/height`) — a masonry look, but filled in
   reading order left to right, and appended pages extend it instead of reshuffling it. Tiles use
   `thumb-md`. Infinite scroll by cursor.
 - **Filter state lives in the URL** (`?facet=…&q=…`). Back, reload and a copied link all show the
@@ -123,6 +125,10 @@ combination rule (OR within a facet, AND across) goes into the tool description.
   arrives. For screenshots the title is often a file name like `Screenshot 2026-10-30`.
 - **Counts are computed per request**, one grouped query per facet. Cheap at this volume; at tens
   of thousands of assets it would need a cache.
+- **Counts only see classified assets.** A pending or unclassified asset has no facet values, so
+  the counts of a facet can add up to less than the total.
+- **The web bundle now carries Zod** (lazy chunk, about 80 kB over the wire), because the overview
+  parses its URL with the same `AssetQuerySchema` as the api. The price of one schema.
 
 ## Open questions
 
@@ -135,13 +141,27 @@ None that block the start. Decided here, so they are not re-opened during implem
 3. **Detail as a route, not a modal.** A modal cannot be linked, and the detail page is the one
    a reviewer will want to send around in `0006`.
 
+## Decided during implementation
+
+1. **The cursor is the creation time in microseconds plus the id**, not an ISO timestamp.
+   Postgres keeps microseconds, a JavaScript `Date` only milliseconds; a cursor rounded to
+   milliseconds skips or repeats assets created within the same one.
+2. **The search is tested against a real Postgres, in process: PGlite** (`@electric-sql/pglite`,
+   dev dependency). The semantics of this feature live in SQL — OR/AND, counts, stemming,
+   keyset order — and a mocked database would only test the mock. The tests run the real
+   migrations, so they cover the triggers as well. PGlite needs Jest's
+   `--experimental-vm-modules`; `apps/api/jest.config.cts` sets it for the workers.
+3. **The paste handler checks that its target is an element** before calling `closest`. Found in
+   the `0004` verification; a real paste always targets one, a synthetic event may not.
+4. **The dev proxy forwards `/files` too**, so thumbnails load with `nx serve web`.
+
 ## Verification
 
 1. Start page shows all non-deleted, non-failed assets as a grid, newest first; a fresh upload
    appears at the top as pending and fills in once classified.
-2. Select `style:minimal`: only minimal assets remain, and the other `style` values keep their
-   counts. Add `style:organic`: the result grows. Add `theme:dark`: it shrinks. Every count shown
-   before a click equals the number of tiles after it.
+2. Select `style:minimal`: only minimal assets remain, as many as its count said, and the other
+   `style` values keep their counts. Add `style:organic`: the result grows by organic's count
+   (less any asset that is both). Add `theme:dark`: it shrinks to dark's count.
 3. Reload, then press back: the same filters and the same result each time. Copy the URL into a
    second browser session in the other language: same result, labels translated.
 4. Search for a word that appears only in one description: that asset is found. Search for one
