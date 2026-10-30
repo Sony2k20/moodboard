@@ -71,6 +71,10 @@ export class AssetsService {
     bytes: Uint8Array;
     format: UploadFormat;
     fileName?: string;
+    /** Where it came from, for the audit log: the web upload or MCP `add_asset` (0010). */
+    source?: 'upload' | 'mcp';
+    /** A title the person gave explicitly (MCP `add_asset`, 0010); wins over the file name. */
+    title?: string;
     userId: string;
   }): Promise<{ id: string; enqueued: boolean }> {
     const id = randomUUID();
@@ -78,7 +82,7 @@ export class AssetsService {
     const path = assetFilePath(id, 'original', { extension });
     const stored = await this.storage.put(path, input.bytes, { mime });
 
-    const title = titleFromFileName(input.fileName);
+    const title = input.title?.trim().slice(0, 200) || titleFromFileName(input.fileName);
     try {
       await this.db.transaction(async (tx) => {
         await tx.insert(assets).values({
@@ -102,7 +106,7 @@ export class AssetsService {
           action: 'asset.created',
           entity: 'asset',
           entityId: id,
-          diff: { source: 'upload', format: input.format, bytes: stored.bytes },
+          diff: { source: input.source ?? 'upload', format: input.format, bytes: stored.bytes },
         });
       });
     } catch (error) {

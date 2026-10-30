@@ -31,5 +31,7 @@ import { PipelineQueue } from './pipeline.queue';
         Number(process.env['TRASH_RETENTION_DAYS'] ?? DEFAULT_TRASH_RETENTION_DAYS),
     },
   ],
+  // The MCP server (0010) calls the same services as the web, never its own queries.
+  exports: [AssetsService, AssetSearchService],
 })
 export class AssetsModule {}

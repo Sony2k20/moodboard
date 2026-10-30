@@ -13,6 +13,7 @@ import type { Request } from 'express';
 import { AUTH_CONFIG, AuthConfig } from './auth.config';
 import { AuthCookies } from './cookies';
 import { SessionData, SessionStore } from './session.store';
+import { ApiTokensService } from './api-tokens.service';
 import { CurrentUser, UsersService } from './users.service';
 
 const PUBLIC = 'mb:public';
@@ -22,6 +23,15 @@ const PUBLIC = 'mb:public';
  * closed, so a new endpoint that forgets about authentication is protected anyway.
  */
 export const Public = () => SetMetadata(PUBLIC, true);
+
+const BEARER = 'mb:bearer';
+
+/**
+ * Authenticates a route by a personal API token instead of the session (0010). Only the MCP
+ * endpoint carries it: a token does not open the rest of the api, and a session does not open
+ * this route.
+ */
+export const BearerToken = () => SetMetadata(BEARER, true);
 
 export interface AuthenticatedRequest extends Request {
   user: CurrentUser;
@@ -47,6 +57,7 @@ export class AuthGuard implements CanActivate {
     @Inject(AUTH_CONFIG) private readonly config: AuthConfig,
     private readonly sessions: SessionStore,
     private readonly users: UsersService,
+    private readonly tokens: ApiTokensService,
   ) {
     this.cookies = new AuthCookies(config);
   }
@@ -64,6 +75,22 @@ export class AuthGuard implements CanActivate {
     }
 
     const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
+
+    const bearer = this.reflector.getAllAndOverride<boolean>(BEARER, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (bearer) {
+      const header = req.headers?.authorization ?? '';
+      const token = header.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : '';
+      const user = token ? await this.tokens.authenticate(token) : null;
+      if (!user) {
+        throw new UnauthorizedException('A valid API token is required');
+      }
+      req.user = user;
+      return true;
+    }
+
     const session = await this.sessions.get(this.cookies.readSession(req));
     const user = session ? await this.users.findById(session.userId) : null;
     if (!session || !user) {

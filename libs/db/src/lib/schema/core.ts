@@ -113,3 +113,28 @@ export const assetFiles = pgTable(
     uniqueIndex('asset_file_path_key').on(table.path),
   ],
 );
+
+/**
+ * Personal API tokens for MCP clients (0010). Only a SHA-256 of the token is stored: tokens are
+ * 32 random bytes, so a slow hash adds nothing. `prefix` lets a person recognise a token in the
+ * list without the token itself.
+ */
+export const apiTokens = pgTable(
+  'api_token',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    prefix: text('prefix').notNull(),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+    lastUsedAt: tstz('last_used_at'),
+    revokedAt: tstz('revoked_at'),
+  },
+  (table) => [
+    uniqueIndex('api_token_token_hash_key').on(table.tokenHash),
+    index('api_token_user_id_idx').on(table.userId),
+  ],
+);
