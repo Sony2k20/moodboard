@@ -878,8 +878,7 @@ readable by Claude Code.
 - [x] Helm chart with the `IngressRoute`/`Ingress` switch, optional cloudflared (§4.12)
 - [x] Wiring to external Postgres and Authentik via values (§4.3)
 - [x] Valkey with its `deploy` flag
-- [x] HostPath volume + nodeAffinity + UID 1000 (§4.2) — writability proven only by the first
-  real upload (0004)
+- [x] HostPath volume + nodeAffinity + UID 1000 (§4.2)
 - [x] OIDC login (BFF pattern, HttpOnly cookie) + emergency admin — emergency admin implemented,
   not enabled
 - [x] `StorageService` interface (HostPath adapter)
