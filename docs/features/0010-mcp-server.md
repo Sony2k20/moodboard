@@ -1,6 +1,6 @@
 # 0010 — MCP server
 
-> Status: draft
+> Status: implemented — not yet deployed
 > Phase: 1
 > Created: 2026-10-30
 
@@ -108,3 +108,18 @@ None that block the start. Decided here:
 5. Paste a screenshot into the session and ask to add it: `add_asset` creates it under the
    token's owner; it appears in the overview and is classified.
 6. Revoke the token: the next call answers `401`. A token on any other `/api` route: `401`.
+
+## Decided during implementation
+
+1. **The larger body limit (36 MB) applies to `/api/mcp` only.** It is registered in `main.ts`
+   before Nest's own parsers, which then find the body already read; every other route keeps
+   the 100 kB default, so nobody can push a large body at them before authentication. `express`
+   became a direct dependency for that — it was already installed through Nest.
+2. **`ingestUpload` takes an explicit `title`** (a person's, so `human`) and a `source` for the
+   audit log (`upload` or `mcp`).
+3. **`search_assets` defaults to 20 results**, not the web's 60: an agent pays for every line.
+   Its counts list only values with a count above zero.
+4. **Tested at three levels:** the guard (a token opens only bearer routes, a session does not
+   open them), the tools through a real MCP client over an in-memory transport against PGlite,
+   and the HTTP path — Nest controller, stateless transport, body limit — with the SDK's
+   streamable HTTP client against a listening test app.
