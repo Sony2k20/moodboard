@@ -97,7 +97,13 @@
     "removeTag": "Remove tag {{ tag }}",
     "delete": "Move to trash",
     "deleteHint": "Restorable from the trash until the date shown there.",
-    "confirmDelete": "Move this asset to the trash?"
+    "confirmDelete": "Move this asset to the trash?",
+    "prompt": {
+      "title": "Prompt for Claude Code",
+      "copy": "Copy",
+      "copied": "Copied",
+      "hint": "Built from the metadata above, in English. Attach the original image when you paste it."
+    }
   },
   "bulk": {
     "start": "Select",

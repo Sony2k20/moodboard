@@ -42,6 +42,11 @@
     } @else {
     <h1>
       {{ asset.title ?? ('asset.untitled' | transloco) }}
+      @if (asset.title) {
+      <span class="origin" [attr.data-origin]="asset.titleOrigin">
+        {{ 'detail.origin.' + asset.titleOrigin | transloco }}
+      </span>
+      }
       <button type="button" class="edit" (click)="edit('title')">
         {{ 'detail.edit' | transloco }}
       </button>
@@ -51,6 +56,17 @@
       {{ 'detail.uploadedBy' | transloco: { name: asset.author.displayName } }}
       · {{ asset.createdAt | date: 'medium' }}
     </p>
+
+    <details class="prompt">
+      <summary>
+        {{ 'detail.prompt.title' | transloco }}
+        <button type="button" class="copy" (click)="$event.preventDefault(); copyPrompt()">
+          {{ (copied() ? 'detail.prompt.copied' : 'detail.prompt.copy') | transloco }}
+        </button>
+      </summary>
+      <pre>{{ prompt() }}</pre>
+      <small class="hint">{{ 'detail.prompt.hint' | transloco }}</small>
+    </details>
 
     <section>
       <h2>

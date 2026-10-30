@@ -97,7 +97,13 @@
     "removeTag": "Tag {{ tag }} entfernen",
     "delete": "In den Papierkorb",
     "deleteHint": "Bis zum dort angezeigten Datum aus dem Papierkorb wiederherstellbar.",
-    "confirmDelete": "Dieses Asset in den Papierkorb verschieben?"
+    "confirmDelete": "Dieses Asset in den Papierkorb verschieben?",
+    "prompt": {
+      "title": "Prompt für Claude Code",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "hint": "Aus den Metadaten oben gebaut, auf Englisch. Beim Einfügen das Originalbild mit anhängen."
+    }
   },
   "bulk": {
     "start": "Auswählen",

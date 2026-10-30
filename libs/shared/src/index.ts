@@ -8,3 +8,4 @@ export * from './lib/sniff-format';
 export * from './lib/asset-query';
 export * from './lib/tags';
 export * from './lib/asset-edit';
+export * from './lib/build-prompt';

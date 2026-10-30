@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { AssetDetail, VocabularyFacet } from '@moodboard/shared';
+import { AssetDetail, buildPrompt, VocabularyFacet } from '@moodboard/shared';
 import { AssetsApi } from '../assets/assets-api.service';
 import { Vocabulary } from '../assets/vocabulary';
 import { SessionService } from '../auth/session.service';
@@ -91,6 +91,13 @@ export class AssetDetailPage {
       }));
   });
 
+  /** The build prompt (0008): recomputed from the metadata, so every edit shows at once. */
+  protected readonly prompt = computed(() => {
+    const asset = this.asset.value();
+    return asset ? buildPrompt(asset, this.vocabulary.facets()) : '';
+  });
+  protected readonly copied = signal(false);
+
   /** Deleting: own assets, or any as an admin (§9). The api checks it again. */
   protected readonly mayDelete = computed(() => {
     const user = this.session.user();
@@ -111,6 +118,16 @@ export class AssetDetailPage {
       );
     }
     this.editing.set(field);
+  }
+
+  protected async copyPrompt(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.prompt());
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2000);
+    } catch {
+      // Clipboard refused (no permission, insecure context): the text is selectable in the preview.
+    }
   }
 
   protected editFacet(key: string): void {
