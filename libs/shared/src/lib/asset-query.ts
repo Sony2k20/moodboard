@@ -121,8 +121,34 @@ export interface AssetCard {
     readonly width: number | null;
     readonly height: number | null;
   } | null;
-  readonly facets: readonly FacetFilter[];
+  /** With origin, so a tile can show which values are a model's guess (0012). */
+  readonly facets: readonly (FacetFilter & { readonly origin: Origin })[];
   readonly tags: readonly string[];
+  /**
+   * How many facets hold a model's values that no person has decided yet (0012). `0` means every
+   * facet a model filled has been confirmed or corrected by a person.
+   */
+  readonly unconfirmedFacets: number;
+}
+
+/**
+ * The facets of one asset that are still only a model's guess (0012): they hold `ai` values, no
+ * `human` value, and no decision row. Derived, never stored. The api counts them for the cards
+ * and the web for an asset it has just edited, so both say the same.
+ */
+export function unconfirmedFacetKeys(
+  values: readonly { readonly facet: string; readonly origin: Origin }[],
+  decidedFacets: readonly string[],
+): string[] {
+  const decided = new Set(decidedFacets);
+  const human = new Set(values.filter((v) => v.origin === 'human').map((v) => v.facet));
+  const keys: string[] = [];
+  for (const { facet, origin } of values) {
+    if (origin === 'ai' && !decided.has(facet) && !human.has(facet) && !keys.includes(facet)) {
+      keys.push(facet);
+    }
+  }
+  return keys;
 }
 
 export interface FacetValueCount {

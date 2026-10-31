@@ -1,36 +1,76 @@
-<div class="grid" #grid [class.selecting]="selecting()">
+<div class="grid" [class.selecting]="selecting()" [class.facets]="view() === 'facets'">
   @for (item of items(); track item.id) {
-  <a
+  <article
+    #tile
     class="tile"
-    [routerLink]="selecting() ? null : ['/assets', item.id]"
-    [style.grid-row-end]="'span ' + span(item)"
-    [style.aspect-ratio]="1 / ratio(item)"
     [class.selected]="selected().has(item.id)"
-    [attr.aria-pressed]="selecting() ? selected().has(item.id) : null"
-    (click)="onClick($event, item.id)"
+    [class.current]="current() === item.id"
   >
-    @if (item.thumbnail) {
-    <img [src]="item.thumbnail.url" [alt]="item.title ?? ''" loading="lazy" />
+    <a
+      class="media"
+      [routerLink]="selecting() ? null : []"
+      [queryParams]="{ asset: item.id }"
+      queryParamsHandling="merge"
+      [style.aspect-ratio]="1 / ratio(item)"
+      [attr.aria-pressed]="selecting() ? selected().has(item.id) : null"
+      [attr.aria-current]="current() === item.id ? 'true' : null"
+      (click)="onClick($event, item.id)"
+    >
+      @if (item.thumbnail) {
+      <img [src]="item.thumbnail.url" [alt]="item.title ?? ''" loading="lazy" />
+      }
+      @if (selecting()) {
+      <span class="check" aria-hidden="true">{{ selected().has(item.id) ? '✓' : '' }}</span>
+      } @else if (item.status === 'pending') {
+      <span class="badge">
+        {{ (item.type === 'website' && !item.thumbnail ? 'asset.capture.pending' : 'asset.status.pending') | transloco }}
+      </span>
+      } @else if (item.status !== 'failed' && !item.classified) {
+      <span class="badge">{{ 'asset.unclassified' | transloco }}</span>
+      } @else if (item.status !== 'failed' && item.unconfirmedFacets > 0) {
+      <span
+        class="badge guesses"
+        [title]="'overview.guesses' | transloco: { count: item.unconfirmedFacets }"
+      >
+        <span class="visually-hidden">{{ 'overview.guesses' | transloco: { count: item.unconfirmedFacets } }}</span>
+        <span aria-hidden="true">{{ item.unconfirmedFacets }}</span>
+      </span>
+      }
+      @if (!item.thumbnail && item.sourceUrl) {
+      <span class="host">{{ host(item.sourceUrl) }}</span>
+      }
+      <span class="caption">
+        {{ item.title ?? (item.sourceUrl ? host(item.sourceUrl) : ('asset.untitled' | transloco)) }}
+        <small>{{ item.author.displayName }}</small>
+      </span>
+    </a>
+
+    @if (item.status === 'failed' && !selecting()) {
+    <div class="failure" role="status">
+      <strong>{{ 'asset.capture.failedBadge' | transloco }}</strong>
+      <span>{{ 'asset.capture.failed.' + (item.statusReason ?? 'unknown') | transloco }}</span>
+      @if (item.type === 'website') {
+      <button type="button" [disabled]="retrying().has(item.id)" (click)="onRetry(item.id)">
+        {{ 'detail.capture.retry' | transloco }}
+      </button>
+      }
+    </div>
     }
-    @if (selecting()) {
-    <span class="check" aria-hidden="true">{{ selected().has(item.id) ? '✓' : '' }}</span>
-    } @else if (item.status === 'failed') {
-    <span class="badge failed">{{ 'asset.capture.failedBadge' | transloco }}</span>
-    } @else if (item.status === 'pending') {
-    <span class="badge">
-      {{ (item.type === 'website' && !item.thumbnail ? 'asset.capture.pending' : 'asset.status.pending') | transloco }}
-    </span>
-    } @else if (!item.classified) {
-    <span class="badge">{{ 'asset.unclassified' | transloco }}</span>
+
+    @if (view() === 'facets' && item.facets.length > 0) {
+    <ul class="chips">
+      @for (value of item.facets; track value.facet + ':' + value.value) {
+      <li
+        class="origin-chip"
+        [attr.data-origin]="value.origin"
+        [title]="vocabulary.facetLabel(value.facet) + ' · ' + ('detail.origin.' + value.origin | transloco)"
+      >
+        {{ vocabulary.valueLabel(value.facet, value.value) }}
+      </li>
+      }
+    </ul>
     }
-    @if (!item.thumbnail && item.sourceUrl) {
-    <span class="host">{{ host(item.sourceUrl) }}</span>
-    }
-    <span class="caption">
-      {{ item.title ?? (item.sourceUrl ? host(item.sourceUrl) : ('asset.untitled' | transloco)) }}
-      <small>{{ item.author.displayName }}</small>
-    </span>
-  </a>
+  </article>
   }
 </div>
 <div class="sentinel" #sentinel aria-hidden="true"></div>

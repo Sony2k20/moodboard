@@ -1,0 +1,167 @@
+<header class="head">
+  <a class="full" [routerLink]="['/assets', id()]">{{ 'inspector.openPage' | transloco }} ↗</a>
+  <button
+    type="button"
+    class="close"
+    (click)="closed.emit()"
+    [attr.aria-label]="'inspector.close' | transloco"
+  >×</button>
+</header>
+
+@if (notFound()) {
+<p role="alert" class="note">{{ 'detail.notFound' | transloco }}</p>
+} @else if (asset.error()) {
+<p role="alert" class="note">{{ 'detail.failed' | transloco }}</p>
+} @else if (asset.value(); as asset) {
+<div class="body">
+  <figure class="preview">
+    @if (image().large; as large) {
+    <a [href]="image().original?.url ?? large.url" target="_blank" rel="noopener">
+      <img [src]="large.url" [alt]="asset.title ?? ''" />
+    </a>
+    } @else if (asset.status === 'failed') {
+    <div class="placeholder failed" role="alert">
+      <p>{{ 'asset.capture.failed.' + (asset.statusReason ?? 'unknown') | transloco }}</p>
+      @if (asset.type === 'website') {
+      <button type="button" [disabled]="retrying()" (click)="retryCapture()">
+        {{ 'detail.capture.retry' | transloco }}
+      </button>
+      }
+    </div>
+    } @else {
+    <div class="placeholder">
+      {{ (asset.type === 'website' ? 'asset.capture.pending' : 'asset.status.pending') | transloco }}
+    </div>
+    }
+    <figcaption>
+      @if (image().original; as original) {
+      <a [href]="original.url" target="_blank" rel="noopener">
+        {{ (asset.type === 'website' ? 'detail.openFullPage' : 'detail.openOriginal') | transloco }}
+      </a>
+      }
+      @if (asset.sourceUrl) {
+      <a [href]="asset.sourceUrl" target="_blank" rel="noopener noreferrer" [title]="asset.sourceUrl">
+        {{ host(asset.sourceUrl) }} ↗
+      </a>
+      }
+    </figcaption>
+  </figure>
+
+  @if (saveError()) {
+  <p role="alert" class="error">{{ 'detail.saveFailed' | transloco }}</p>
+  }
+
+  @if (editing() === 'title') {
+  <form class="title-form" (submit)="$event.preventDefault(); saveTitle(title.value)">
+    <input
+      #title
+      [value]="asset.title ?? ''"
+      maxlength="200"
+      [attr.aria-label]="'inspector.title' | transloco"
+      (keydown.escape)="$event.stopPropagation(); editing.set(null)"
+    />
+    <button type="submit" [disabled]="saving()">{{ 'detail.save' | transloco }}</button>
+  </form>
+  } @else {
+  <h2 class="title">
+    <button type="button" (click)="editTitle()" [title]="'detail.edit' | transloco">
+      {{ asset.title ?? ('asset.untitled' | transloco) }}
+    </button>
+    @if (asset.title) {
+    <span class="origin" [attr.data-origin]="asset.titleOrigin">
+      {{ 'detail.origin.' + asset.titleOrigin | transloco }}
+    </span>
+    }
+  </h2>
+  }
+  <p class="byline">
+    {{ asset.author.displayName }} · {{ asset.createdAt | date: 'mediumDate' }}
+  </p>
+
+  @if (asset.colors.length > 0) {
+  <div class="palette" [attr.aria-label]="'detail.colors' | transloco" role="img">
+    @for (color of asset.colors; track color.hex) {
+    <span [style.background]="color.hex" [style.flex-grow]="color.ratio" [title]="color.hex"></span>
+    }
+  </div>
+  }
+
+  <section class="facets" [attr.aria-label]="'detail.facets' | transloco">
+    @for (row of rows(); track row.facet.key) {
+    <div class="facet" [class.open]="editing() === row.facet.key" [class.unconfirmed]="row.unconfirmed">
+      <button
+        type="button"
+        class="facet-head"
+        [attr.aria-expanded]="editing() === row.facet.key"
+        (click)="editFacet(row)"
+      >
+        <span class="label">{{ vocabulary.text(row.facet.label) }}</span>
+        <span class="values">
+          @for (value of row.values; track value.value) {
+          <span
+            class="origin-chip"
+            [attr.data-origin]="row.unconfirmed ? 'ai' : 'human'"
+            [title]="'detail.origin.' + value.origin | transloco"
+          >{{ vocabulary.valueLabel(row.facet.key, value.value) }}</span>
+          } @empty {
+          <span class="none">—</span>
+          }
+        </span>
+      </button>
+      @if (editing() === row.facet.key) {
+      <form class="editor" (submit)="$event.preventDefault(); saveFacet(row.facet)">
+        <div class="options" role="group" [attr.aria-label]="vocabulary.text(row.facet.label)">
+          @for (option of row.facet.values; track option.value) {
+          <button
+            type="button"
+            class="option"
+            [attr.aria-pressed]="draft().has(option.value)"
+            [title]="vocabulary.text(option.description)"
+            (click)="toggleDraft(row.facet, option.value)"
+          >
+            {{ vocabulary.text(option.label) }}
+          </button>
+          }
+        </div>
+        <div class="actions">
+          <button type="submit" class="primary" [disabled]="saving()">{{ 'detail.save' | transloco }}</button>
+          <button type="button" (click)="editing.set(null)">{{ 'detail.cancel' | transloco }}</button>
+          <small>{{ (row.facet.isMultiValue ? 'inspector.multi' : 'inspector.single') | transloco }}</small>
+        </div>
+      </form>
+      }
+    </div>
+    }
+    <p class="legend">
+      <span class="origin-chip" data-origin="human">{{ 'detail.origin.human' | transloco }}</span>
+      <span class="origin-chip" data-origin="ai">{{ 'inspector.guess' | transloco }}</span>
+    </p>
+  </section>
+
+  <p class="run">
+    @if (asset.classification; as run) {
+    {{ 'inspector.run' | transloco: { version: run.promptVersion, model: run.model } }}
+    · {{ run.createdAt | date: 'medium' }}
+    } @else {
+    {{ 'detail.notClassified' | transloco }}
+    }
+  </p>
+</div>
+
+<footer class="actions-bar">
+  @if (guesses().length > 0) {
+  <p class="guesses">
+    <span>{{ 'inspector.guessesLeft' | transloco: { count: guesses().length } }}</span>
+    <button type="button" class="link" [disabled]="saving()" (click)="confirmAll()">
+      <span class="wide">{{ 'inspector.confirmAll' | transloco }}</span>
+      <span class="narrow">{{ 'inspector.confirmN' | transloco: { count: guesses().length } }}</span>
+    </button>
+  </p>
+  }
+  <button type="button" class="primary copy" [disabled]="!prompt()" (click)="copyPrompt()">
+    {{ (copied() ? 'detail.prompt.copied' : 'inspector.copyPrompt') | transloco }}
+  </button>
+</footer>
+} @else {
+<p class="note">…</p>
+}

@@ -1,1 +1,40 @@
-/* You can add global styles to this file, and also import other style files */
+/* The "quiet gallery" (0012): light, image first, ink on paper. One theme, no dark mode. */
+:root {
+  --ink: #1d1d1f;
+  --ink-soft: #5f5f66;
+  --ink-faint: #a3a3aa;
+  --line: #e2e2e6;
+  --surface: #ffffff;
+  --wash: #f3f3f5;
+  --accent: #2f6fed;
+  --danger: #a3221b;
+  --danger-wash: #fbeceb;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+/* A facet value with its provenance (0012): solid = a person's, dashed = a model's guess. */
+.origin-chip {
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--ink-soft);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.origin-chip[data-origin='ai'] {
+  border-style: dashed;
+  border-color: var(--ink-faint);
+  color: var(--ink-soft);
+}

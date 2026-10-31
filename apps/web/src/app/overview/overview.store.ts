@@ -3,11 +3,13 @@ import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core'
 import { Router } from '@angular/router';
 import {
   AssetCard,
+  AssetDetail,
   AssetQuery,
   assetQueryParams,
   AssetQuerySchema,
   AssetSearchResult,
   MAX_BULK_ASSETS,
+  unconfirmedFacetKeys,
 } from '@moodboard/shared';
 import { AssetsApi, BulkRequest } from '../assets/assets-api.service';
 
@@ -16,6 +18,18 @@ const CLASSIFY_WINDOW_MS = 3 * 60 * 1000;
 const POLL_MS = 4000;
 
 const EMPTY_QUERY: AssetQuery = AssetQuerySchema.parse({});
+
+/** What a tile shows under its image (0012). A per-viewer setting, so it lives in the browser. */
+export type GridView = 'images' | 'facets';
+const VIEW_KEY = 'moodboard.overview.view';
+
+function readView(): GridView {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'facets' ? 'facets' : 'images';
+  } catch {
+    return 'images';
+  }
+}
 
 /**
  * The overview's state (0005). The URL is the source of truth for the query — back, reload and a
@@ -47,6 +61,8 @@ export class OverviewStore {
   readonly selecting = signal(false);
   readonly selected = signal<ReadonlySet<string>>(new Set());
   readonly bulkError = signal<'forbidden' | 'failed' | null>(null);
+
+  readonly view = signal<GridView>(readView());
 
   readonly hasFilters = computed(() => {
     const q = this.query();
@@ -214,6 +230,46 @@ export class OverviewStore {
     void this.router.navigate(['/']);
   }
 
+  setView(view: GridView): void {
+    this.view.set(view);
+    try {
+      localStorage.setItem(VIEW_KEY, view);
+    } catch {
+      // Storage blocked: the choice holds for this page load.
+    }
+  }
+
+  /**
+   * An asset was edited in the inspector (0012): its tile takes the stored state at once — the
+   * counter, the chips, the title — without reloading pages that were scrolled in.
+   */
+  patch(detail: AssetDetail): void {
+    this.items.update((items) =>
+      items.map((item) =>
+        item.id === detail.id
+          ? {
+              ...item,
+              title: detail.title,
+              status: detail.status,
+              statusReason: detail.statusReason,
+              facets: detail.facets.map(({ facet, value, origin }) => ({ facet, value, origin })),
+              tags: detail.tags.map((t) => t.name),
+              unconfirmedFacets: unconfirmedFacetKeys(detail.facets, detail.decidedFacets).length,
+            }
+          : item,
+      ),
+    );
+  }
+
+  /** Another capture attempt for a failed website (0011), from its tile. */
+  async retryCapture(id: string): Promise<void> {
+    try {
+      await this.api.retryCapture(id);
+    } finally {
+      await this.refresh();
+    }
+  }
+
   setSelecting(on: boolean): void {
     this.selecting.set(on);
     this.selected.set(new Set());
@@ -259,9 +315,13 @@ export class OverviewStore {
     }
   }
 
+  /** Changes the query; the asset open in the inspector (0012) stays open. */
   private navigate(change: Partial<AssetQuery>): void {
     const next = { ...this.query(), ...change, cursor: undefined };
-    void this.router.navigate(['/'], { queryParams: assetQueryParams(next) });
+    const asset = this.router.parseUrl(this.router.url).queryParamMap.get('asset');
+    void this.router.navigate(['/'], {
+      queryParams: { ...assetQueryParams(next), ...(asset ? { asset } : {}) },
+    });
   }
 
   private apply(result: AssetSearchResult, items: readonly AssetCard[]): void {

@@ -8,22 +8,27 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { parseCaptureUrl } from '@moodboard/shared';
 import { AssetGrid } from '../overview/asset-grid';
 import { BulkBar } from '../overview/bulk-bar';
-import { FilterPanel } from '../overview/filter-panel';
+import { FilterBar } from '../overview/filter-bar';
+import { Inspector } from '../overview/inspector';
 import { OverviewStore } from '../overview/overview.store';
 import { UploadsService } from '../uploads/uploads.service';
 
+/** `?asset=` names the asset open in the inspector (0012); anything else is no selection. */
+const ASSET_ID = /^[0-9a-f-]{36}$/i;
+
 /**
  * The start page is the overview (0005): filters and grid, with the upload as a bar on top.
- * Dropping works anywhere on the page, pasting too.
+ * Dropping works anywhere on the page, pasting too. A selected tile opens the inspector beside
+ * the grid (0012); the selection is in the URL, so a reload or a shared link reopens it.
  */
 @Component({
   selector: 'mb-home',
-  imports: [TranslocoPipe, PercentPipe, AssetGrid, BulkBar, FilterPanel],
+  imports: [TranslocoPipe, PercentPipe, AssetGrid, BulkBar, FilterBar, Inspector],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
@@ -32,15 +37,30 @@ export class Home {
   protected readonly store = inject(OverviewStore);
   protected readonly dragging = signal(false);
   protected readonly urlInvalid = signal(false);
+  protected readonly inspected = signal<string | null>(null);
+  private readonly router = inject(Router);
 
   constructor() {
+    // Opening or closing the inspector changes only `asset`; the search stays as it is.
+    let followed: string | null = null;
     const subscription = inject(ActivatedRoute).queryParamMap.subscribe(
       (params) => {
         const raw: Record<string, string | string[]> = {};
         for (const key of params.keys) {
+          if (key === 'asset') {
+            continue;
+          }
           const values = params.getAll(key);
           raw[key] = values.length === 1 ? values[0] : values;
         }
+        const asset = params.get('asset');
+        this.inspected.set(asset && ASSET_ID.test(asset) ? asset : null);
+        const key = JSON.stringify(raw);
+        if (key === followed) {
+          this.store.lastUrl.set(this.router.url);
+          return;
+        }
+        followed = key;
         void this.store.follow(raw);
       },
     );
@@ -54,6 +74,13 @@ export class Home {
         seen = completed;
         untracked(() => void this.store.refresh());
       }
+    });
+  }
+
+  protected closeInspector(): void {
+    void this.router.navigate([], {
+      queryParams: { asset: null },
+      queryParamsHandling: 'merge',
     });
   }
 

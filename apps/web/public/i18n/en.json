@@ -80,14 +80,35 @@
     "author": "Author",
     "allAuthors": "All authors",
     "tags": "Tags",
-    "remove": "Remove filter",
     "results": "{{ count }} assets",
     "resultsOne": "1 asset",
     "clear": "Clear all filters",
     "empty": "Nothing uploaded yet. Drop images onto this page to start.",
     "noMatch": "No asset matches these filters.",
     "invalid": "This link contains a filter that does not exist.",
-    "failed": "The assets could not be loaded. Try again in a moment."
+    "failed": "The assets could not be loaded. Try again in a moment.",
+    "filters": "Filters",
+    "removeFilter": "Remove filter {{ filter }}",
+    "guesses": "Unconfirmed AI guesses: {{ count }}",
+    "view": {
+      "label": "Show",
+      "images": "Images",
+      "facets": "Facets"
+    }
+  },
+  "inspector": {
+    "label": "Asset inspector",
+    "openPage": "Open page",
+    "close": "Close",
+    "title": "Title",
+    "guess": "AI guess",
+    "single": "One value",
+    "multi": "Several values",
+    "run": "Prompt v{{ version }} · {{ model }}",
+    "guessesLeft": "AI guesses left: {{ count }}",
+    "confirmAll": "Confirm all",
+    "confirmN": "Confirm guesses ({{ count }})",
+    "copyPrompt": "Copy prompt for Claude"
   },
   "detail": {
     "back": "Overview",
