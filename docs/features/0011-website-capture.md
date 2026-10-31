@@ -1,7 +1,7 @@
 # 0011 — Website capture
 
 > Status: accepted — release 1 of 3 deployed in v0.8.0 (2026-10-31); plan for 2 and 3 revised
-> the same day, see "Revised plan"; release 2 deployed in v0.9.0 (2026-10-31)
+> the same day, see "Revised plan"; release 2 deployed in v0.9.0, release 3 in v0.14.0 (2026-10-31)
 > Phase: 1
 > Created: 2026-10-30
 
@@ -533,3 +533,16 @@ detail page plays it. What it left open:
   others none. The detail page plays the video with the poster, muted and looping; seeking to
   2 s works through `206` answers. No console errors.
 - `nx run-many -t lint,test,build`: green for all projects.
+
+## Rollout (release 3)
+
+v0.14.0 deployed 2026-10-31 (gitops `6ef9da8`): ArgoCD synced and healthy, api, web and worker
+on the `0.14.0` images.
+
+- The worker container has ffmpeg with `libx264` and runs as UID 1000.
+- `/files/…/capture.mp4` is behind the session like every other file (`401` without one).
+- The worker's memory before the first capture with video: 171 MiB peak since start
+  (`/sys/fs/cgroup/memory.peak`), limit 2560 MiB.
+- **Not verified yet:** Verification 1 and 2 with a real site, and the memory peak during a
+  recorded capture (§4.6), which `memory.peak` will show after the first one. Release 3 counts as
+  done once both are in.
