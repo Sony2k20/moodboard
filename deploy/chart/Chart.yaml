@@ -5,6 +5,6 @@ type: application
 # Chart and application are released together, so both are always the same version: the git tag
 # vX.Y.Z without its v. appVersion is the default image tag, which lets a deployment pin only the
 # git tag. The publish workflow refuses a tag that does not match both. See README, Releasing.
-version: 0.7.2
-appVersion: "0.7.2"
+version: 0.8.0
+appVersion: "0.8.0"
 kubeVersion: ">=1.29.0-0"
