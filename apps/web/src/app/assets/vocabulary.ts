@@ -21,6 +21,11 @@ export class Vocabulary {
     () => this.loaded.value() ?? [],
   );
 
+  /** After an admin edit (0014): every filter, chip and editor shows the stored vocabulary. */
+  replace(vocabulary: readonly VocabularyFacet[]): void {
+    this.loaded.value.set([...vocabulary]);
+  }
+
   private readonly byKey = computed(
     () => new Map(this.facets().map((facet) => [facet.key, facet])),
   );

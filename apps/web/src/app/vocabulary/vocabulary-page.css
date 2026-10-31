@@ -1,0 +1,175 @@
+:host {
+  display: block;
+  max-width: 48rem;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.4rem;
+}
+
+h2 {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  margin: 1.75rem 0 0.25rem;
+  font-size: 1rem;
+}
+
+code {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.intro,
+.hint,
+.note,
+.empty {
+  color: var(--ink-soft);
+}
+
+.hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: var(--danger);
+}
+
+.create,
+.edit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.5rem 0.75rem;
+  align-items: end;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+label span {
+  color: var(--ink-soft);
+}
+
+label small {
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+input {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+
+input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.key {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+button {
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+button.primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-decoration: underline;
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.values {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.values li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.values li:has(.edit) {
+  display: block;
+}
+
+.values .name {
+  font-weight: 600;
+}
+
+.values .uses {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.row-actions {
+  display: inline-flex;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.compact li {
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.compact .name {
+  font-weight: 400;
+}
+
+details {
+  border-bottom: 1px solid var(--line);
+}
+
+summary {
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+summary small {
+  margin-left: 0.4rem;
+  color: var(--ink-faint);
+}

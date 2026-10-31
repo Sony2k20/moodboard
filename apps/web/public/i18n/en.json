@@ -284,5 +284,33 @@
     "confirmRevoke": "Revoke the token \"{{ name }}\"? Clients using it lose access at once.",
     "usageTitle": "How to connect",
     "usage": "Run this in a terminal, with your token in place of <token>. In Claude Code, /mcp then lists the four tools: list_vocabulary, search_assets, get_asset, add_asset."
+  },
+  "vocabulary": {
+    "nav": "Vocabulary",
+    "title": "Vocabulary",
+    "intro": "The controlled values every reference is described with. Filters, the inspector and agents use exactly these.",
+    "adminsOnly": "Only admins can change the vocabulary. You can look at it here.",
+    "curatedHint": "Curated by admins, never guessed by the model. A key stays as it is once created: it is in links and agent filters.",
+    "labelEn": "English label",
+    "labelDe": "German label",
+    "descriptionEn": "English description",
+    "descriptionDe": "German description",
+    "key": "Key",
+    "keyHint": "Used as {{ facet }}:{{ key }} in filters and links",
+    "add": "Add value",
+    "uses": "{{ count }} uses",
+    "usesOne": "1 use",
+    "delete": "Delete",
+    "inUseHint": "Still in use. Remove it from those assets first.",
+    "confirmDelete": "Delete \"{{ name }}\" for good?",
+    "noValues": "No values yet.",
+    "classifiedTitle": "Classified by the model",
+    "classifiedHint": "These values are part of the classification prompt. They change in the code, with a new prompt version and a re-analysis.",
+    "error": {
+      "exists": "A value with this key exists already.",
+      "inUse": "This value is still used, possibly by an asset in the trash.",
+      "invalid": "Both labels are needed, and the key may only hold lowercase letters, digits and hyphens. A description needs both languages too.",
+      "failed": "That did not work. Try again in a moment."
+    }
   }
 }

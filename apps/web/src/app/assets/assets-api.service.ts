@@ -9,8 +9,10 @@ import {
   BulkResult,
   TrashItem,
   VocabularyFacet,
+  VocabularyValueCreate,
+  VocabularyValuePatch,
 } from '@moodboard/shared';
-import { firstValueFrom, shareReplay } from 'rxjs';
+import { firstValueFrom, Observable, of, shareReplay } from 'rxjs';
 
 /** A bulk action as the web sends it; facet values as `facet:value` keys (0006). */
 export type BulkRequest =
@@ -23,10 +25,8 @@ export type BulkRequest =
 export class AssetsApi {
   private readonly http = inject(HttpClient);
 
-  /** The vocabulary changes rarely; one request per page load is enough. */
-  private readonly vocabulary$ = this.http
-    .get<VocabularyFacet[]>('/api/vocabulary')
-    .pipe(shareReplay(1));
+  /** The vocabulary changes rarely: one request per page load, again after an admin edit (0014). */
+  private vocabulary$ = this.loadVocabulary();
 
   search(query: Partial<AssetQuery>): Promise<AssetSearchResult> {
     return firstValueFrom(
@@ -42,6 +42,33 @@ export class AssetsApi {
 
   vocabulary(): Promise<VocabularyFacet[]> {
     return firstValueFrom(this.vocabulary$);
+  }
+
+  // Maintaining the curated facets (0014), admins only. Each answers with the whole vocabulary.
+
+  createValue(facet: string, value: VocabularyValueCreate): Promise<VocabularyFacet[]> {
+    return this.vocabularyWrite(
+      this.http.post<VocabularyFacet[]>(`${this.valuesUrl(facet)}`, value),
+    );
+  }
+
+  updateValue(
+    facet: string,
+    value: string,
+    patch: VocabularyValuePatch,
+  ): Promise<VocabularyFacet[]> {
+    return this.vocabularyWrite(
+      this.http.patch<VocabularyFacet[]>(
+        `${this.valuesUrl(facet)}/${encodeURIComponent(value)}`,
+        patch,
+      ),
+    );
+  }
+
+  deleteValue(facet: string, value: string): Promise<VocabularyFacet[]> {
+    return this.vocabularyWrite(
+      this.http.delete<VocabularyFacet[]>(`${this.valuesUrl(facet)}/${encodeURIComponent(value)}`),
+    );
   }
 
   // Edits answer with the asset as stored, so the page shows what the guards made of it.
@@ -84,5 +111,20 @@ export class AssetsApi {
 
   private url(id: string): string {
     return `/api/assets/${encodeURIComponent(id)}`;
+  }
+
+  private valuesUrl(facet: string): string {
+    return `/api/vocabulary/${encodeURIComponent(facet)}/values`;
+  }
+
+  private loadVocabulary(): Observable<VocabularyFacet[]> {
+    return this.http.get<VocabularyFacet[]>('/api/vocabulary').pipe(shareReplay(1));
+  }
+
+  /** The answer is the stored vocabulary; it replaces the cached one for every later reader. */
+  private async vocabularyWrite(request: Observable<VocabularyFacet[]>): Promise<VocabularyFacet[]> {
+    const vocabulary = await firstValueFrom(request);
+    this.vocabulary$ = of(vocabulary);
+    return vocabulary;
   }
 }

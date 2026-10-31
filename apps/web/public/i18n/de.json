@@ -284,5 +284,33 @@
     "confirmRevoke": "Den Token „{{ name }}“ widerrufen? Clients, die ihn benutzen, verlieren sofort den Zugriff.",
     "usageTitle": "So verbindest du dich",
     "usage": "Im Terminal ausführen, mit deinem Token statt <token>. In Claude Code zeigt /mcp danach die vier Tools: list_vocabulary, search_assets, get_asset, add_asset."
+  },
+  "vocabulary": {
+    "nav": "Vokabular",
+    "title": "Vokabular",
+    "intro": "Die festgelegten Werte, mit denen jede Referenz beschrieben wird. Filter, Inspektor und Agenten verwenden genau diese.",
+    "adminsOnly": "Nur Admins können das Vokabular ändern. Ansehen kannst du es hier.",
+    "curatedHint": "Von Admins gepflegt, nie vom Modell geraten. Ein Schlüssel bleibt, wie er angelegt wurde: Er steht in Links und Agenten-Filtern.",
+    "labelEn": "Englische Bezeichnung",
+    "labelDe": "Deutsche Bezeichnung",
+    "descriptionEn": "Englische Beschreibung",
+    "descriptionDe": "Deutsche Beschreibung",
+    "key": "Schlüssel",
+    "keyHint": "Wird als {{ facet }}:{{ key }} in Filtern und Links verwendet",
+    "add": "Wert hinzufügen",
+    "uses": "{{ count }}× verwendet",
+    "usesOne": "1× verwendet",
+    "delete": "Löschen",
+    "inUseHint": "Wird noch verwendet. Erst bei diesen Assets entfernen.",
+    "confirmDelete": "„{{ name }}“ endgültig löschen?",
+    "noValues": "Noch keine Werte.",
+    "classifiedTitle": "Vom Modell klassifiziert",
+    "classifiedHint": "Diese Werte sind Teil des Klassifizierungs-Prompts. Sie ändern sich im Code, mit neuer Prompt-Version und Neuanalyse.",
+    "error": {
+      "exists": "Ein Wert mit diesem Schlüssel existiert bereits.",
+      "inUse": "Dieser Wert wird noch verwendet, eventuell von einem Asset im Papierkorb.",
+      "invalid": "Beide Bezeichnungen sind nötig, und der Schlüssel darf nur Kleinbuchstaben, Ziffern und Bindestriche enthalten. Eine Beschreibung braucht ebenfalls beide Sprachen.",
+      "failed": "Das hat nicht geklappt. Versuch es gleich noch einmal."
+    }
   }
 }

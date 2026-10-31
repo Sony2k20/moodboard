@@ -1,0 +1,118 @@
+<h1>{{ 'vocabulary.title' | transloco }}</h1>
+<p class="intro">{{ 'vocabulary.intro' | transloco }}</p>
+
+@if (!admin()) {
+<p class="note" role="status">{{ 'vocabulary.adminsOnly' | transloco }}</p>
+}
+
+@if (error(); as error) {
+<p role="alert" class="error">{{ 'vocabulary.error.' + error | transloco }}</p>
+}
+
+@for (facet of curated(); track facet.key) {
+<section class="curated" [attr.aria-label]="vocabulary.text(facet.label)">
+  <h2>{{ vocabulary.text(facet.label) }} <code>{{ facet.key }}</code></h2>
+  <p class="hint">{{ 'vocabulary.curatedHint' | transloco }}</p>
+
+  @if (admin()) {
+  <form class="create" (submit)="$event.preventDefault(); create(facet.key)">
+    <label>
+      <span>{{ 'vocabulary.labelEn' | transloco }}</span>
+      <input
+        [value]="labelEn()"
+        maxlength="80"
+        required
+        (input)="onLabelEn($any($event.target).value)"
+      />
+    </label>
+    <label>
+      <span>{{ 'vocabulary.labelDe' | transloco }}</span>
+      <input
+        [value]="labelDe()"
+        maxlength="80"
+        required
+        (input)="onLabelDe($any($event.target).value)"
+      />
+    </label>
+    <label>
+      <span>{{ 'vocabulary.key' | transloco }}</span>
+      <input
+        class="key"
+        [value]="key()"
+        maxlength="64"
+        spellcheck="false"
+        autocapitalize="off"
+        [attr.aria-invalid]="key() !== '' && !keyValid()"
+        (input)="onKey($any($event.target).value)"
+      />
+      <small>{{ 'vocabulary.keyHint' | transloco: { facet: facet.key, key: key() || '…' } }}</small>
+    </label>
+    <button type="submit" class="primary" [disabled]="busy() || !labelEn().trim() || !keyValid()">
+      {{ 'vocabulary.add' | transloco }}
+    </button>
+  </form>
+  }
+
+  <ul class="values">
+    @for (value of facet.values; track value.value) {
+    <li>
+      @if (editing() === facet.key + ':' + value.value) {
+      <form
+        class="edit"
+        (submit)="$event.preventDefault(); save(facet.key, value, en.value, de.value, dEn.value, dDe.value)"
+      >
+        <label><span>{{ 'vocabulary.labelEn' | transloco }}</span><input #en [value]="value.label.en" maxlength="80" /></label>
+        <label><span>{{ 'vocabulary.labelDe' | transloco }}</span><input #de [value]="value.label.de" maxlength="80" /></label>
+        <label><span>{{ 'vocabulary.descriptionEn' | transloco }}</span><input #dEn [value]="value.description?.en ?? ''" maxlength="300" /></label>
+        <label><span>{{ 'vocabulary.descriptionDe' | transloco }}</span><input #dDe [value]="value.description?.de ?? ''" maxlength="300" /></label>
+        <div class="actions">
+          <button type="submit" class="primary" [disabled]="busy()">{{ 'detail.save' | transloco }}</button>
+          <button type="button" (click)="editing.set(null)">{{ 'detail.cancel' | transloco }}</button>
+        </div>
+      </form>
+      } @else {
+      <span class="name">{{ vocabulary.text(value.label) }}</span>
+      <code>{{ value.value }}</code>
+      <span class="uses">{{ (uses(facet.key, value.value) === 1 ? 'vocabulary.usesOne' : 'vocabulary.uses') | transloco: { count: uses(facet.key, value.value) } }}</span>
+      @if (admin()) {
+      <span class="row-actions">
+        <button type="button" class="link" (click)="edit(facet.key, value)">{{ 'detail.edit' | transloco }}</button>
+        <button
+          type="button"
+          class="link danger"
+          [disabled]="busy() || uses(facet.key, value.value) > 0"
+          [title]="uses(facet.key, value.value) > 0 ? ('vocabulary.inUseHint' | transloco) : ''"
+          (click)="remove(facet.key, value)"
+        >{{ 'vocabulary.delete' | transloco }}</button>
+      </span>
+      }
+      }
+    </li>
+    } @empty {
+    <li class="empty">{{ 'vocabulary.noValues' | transloco }}</li>
+    }
+  </ul>
+</section>
+}
+
+<section class="classified">
+  <h2>{{ 'vocabulary.classifiedTitle' | transloco }}</h2>
+  <p class="hint">{{ 'vocabulary.classifiedHint' | transloco }}</p>
+  @for (facet of classified(); track facet.key) {
+  <details>
+    <summary>
+      {{ vocabulary.text(facet.label) }} <code>{{ facet.key }}</code>
+      <small>{{ facet.values.length }}</small>
+    </summary>
+    <ul class="values compact">
+      @for (value of facet.values; track value.value) {
+      <li>
+        <span class="name">{{ vocabulary.text(value.label) }}</span>
+        <code>{{ value.value }}</code>
+        <span class="uses">{{ (uses(facet.key, value.value) === 1 ? 'vocabulary.usesOne' : 'vocabulary.uses') | transloco: { count: uses(facet.key, value.value) } }}</span>
+      </li>
+      }
+    </ul>
+  </details>
+  }
+</section>

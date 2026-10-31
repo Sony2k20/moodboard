@@ -3,6 +3,9 @@
   @if (session.user(); as user) {
   <a routerLink="/trash">{{ 'trash.title' | transloco }}</a>
   <a routerLink="/tokens">{{ 'tokens.nav' | transloco }}</a>
+  @if (user.role === 'admin') {
+  <a routerLink="/vocabulary">{{ 'vocabulary.nav' | transloco }}</a>
+  }
   <span class="user">
     {{ user.displayName }} @if (user.role === 'admin') {
     <small>· {{ 'auth.roleAdmin' | transloco }}</small>

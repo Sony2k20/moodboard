@@ -3,11 +3,13 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
   Get,
   HttpCode,
   NotFoundException,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UnsupportedMediaTypeException,
@@ -23,6 +25,8 @@ import {
   parseCaptureUrl,
   sniffUploadFormat,
   VocabularyFacet,
+  VocabularyValueCreateSchema,
+  VocabularyValuePatchSchema,
 } from '@moodboard/shared';
 import { z } from 'zod';
 
@@ -34,6 +38,7 @@ import { User } from '../auth/auth.guard';
 import type { CurrentUser } from '../auth/users.service';
 import { AssetSearchService } from './asset-search.service';
 import { AssetsService } from './assets.service';
+import { VocabularyAdminService } from './vocabulary-admin.service';
 
 /**
  * One file per request (0004): several files are several requests, so one bad file does not
@@ -133,13 +138,59 @@ export class AssetsController {
   }
 }
 
-/** The controlled vocabulary with its labels — what the filters render, later `list_vocabulary`. */
+/**
+ * The controlled vocabulary with its labels — what the filters render, later `list_vocabulary`.
+ * Admins maintain the curated facets' values here (0014); every write answers with the whole
+ * vocabulary, so the page shows what was stored.
+ */
 @Controller('vocabulary')
 export class VocabularyController {
-  constructor(private readonly search: AssetSearchService) {}
+  constructor(
+    private readonly search: AssetSearchService,
+    private readonly admin: VocabularyAdminService,
+  ) {}
 
   @Get()
   list(): Promise<VocabularyFacet[]> {
     return this.search.vocabulary();
   }
+
+  @Post(':facet/values')
+  async create(
+    @Param('facet') facet: string,
+    @Body() body: unknown,
+    @User() user: CurrentUser,
+  ): Promise<VocabularyFacet[]> {
+    await this.admin.create(facet, parseBody(VocabularyValueCreateSchema, body), user);
+    return this.search.vocabulary();
+  }
+
+  @Patch(':facet/values/:value')
+  async update(
+    @Param('facet') facet: string,
+    @Param('value') value: string,
+    @Body() body: unknown,
+    @User() user: CurrentUser,
+  ): Promise<VocabularyFacet[]> {
+    await this.admin.update(facet, value, parseBody(VocabularyValuePatchSchema, body), user);
+    return this.search.vocabulary();
+  }
+
+  @Delete(':facet/values/:value')
+  async remove(
+    @Param('facet') facet: string,
+    @Param('value') value: string,
+    @User() user: CurrentUser,
+  ): Promise<VocabularyFacet[]> {
+    await this.admin.remove(facet, value, user);
+    return this.search.vocabulary();
+  }
+}
+
+function parseBody<T extends z.ZodType>(schema: T, body: unknown): z.infer<T> {
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    throw new BadRequestException(z.prettifyError(parsed.error));
+  }
+  return parsed.data;
 }

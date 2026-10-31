@@ -1,4 +1,9 @@
-import { hasTechnique, techniqueForModel, VOCABULARY } from '@moodboard/shared';
+import {
+  CURATED_FACET_KEYS,
+  hasTechnique,
+  techniqueForModel,
+  VOCABULARY,
+} from '@moodboard/shared';
 import { ClassifyInput } from './classifier.port';
 
 /**
@@ -7,8 +12,8 @@ import { ClassifyInput } from './classifier.port';
  */
 export const PROMPT_VERSION = 5;
 
-/** `project` is curated by humans per client and never guessed by a model (analysis-result.schema). */
-const CLASSIFIED_FACETS = VOCABULARY.filter((facet) => facet.key !== 'project');
+/** Curated facets (`project`) are maintained by admins and never guessed by a model (0014). */
+const CLASSIFIED_FACETS = VOCABULARY.filter((facet) => !CURATED_FACET_KEYS.includes(facet.key));
 
 function renderVocabulary(): string {
   return CLASSIFIED_FACETS.map((facet) => {

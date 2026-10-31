@@ -8,6 +8,7 @@ import {
 import { AssetEditService } from './asset-edit.service';
 import { AssetSearchService } from './asset-search.service';
 import { AssetsController, VocabularyController } from './assets.controller';
+import { VocabularyAdminService } from './vocabulary-admin.service';
 import { AssetsService } from './assets.service';
 import { FilesController } from './files.controller';
 import { PipelineQueue } from './pipeline.queue';
@@ -24,6 +25,7 @@ import { PipelineQueue } from './pipeline.queue';
     AssetsService,
     AssetSearchService,
     AssetEditService,
+    VocabularyAdminService,
     PipelineQueue,
     {
       provide: TRASH_RETENTION_DAYS,
