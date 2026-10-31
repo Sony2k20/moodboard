@@ -472,3 +472,33 @@ Not yet checked in production:
 - the memory peak during a capture, as opposed to after it
 - the NetworkPolicy, which stays off (`worker.egress.restrict: false`) until the database
   selector is confirmed in the cluster
+
+## Release 3 — decided before implementation (2026-10-31)
+
+The plan above stands: a second context records the scroll, ffmpeg turns it into an MP4, the
+detail page plays it. What it left open:
+
+1. **The video is optional.** Recording runs after context A has produced everything the
+   pipeline needs, with its own budget of 60 s. If it fails — the page misbehaves on the second
+   load, ffmpeg is missing, the budget runs out — the capture still succeeds without a video and
+   the worker logs why. The video is for people (Revised plan, point 3); losing it must never cost
+   the poster, the full page or the technique.
+2. **Recording at 1440×900, DPR 1.** Context B starts from A's `storageState`, waits for `load`
+   and up to 5 s of network idle, then scrolls to the bottom in 10 s with an eased, continuous
+   scroll and holds the last frame for 1 s. The scroll start is timed against the page's creation
+   so the load is cut off.
+3. **ffmpeg from Debian in the worker image.** H.264, `crf 28`, `veryfast`, `yuv420p`, 30 fps,
+   `+faststart`, no audio. Playwright's bundled ffmpeg only writes VP8, which Safari plays
+   unreliably, so it is not enough. CI installs ffmpeg too, so the whole path runs there; a
+   machine without it skips that test.
+4. **The file is `capture.mp4`**, kind `capture`, mime `video/mp4`. The layout said
+   `capture.webm`; no such file was ever stored, so the name changes without a migration.
+5. **Files are served with `Range`.** A browser seeks a video by asking for byte ranges; without
+   `206` answers the player cannot jump. `StorageService.get` gains an optional range, which the
+   HostPath adapter reads with a ranged stream and an S3 adapter would pass through.
+6. **`AssetCard.hasVideo`** (additive) drives the badge on the tile. `search_assets` does not
+   show it; `get_asset` is unchanged — the video is for people.
+7. **A retry replaces the video**, and a retry that records none removes the old one, like every
+   other file the step owns.
+8. **Memory:** recording keeps one more context open for about 15 s. The peak is measured in
+   production on the first capture after the release (§4.6) before release 3 counts as done.
