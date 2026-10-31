@@ -101,6 +101,26 @@ version stays 0: a new feature is a minor release, a fix a patch.
 3. In the ArgoCD Application, set `targetRevision: vX.Y.Z`. Nothing else: the image tag comes
    from the chart's `appVersion`.
 
+## Restoring the database
+
+Backups are a `pg_dump --format=custom` outside the application (concept §4.3). A restore was
+rehearsed into a scratch database on 2026-10-31; the steps, so the next one is not a first:
+
+1. Create an empty database owned by the application role, as a superuser of the cluster.
+2. Restore the dump as the application role, without the cluster's extensions. Some clusters
+   install extensions such as `vector` into every database; moodboard uses none, and only a
+   superuser may create or comment on them, so a plain `pg_restore` stops at the first entry:
+
+   ```bash
+   pg_restore --list moodboard.dump | grep -v ' EXTENSION ' > restore.toc
+   pg_restore --no-owner --exit-on-error --use-list=restore.toc --dbname=<target> moodboard.dump
+   ```
+
+3. Check: every table's row count matches, `drizzle.__drizzle_migrations` holds every migration,
+   and the origin guards refuse an `ai` write to a `human` row (migration `0001`).
+
+The dump holds the database only. The asset files on the storage volume need their own backup.
+
 ## Development
 
 Requires Node 24 and npm 11. Postgres is an external dependency, operated by CloudNativePG in

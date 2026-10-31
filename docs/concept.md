@@ -925,7 +925,9 @@ readable by Claude Code.
 
 **Access and Operations**
 - [x] MCP server: `search_assets`, `get_asset`, `list_vocabulary`, `add_asset`
-- [ ] Database restore rehearsed once (§4.3)
+- [x] Database restore rehearsed once (§4.3) — 2026-10-31 into a scratch database, all tables
+  row-identical, guards and search intact; steps in the README. The asset files are not in the
+  database backup
 
 ### Phase 2 — Sharpening
 
