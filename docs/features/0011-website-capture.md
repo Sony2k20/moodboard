@@ -502,3 +502,34 @@ detail page plays it. What it left open:
    other file the step owns.
 8. **Memory:** recording keeps one more context open for about 15 s. The peak is measured in
    production on the first capture after the release (§4.6) before release 3 counts as done.
+
+## Decided during implementation (release 3)
+
+1. **Context A closes before B opens**, after handing over its `storageState`, so only one page
+   is in memory while the video records.
+2. **Recording is a constructor option of the capturer** (`video`, on by default). The capture
+   tests that are about banners, technique and the egress guard run without it, which saves them
+   about 15 s each; one test records.
+3. **The scroll eases in and out** (`requestAnimationFrame`, re-reading the page height every
+   frame, since lazy content grows it), and the cut starts 0.2 s before the scroll, so its first
+   frame is not lost between the two processes' clocks.
+4. **The play badge sits bottom right** on the tile, clear of the status and guess badges, and
+   steps aside when the caption fades in on hover.
+5. **`[muted]` is bound as a property** on the player: Angular sets attributes after parsing,
+   and the `muted` attribute then never reaches the property.
+6. **Range answers:** one `bytes=` range gets `206` with `Content-Range`; a range outside the file
+   `416`; several ranges or anything unparsable the whole file with `200`, which HTTP allows.
+
+### Verified (release 3, before release)
+
+- **CI** (ubuntu, ffmpeg 6.1 as in the image): the video test records a page and gets an MP4
+  that starts with `ftyp`, has `moov` before `mdat` (faststart) and an `avc1` track. In CI the
+  test fails rather than skips when ffmpeg is missing.
+- **Locally without ffmpeg:** the recording runs, the transcode fails to start, and the capture
+  ends with its pictures and no video, as decided.
+- **Api:** `parseRange` and a `206` for `bytes=2-5` with the right headers and bytes; the
+  HostPath adapter reads a byte range.
+- **Against a stub api in Chromium** (1440 × 900): the website tile shows the play badge, the
+  others none. The detail page plays the video with the poster, muted and looping; seeking to
+  2 s works through `206` answers. No console errors.
+- `nx run-many -t lint,test,build`: green for all projects.
