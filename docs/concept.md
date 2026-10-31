@@ -482,8 +482,10 @@ asset_color          asset_id, hex, lab_l, lab_a, lab_b, ratio, position
 asset_search         asset_id, tsv tsvector
                      -- generated column, to_tsvector('english', title || description); see §13
 capture_tech         asset_id, fonts jsonb, css_properties jsonb,
-                     libraries jsonb, viewport, captured_at
-                     -- result of the technique extraction from §8
+                     libraries jsonb, tokens jsonb, elements jsonb, page_title,
+                     viewport, captured_at
+                     -- result of the technique extraction from §8; tokens and
+                     -- element styles since 0011 release 2
 asset_embedding      asset_id, model, dim, embedding vector(N), created_at
                      -- phase 4 only (§7.6), listed here for completeness
 ```
@@ -904,8 +906,8 @@ readable by Claude Code.
 - [x] Playwright in the worker image, `/dev/shm` mount, resource limits (§4.6) — 0011, v0.8.0
 - [x] Drop in a URL → screenshots, proper error reporting, egress guard (§8.2, §8.3) — 0011,
   v0.8.0
-- [ ] Cookie banner heuristics (§8.3) — 0011 release 2
-- [ ] Technique extraction with design tokens → classification context, so `motion` gets
+- [x] Cookie banner heuristics (§8.3) — 0011 release 2
+- [x] Technique extraction with design tokens → classification context, so `motion` gets
   genuinely filled — 0011 release 2
 - [ ] Scroll video and player in the detail view — 0011 release 3
 

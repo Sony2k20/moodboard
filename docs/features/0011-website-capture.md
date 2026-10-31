@@ -1,7 +1,7 @@
 # 0011 — Website capture
 
 > Status: accepted — release 1 of 3 deployed in v0.8.0 (2026-10-31); plan for 2 and 3 revised
-> the same day, see "Revised plan"
+> the same day, see "Revised plan"; release 2 implemented, not yet deployed
 > Phase: 1
 > Created: 2026-10-30
 
@@ -366,6 +366,61 @@ Not verified: the worker image itself. Docker is not installed on the developmen
 the image is first built by the publish workflow after the push. Also not verified: a capture in the cluster
 (`/dev/shm`, memory, real sites) and the NetworkPolicy under the cluster's network setup. Those
 are the production check after the rollout.
+
+## Decided during implementation (release 2)
+
+1. **`capture_tech.page_title`**, a third nullable column next to `tokens` and `elements`. The
+   page `<title>` is part of the model's context ("host, page `<title>`, …"), and release 1 had
+   nowhere to keep it. Putting it into `asset.title` would have lost it at the first
+   classification. Migration `0013`, additive.
+2. **The tiers run once, after network idle.** Tier 1 clicks the first visible accept button of
+   the listed platforms (Playwright's CSS reaches into Usercentrics' open shadow root). Tier 2
+   matches whole accessible names only, so "Accept and pay" is never clicked; it includes "OK"
+   and "Got it", which many small banners use. Tier 3 also lifts the `overflow: hidden` a banner
+   leaves on `html` or `body`, or the scroll and the full page stay locked. A consent failure
+   never fails the capture.
+3. **The stylesheet text is scanned, not parsed** (`apps/worker/src/app/capture/css-text.ts`):
+   `@media`, `@supports`, `@layer` and `@container` are followed, rules nested inside a style
+   rule (CSS nesting) are not. Only sheets of the main frame count; an ad iframe's styles are no
+   part of the design.
+4. **`:root` custom properties are named by the stylesheets and valued by the browser**: the
+   scan finds the names, `getComputedStyle` resolves `var()` chains. Values longer than 200
+   characters (inlined SVGs, long font stacks) are left out.
+5. **A failed extraction costs the technique, not the picture.** The capture stores an empty
+   technique and logs the error.
+6. **Colours are counted as the browser computes them** (`rgb(17, 17, 17)`), not converted to
+   hex: the computed form is what an agent would read in DevTools, and `asset_color` already
+   holds the hex palette of the picture.
+7. **Prompt v4 changes two guidelines**: `motion` names which measured signals mean which value
+   (scroll library or reveal animation → `scroll-reveal`/`parallax`, `:hover` transform or
+   shadow → `hover-transform`, infinite translate → `marquee`), and a second line tells the
+   model to treat measured fonts, colours, radii and shadows as facts in the description and the
+   visual details. The motion facet's own description no longer promises keyframes.
+8. **`get_asset`** returns the full record as `captureTech` in its JSON; the MCP instructions
+   tell agents that those values are exact. The build prompt gets a "Measured on the live page"
+   section plus one rule to use the values exactly.
+
+### Verified (release 2)
+
+- **Against real Chromium** (`website-capturer.integration.spec.ts`, fixture pages):
+  - a OneTrust banner is accepted (`platform`), a button "Alle akzeptieren" inside an iframe is
+    clicked (`button`), a cookie notice without a button is removed (`removed`); in all three the
+    poster no longer shows the banner, and a page without a banner is left alone
+  - from a stylesheet on a second origin: the `:hover` transform, `:root` custom properties
+    with their values, the `@keyframes` behind a running animation; the transition with its
+    easing counted on both cards; a fake `window.gsap` reported as GSAP; card, button, `h1`,
+    body text and link styles
+- **Scanner and accept-name pattern** (`css-text.spec.ts`), the 4k cap
+  (`capture-technique.spec.ts`), the prompt v4 user text (`prompt.spec.ts`), the build prompt
+  section (`build-prompt.spec.ts`).
+- **The detail page against a stub api**: the technique panel with swatches, shadow previews,
+  element styles and custom properties, the capture date, and the build prompt section.
+- `nx run-many -t lint,test,build`: all green, api integration tests included (migration `0013`
+  on PGlite).
+
+Not verified: a classification at prompt version 4 against the real model (no API key on the
+development machine), and captures of real sites with real banners. Both are the production
+check: Verification 1, 2 and 5, without the video.
 
 ## Rollout (release 1)
 
