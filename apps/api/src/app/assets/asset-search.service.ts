@@ -27,6 +27,7 @@ import {
   STORAGE_SERVICE,
   StorageService,
   TrashItem,
+  unconfirmedFacetKeys,
   VocabularyFacet,
 } from '@moodboard/shared';
 import {
@@ -445,7 +446,7 @@ export class AssetSearchService {
     }
     const ids = rows.map((row) => row.id);
 
-    const [thumbs, facetRows, tagRows, classified] = await Promise.all([
+    const [thumbs, facetRows, tagRows, classified, decisions] = await Promise.all([
       this.db
         .select({
           assetId: assetFiles.assetId,
@@ -460,6 +461,7 @@ export class AssetSearchService {
           assetId: assetFacetValues.assetId,
           facet: facets.key,
           value: facetValues.value,
+          origin: assetFacetValues.origin,
         })
         .from(assetFacetValues)
         .innerJoin(facetValues, eq(facetValues.id, assetFacetValues.facetValueId))
@@ -476,6 +478,11 @@ export class AssetSearchService {
         .selectDistinct({ assetId: analysisRuns.assetId })
         .from(analysisRuns)
         .where(and(inArray(analysisRuns.assetId, ids), eq(analysisRuns.status, 'succeeded'))),
+      this.db
+        .select({ assetId: assetFacetDecisions.assetId, facet: facets.key })
+        .from(assetFacetDecisions)
+        .innerJoin(facets, eq(facets.id, assetFacetDecisions.facetId))
+        .where(inArray(assetFacetDecisions.assetId, ids)),
     ]);
 
     const thumbBy = new Map(thumbs.map((t) => [t.assetId, t]));
@@ -489,9 +496,15 @@ export class AssetSearchService {
     };
     const facetsBy = group(facetRows);
     const tagsBy = group(tagRows);
+    const decidedBy = group(decisions);
 
     return rows.map((row) => {
       const thumb = thumbBy.get(row.id);
+      const values = (facetsBy.get(row.id) ?? []).map(({ facet, value, origin }) => ({
+        facet,
+        value,
+        origin,
+      }));
       return {
         id: row.id,
         title: row.title,
@@ -505,8 +518,12 @@ export class AssetSearchService {
         thumbnail: thumb
           ? { url: this.storage.url(thumb.path), width: thumb.width, height: thumb.height }
           : null,
-        facets: (facetsBy.get(row.id) ?? []).map(({ facet, value }) => ({ facet, value })),
+        facets: values,
         tags: (tagsBy.get(row.id) ?? []).map((t) => t.name),
+        unconfirmedFacets: unconfirmedFacetKeys(
+          values,
+          (decidedBy.get(row.id) ?? []).map((d) => d.facet),
+        ).length,
       };
     });
   }

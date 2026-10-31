@@ -22,6 +22,7 @@ const card = (id: string, change: Partial<AssetCard> = {}): AssetCard => ({
   thumbnail: null,
   facets: [],
   tags: [],
+  unconfirmedFacets: 0,
   ...change,
 });
 
@@ -158,5 +159,55 @@ describe('OverviewStore', () => {
     http.expectOne('/api/assets/bulk').flush(null, { status: 403, statusText: 'Forbidden' });
     expect(await bulk).toBe(false);
     expect(store.bulkError()).toBe('forbidden');
+  });
+
+  it('keeps the asset open in the inspector when the filter changes (0012)', async () => {
+    const done = store.follow({});
+    await flush(search(), result([]));
+    await done;
+    jest.spyOn(router, 'url', 'get').mockReturnValue('/?asset=a1&q=grid');
+    const navigate = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    store.toggleFacet('mood', 'calm');
+    expect(navigate).toHaveBeenLastCalledWith(['/'], {
+      queryParams: { facet: ['mood:calm'], asset: 'a1' },
+    });
+  });
+
+  it('patches an edited asset into its tile with the new unconfirmed count (0012)', async () => {
+    const done = store.follow({});
+    await flush(
+      search(),
+      result([
+        card('a', {
+          unconfirmedFacets: 2,
+          facets: [
+            { facet: 'mood', value: 'calm', origin: 'ai' },
+            { facet: 'theme', value: 'dark', origin: 'ai' },
+          ],
+        }),
+        card('b'),
+      ]),
+    );
+    await done;
+
+    store.patch({
+      id: 'a',
+      title: 'Calm hero',
+      status: 'ready',
+      statusReason: null,
+      facets: [
+        { facet: 'mood', value: 'calm', origin: 'human', confidence: null },
+        { facet: 'theme', value: 'dark', origin: 'ai', confidence: 0.8 },
+      ],
+      decidedFacets: ['mood'],
+      tags: [],
+    } as never);
+
+    const [a, b] = store.items();
+    expect(a.title).toBe('Calm hero');
+    expect(a.unconfirmedFacets).toBe(1);
+    expect(a.facets[0]).toEqual({ facet: 'mood', value: 'calm', origin: 'human' });
+    expect(b.id).toBe('b');
   });
 });

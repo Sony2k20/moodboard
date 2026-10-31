@@ -1,0 +1,130 @@
+<div class="row">
+  <form class="search" role="search" (submit)="submitSearch($event, search.value)">
+    <label class="visually-hidden" for="overview-search">
+      {{ 'overview.search' | transloco }}
+    </label>
+    <input
+      #search
+      id="overview-search"
+      type="search"
+      [placeholder]="'overview.searchPlaceholder' | transloco"
+      [value]="store.query().q ?? ''"
+      (input)="onSearch(search.value)"
+    />
+  </form>
+
+  <div class="pills" role="toolbar" [attr.aria-label]="'overview.filters' | transloco">
+    @for (facet of facets(); track facet.key) {
+    @let selected = selectedIn(facet.key);
+    <button
+      type="button"
+      class="pill"
+      [class.active]="selected > 0"
+      [class.open]="open() === facet.key"
+      [attr.aria-expanded]="open() === facet.key"
+      [attr.aria-controls]="'facet-values-' + facet.key"
+      (click)="toggle(facet.key)"
+    >
+      {{ vocabulary.text(facet.label) }}
+      @if (selected > 0) {
+      <span class="count">{{ selected }}</span>
+      }
+      <span class="caret" aria-hidden="true">▾</span>
+    </button>
+    }
+
+    @if (store.counts().authors.length > 1 || store.query().author) {
+    <label class="pill author" [class.active]="!!store.query().author">
+      <span class="visually-hidden">{{ 'overview.author' | transloco }}</span>
+      <select (change)="onAuthor($event)">
+        <option value="" [selected]="!store.query().author">
+          {{ 'overview.allAuthors' | transloco }}
+        </option>
+        @for (author of store.counts().authors; track author.id) {
+        <option [value]="author.id" [selected]="author.id === store.query().author">
+          {{ author.displayName }} ({{ author.count }})
+        </option>
+        }
+      </select>
+    </label>
+    }
+  </div>
+</div>
+
+@if (openFacet(); as facet) {
+<div
+  class="values"
+  role="group"
+  [id]="'facet-values-' + facet.key"
+  [attr.aria-label]="vocabulary.text(facet.label)"
+>
+  @for (option of facet.values; track option.value) {
+  @let selected = store.isSelected(facet.key, option.value);
+  @let count = store.count(facet.key, option.value);
+  <button
+    type="button"
+    class="value"
+    [attr.aria-pressed]="selected"
+    [disabled]="!selected && count === 0"
+    [title]="vocabulary.text(option.description)"
+    (click)="store.toggleFacet(facet.key, option.value)"
+  >
+    {{ vocabulary.text(option.label) }}
+    <span class="n">{{ count }}</span>
+  </button>
+  }
+</div>
+}
+
+@if (store.hasFilters()) {
+<div class="active">
+  @for (filter of store.query().facet; track filter.facet + ':' + filter.value) {
+  <button
+    type="button"
+    class="chip"
+    (click)="store.toggleFacet(filter.facet, filter.value)"
+    [attr.aria-label]="'overview.removeFilter' | transloco: { filter: vocabulary.valueLabel(filter.facet, filter.value) }"
+  >
+    <small>{{ vocabulary.facetLabel(filter.facet) }}</small>
+    {{ vocabulary.valueLabel(filter.facet, filter.value) }}
+    <span aria-hidden="true">×</span>
+  </button>
+  }
+  @for (tag of store.query().tag; track tag) {
+  <button
+    type="button"
+    class="chip"
+    (click)="store.toggleTag(tag)"
+    [attr.aria-label]="'overview.removeFilter' | transloco: { filter: tag }"
+  >
+    <small>{{ 'overview.tags' | transloco }}</small> {{ tag }}
+    <span aria-hidden="true">×</span>
+  </button>
+  }
+  @if (store.query().author; as author) {
+  <button
+    type="button"
+    class="chip"
+    (click)="store.setAuthor(undefined)"
+    [attr.aria-label]="'overview.removeFilter' | transloco: { filter: authorName(author) }"
+  >
+    <small>{{ 'overview.author' | transloco }}</small> {{ authorName(author) }}
+    <span aria-hidden="true">×</span>
+  </button>
+  }
+  @if (store.query().q; as q) {
+  <button
+    type="button"
+    class="chip"
+    (click)="store.setSearch(''); search.value = ''"
+    [attr.aria-label]="'overview.removeFilter' | transloco: { filter: q }"
+  >
+    <small>{{ 'overview.search' | transloco }}</small> “{{ q }}”
+    <span aria-hidden="true">×</span>
+  </button>
+  }
+  <button type="button" class="link" (click)="store.clear(); search.value = ''">
+    {{ 'overview.clear' | transloco }}
+  </button>
+</div>
+}

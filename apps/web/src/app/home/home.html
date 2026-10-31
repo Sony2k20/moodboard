@@ -49,23 +49,28 @@
 </ul>
 }
 
-<div class="layout">
-  <aside>
-    <mb-filter-panel />
-  </aside>
+<mb-filter-bar />
 
+<div class="layout" [class.inspecting]="!!inspected()">
   <section class="results" [attr.aria-busy]="store.loading()">
     <header>
       <span role="status">
         {{ (store.total() === 1 ? 'overview.resultsOne' : 'overview.results') | transloco: { count: store.total() } }}
       </span>
-      @if (store.hasFilters()) {
-      <button type="button" class="link" (click)="store.clear()">
-        {{ 'overview.clear' | transloco }}
-      </button>
-      }
+      <div class="view" role="group" [attr.aria-label]="'overview.view.label' | transloco">
+        <button
+          type="button"
+          [attr.aria-pressed]="store.view() === 'images'"
+          (click)="store.setView('images')"
+        >{{ 'overview.view.images' | transloco }}</button>
+        <button
+          type="button"
+          [attr.aria-pressed]="store.view() === 'facets'"
+          (click)="store.setView('facets')"
+        >{{ 'overview.view.facets' | transloco }}</button>
+      </div>
       @if (!store.selecting() && store.items().length > 0) {
-      <button type="button" class="link select" (click)="store.setSelecting(true)">
+      <button type="button" class="link" (click)="store.setSelecting(true)">
         {{ 'bulk.start' | transloco }}
       </button>
       }
@@ -85,12 +90,26 @@
       [hasMore]="!!store.nextCursor()"
       [selecting]="store.selecting()"
       [selected]="store.selected()"
+      [current]="inspected()"
+      [view]="store.view()"
       (more)="store.loadMore()"
       (toggle)="store.toggleSelected($event)"
+      (retry)="store.retryCapture($event)"
     />
     } } }
     @if (store.selecting()) {
     <mb-bulk-bar />
     }
   </section>
+
+  @if (inspected(); as id) {
+  <mb-inspector
+    class="inspector"
+    [id]="id"
+    [attr.aria-label]="'inspector.label' | transloco"
+    role="complementary"
+    (closed)="closeInspector()"
+    (changed)="store.patch($event)"
+  />
+  }
 </div>

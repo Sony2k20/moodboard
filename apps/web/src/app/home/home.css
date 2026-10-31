@@ -5,14 +5,16 @@
   align-items: center;
   justify-content: center;
   padding: 0.75rem 1rem;
-  border: 2px dashed #bbb;
-  border-radius: 8px;
+  border: 1.5px dashed var(--line);
+  border-radius: 12px;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
   text-align: center;
 }
 
 .upload.dragging {
-  border-color: #333;
-  background: #f4f4f4;
+  border-color: var(--ink);
+  background: var(--wash);
 }
 
 .pick input {
@@ -60,38 +62,120 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
+  align-items: start;
   margin-top: 1rem;
 }
 
+mb-filter-bar {
+  margin-top: 1rem;
+}
+
+/* The grid's own width picks the columns: five on a desktop, four beside the inspector (0012). */
+.results {
+  container-type: inline-size;
+}
+
+@container (max-width: 1100px) {
+  mb-asset-grid {
+    --columns: 4;
+  }
+}
+
+@container (max-width: 840px) {
+  mb-asset-grid {
+    --columns: 3;
+  }
+}
+
+@container (max-width: 560px) {
+  mb-asset-grid {
+    --columns: 2;
+  }
+}
+
+.layout.inspecting {
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+
+.inspector {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+}
+
+/* Too narrow for four columns and the panel: it floats over the grid instead. */
+@media (max-width: 1100px) {
+  .layout.inspecting {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inspector {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 20;
+    width: min(380px, calc(100vw - 2rem));
+    max-height: none;
+    box-shadow: 0 12px 48px rgb(0 0 0 / 0.18);
+  }
+}
+
+/* Phone: a bottom sheet. */
 @media (max-width: 720px) {
-  .layout {
-    grid-template-columns: 1fr;
+  .inspector {
+    inset: auto 0 0 0;
+    width: auto;
+    max-height: 82vh;
+    border-radius: 16px 16px 0 0;
   }
 }
 
 .results header {
   display: flex;
-  gap: 1rem;
-  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
   margin-bottom: 0.75rem;
-  color: #555;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.view {
+  display: inline-flex;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.view button {
+  padding: 0.2rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+.view button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--surface);
 }
 
 .link {
   padding: 0;
   border: 0;
   background: none;
+  color: inherit;
   font: inherit;
   text-decoration: underline;
   cursor: pointer;
 }
 
 .empty {
-  color: #777;
-}
-
-.select {
-  margin-left: auto;
+  color: var(--ink-soft);
 }

@@ -2,6 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { BadRequestException } from '@nestjs/common';
 import {
   analysisRuns,
+  assetFacetDecisions,
   assetFacetValues,
   assetFiles,
   assets,
@@ -253,10 +254,20 @@ describe('AssetSearchService.search', () => {
     });
     expect(card.facets).toEqual(
       expect.arrayContaining([
-        { facet: 'style', value: 'editorial' },
-        { facet: 'theme', value: 'dark' },
+        { facet: 'style', value: 'editorial', origin: 'ai' },
+        { facet: 'theme', value: 'dark', origin: 'ai' },
       ]),
     );
+    expect(card.unconfirmedFacets).toBe(3);
+  });
+
+  it('counts a facet as confirmed once a person has decided it (0012)', async () => {
+    const [before] = (await search({ facet: 'ui_pattern:hero' })).items;
+    const [style] = await db.select({ id: facets.id }).from(facets).where(eq(facets.key, 'style'));
+    await db.insert(assetFacetDecisions).values({ assetId: before.id, facetId: style.id });
+    const [after] = (await search({ facet: 'ui_pattern:hero' })).items;
+    expect(after.unconfirmedFacets).toBe(2);
+    await db.delete(assetFacetDecisions).where(eq(assetFacetDecisions.assetId, before.id));
   });
 });
 

@@ -81,7 +81,7 @@ export class McpServerFactory {
       {
         title: 'Search design references',
         description:
-          'Facet filters plus full-text search, newest first. Returns cards (id, title, facets, tags) and, for every facet value, how many matching assets carry it — use the counts to narrow down. Page with nextCursor. Open a result with get_asset to see the image.',
+          'Facet filters plus full-text search, newest first. Returns cards (id, title, facets, tags, unconfirmedFacets) and, for every facet value, how many matching assets carry it — use the counts to narrow down. unconfirmedFacets is how many facets still hold only a model\'s guess; 0 means a person has confirmed or corrected every facet a model filled, so prefer those references when quality matters. Page with nextCursor. Open a result with get_asset to see the image.',
         inputSchema: {
           facet: z
             .array(z.string())
@@ -114,6 +114,7 @@ export class McpServerFactory {
               createdAt: item.createdAt,
               facets: item.facets.map((f) => `${f.facet}:${f.value}`),
               tags: item.tags,
+              unconfirmedFacets: item.unconfirmedFacets,
             })),
             counts: result.counts.facets
               .filter((c) => c.count > 0)

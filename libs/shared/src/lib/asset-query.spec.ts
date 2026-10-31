@@ -1,4 +1,4 @@
-import { AssetQuerySchema, assetQueryParams } from './asset-query';
+import { AssetQuerySchema, assetQueryParams, unconfirmedFacetKeys } from './asset-query';
 
 describe('AssetQuerySchema', () => {
   it('reads a query string key given once or several times', () => {
@@ -38,5 +38,27 @@ describe('AssetQuerySchema', () => {
     });
     expect(AssetQuerySchema.parse(assetQueryParams(query))).toEqual(query);
     expect(assetQueryParams(query)).not.toHaveProperty('limit');
+  });
+});
+
+describe('unconfirmedFacetKeys', () => {
+  it('counts a facet with ai values and neither a human value nor a decision', () => {
+    expect(
+      unconfirmedFacetKeys(
+        [
+          { facet: 'mood', origin: 'ai' },
+          { facet: 'mood', origin: 'ai' },
+          { facet: 'style', origin: 'ai' },
+          { facet: 'theme', origin: 'human' },
+          { facet: 'density', origin: 'ai' },
+          { facet: 'density', origin: 'human' },
+        ],
+        ['style'],
+      ),
+    ).toEqual(['mood']);
+  });
+
+  it('never counts an empty facet, decided or not', () => {
+    expect(unconfirmedFacetKeys([], ['mood'])).toEqual([]);
   });
 });

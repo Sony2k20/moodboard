@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  afterRenderEffect,
   Component,
   DestroyRef,
   effect,
@@ -10,10 +11,13 @@ import {
   signal,
   untracked,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AssetCard } from '@moodboard/shared';
+import { Vocabulary } from '../assets/vocabulary';
+import { GridView } from './overview.store';
 
 /** Grid row unit and gap in px; must match `asset-grid.css`. */
 const ROW = 4;
@@ -25,8 +29,12 @@ const LOOKAHEAD_PX = 800;
 
 /**
  * Masonry look in reading order (0005): a CSS grid with small rows, each tile spanning as many as
- * its image is tall at the current column width. Tiles fill left to right, and an appended page
- * extends the grid instead of reshuffling it — unlike CSS columns, which fill top to bottom.
+ * it is tall. Tiles fill left to right, and an appended page extends the grid instead of
+ * reshuffling it — unlike CSS columns, which fill top to bottom.
+ *
+ * The height is measured, not computed from the image ratio (0012): in the "Facets" view a tile
+ * carries a list of chips under its image, and only the browser knows how tall that wraps. The
+ * image box itself keeps its aspect ratio before the thumbnail loads, so measuring never jumps.
  */
 @Component({
   selector: 'mb-asset-grid',
@@ -35,6 +43,8 @@ const LOOKAHEAD_PX = 800;
   styleUrl: './asset-grid.css',
 })
 export class AssetGrid {
+  protected readonly vocabulary = inject(Vocabulary);
+
   readonly items = input.required<readonly AssetCard[]>();
   readonly hasMore = input(false);
   /** The end of the grid came into view. */
@@ -43,12 +53,16 @@ export class AssetGrid {
   readonly selecting = input(false);
   readonly selected = input<ReadonlySet<string>>(new Set());
   readonly toggle = output<string>();
+  /** The asset open in the inspector (0012), highlighted in the grid. */
+  readonly current = input<string | null>(null);
+  readonly view = input<GridView>('images');
+  /** "Retry" on a failed website capture (0011). */
+  readonly retry = output<string>();
 
-  private readonly grid = viewChild.required<ElementRef<HTMLElement>>('grid');
-  private readonly sentinel =
-    viewChild.required<ElementRef<HTMLElement>>('sentinel');
-  protected readonly column = signal(240);
+  private readonly sentinel = viewChild.required<ElementRef<HTMLElement>>('sentinel');
+  private readonly tiles = viewChildren<ElementRef<HTMLElement>>('tile');
   private readonly nearEnd = signal(false);
+  protected readonly retrying = signal<ReadonlySet<string>>(new Set());
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -67,28 +81,39 @@ export class AssetGrid {
         );
       }
     });
-    afterNextRender(() => {
-      const grid = this.grid().nativeElement;
-      const resize = new ResizeObserver(() => {
-        const first = getComputedStyle(grid).gridTemplateColumns.split(' ')[0];
-        const width = parseFloat(first);
-        if (width > 0) {
-          this.column.set(width);
-        }
-      });
-      resize.observe(grid);
 
+    const span = (tile: HTMLElement) => {
+      const height = tile.getBoundingClientRect().height;
+      if (height > 0) {
+        tile.style.gridRowEnd = `span ${Math.ceil((height + GAP) / ROW)}`;
+      }
+    };
+    const resize =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver((entries) => {
+            for (const entry of entries) {
+              span(entry.target as HTMLElement);
+            }
+          });
+    // Observing a tile twice is a no-op, so every render can simply observe them all; a removed
+    // tile is dropped by the observer itself.
+    afterRenderEffect(() => {
+      for (const tile of this.tiles()) {
+        resize?.observe(tile.nativeElement);
+        span(tile.nativeElement);
+      }
+    });
+
+    afterNextRender(() => {
       const intersect = new IntersectionObserver(
         (entries) => this.nearEnd.set(entries.some((e) => e.isIntersecting)),
         { rootMargin: `${LOOKAHEAD_PX}px 0px` },
       );
       intersect.observe(this.sentinel().nativeElement);
-
-      destroyRef.onDestroy(() => {
-        resize.disconnect();
-        intersect.disconnect();
-      });
+      destroyRef.onDestroy(() => intersect.disconnect());
     });
+    destroyRef.onDestroy(() => resize?.disconnect());
   }
 
   /** RouterLink ignores `preventDefault`, so in multi-select the template drops the link instead. */
@@ -97,6 +122,11 @@ export class AssetGrid {
       event.preventDefault();
       this.toggle.emit(id);
     }
+  }
+
+  protected onRetry(id: string): void {
+    this.retrying.update((ids) => new Set([...ids, id]));
+    this.retry.emit(id);
   }
 
   protected ratio(item: AssetCard): number {
@@ -111,9 +141,5 @@ export class AssetGrid {
     } catch {
       return url;
     }
-  }
-
-  protected span(item: AssetCard): number {
-    return Math.ceil((this.column() * this.ratio(item) + GAP) / ROW);
   }
 }

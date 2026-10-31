@@ -80,14 +80,35 @@
     "author": "Autor",
     "allAuthors": "Alle Autoren",
     "tags": "Tags",
-    "remove": "Filter entfernen",
     "results": "{{ count }} Assets",
     "resultsOne": "1 Asset",
     "clear": "Alle Filter zurücksetzen",
     "empty": "Noch nichts hochgeladen. Bilder auf diese Seite ziehen, um anzufangen.",
     "noMatch": "Kein Asset passt zu diesen Filtern.",
     "invalid": "Dieser Link enthält einen Filter, den es nicht gibt.",
-    "failed": "Die Assets konnten nicht geladen werden. Bitte gleich noch einmal versuchen."
+    "failed": "Die Assets konnten nicht geladen werden. Bitte gleich noch einmal versuchen.",
+    "filters": "Filter",
+    "removeFilter": "Filter {{ filter }} entfernen",
+    "guesses": "Unbestätigte KI-Vermutungen: {{ count }}",
+    "view": {
+      "label": "Anzeigen",
+      "images": "Bilder",
+      "facets": "Facetten"
+    }
+  },
+  "inspector": {
+    "label": "Asset-Inspektor",
+    "openPage": "Seite öffnen",
+    "close": "Schließen",
+    "title": "Titel",
+    "guess": "KI-Vermutung",
+    "single": "Ein Wert",
+    "multi": "Mehrere Werte",
+    "run": "Prompt v{{ version }} · {{ model }}",
+    "guessesLeft": "Offene KI-Vermutungen: {{ count }}",
+    "confirmAll": "Alle bestätigen",
+    "confirmN": "Vermutungen bestätigen ({{ count }})",
+    "copyPrompt": "Prompt für Claude kopieren"
   },
   "detail": {
     "back": "Übersicht",
