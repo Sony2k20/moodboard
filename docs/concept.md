@@ -916,6 +916,7 @@ readable by Claude Code.
 - [x] Detail view: editable metadata, colours, capture technique — the detail page (0006,
   0011) and the inspector beside the grid (0012 release 1)
 - [x] Multi-select + bulk tagging
+- [ ] Review mode: confirm model guesses facet by facet from the keyboard — 0012 release 2
 
 **Internationalisation**
 - [x] Transloco setup, `en.json` and `de.json`, language switcher, `user.locale` persisted (§13)

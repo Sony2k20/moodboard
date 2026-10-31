@@ -1,6 +1,7 @@
 # 0012 — Browse and review: the overview with an inspector
 
-> Status: accepted — release 1 implemented, not yet deployed; release 2 waits on open question 1
+> Status: accepted — release 1 implemented in v0.10.0, rollout not yet recorded; release 2
+> (review mode) belongs to phase 1, decided 2026-10-31
 > Phase: 1
 > Created: 2026-10-31
 
@@ -138,10 +139,10 @@ values, and single-value facets accept one value, as in `0006`.
 
 ## Open questions
 
-1. **Review mode in phase 1?** It is not on the §11 list. Recommendation: yes, as release 2. It
-   adds no table and no endpoint beyond one query parameter. It is also the most direct lever on
-   the north star: more `human` facets, faster. The user decides. If not, release 2 moves to
-   phase 2 unchanged.
+1. **Review mode in phase 1 — decided 2026-10-31: yes, as release 2.** It adds no table and no
+   endpoint beyond one query parameter, and it is the most direct lever on the north star: more
+   `human` facets, faster. It goes ahead of `0011` release 3 (the scroll video), which helps
+   people look at a capture but adds nothing to the metadata. §11 lists it.
 2. **Is the counter the right metric?** It counts undecided facets that have `ai` values, not
    values. An alternative is a share ("5 of 8 confirmed"), which also counts facets that are empty
    and undecided. Decide once the first real numbers are visible in the grid.
