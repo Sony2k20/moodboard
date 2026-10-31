@@ -527,12 +527,15 @@ export class AssetSearchService {
       this.db
         .select({
           assetId: assetFiles.assetId,
+          kind: assetFiles.kind,
           path: assetFiles.path,
           width: assetFiles.width,
           height: assetFiles.height,
         })
         .from(assetFiles)
-        .where(and(inArray(assetFiles.assetId, ids), eq(assetFiles.kind, 'thumb_md'))),
+        .where(
+          and(inArray(assetFiles.assetId, ids), inArray(assetFiles.kind, ['thumb_md', 'capture'])),
+        ),
       this.db
         .select({
           assetId: assetFacetValues.assetId,
@@ -562,7 +565,8 @@ export class AssetSearchService {
         .where(inArray(assetFacetDecisions.assetId, ids)),
     ]);
 
-    const thumbBy = new Map(thumbs.map((t) => [t.assetId, t]));
+    const thumbBy = new Map(thumbs.filter((t) => t.kind === 'thumb_md').map((t) => [t.assetId, t]));
+    const videoIds = new Set(thumbs.filter((t) => t.kind === 'capture').map((t) => t.assetId));
     const classifiedIds = new Set(classified.map((c) => c.assetId));
     const group = <T extends { assetId: string }>(list: T[]) => {
       const map = new Map<string, T[]>();
@@ -595,6 +599,7 @@ export class AssetSearchService {
         thumbnail: thumb
           ? { url: this.storage.url(thumb.path), width: thumb.width, height: thumb.height }
           : null,
+        hasVideo: videoIds.has(row.id),
         facets: values,
         tags: (tagsBy.get(row.id) ?? []).map((t) => t.name),
         unconfirmedFacets: unconfirmedFacetKeys(

@@ -1,4 +1,5 @@
 import {
+  ByteRange,
   PutOptions,
   StorageService,
   StoredObject,
@@ -59,11 +60,11 @@ export class HostPathStorageService implements StorageService {
     return { path, bytes: stats.size, modifiedAt: stats.mtime };
   }
 
-  async get(path: string): Promise<AsyncIterable<Uint8Array>> {
+  async get(path: string, range?: ByteRange): Promise<AsyncIterable<Uint8Array>> {
     const target = this.toHostPath(path);
     // Fail here rather than mid-stream, so a caller sees a missing file as a rejected promise.
     await stat(target);
-    return createReadStream(target);
+    return createReadStream(target, range ? { start: range.start, end: range.end } : undefined);
   }
 
   async stat(path: string): Promise<StoredObject | null> {

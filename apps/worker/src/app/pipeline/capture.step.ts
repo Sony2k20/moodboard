@@ -10,7 +10,7 @@ import {
 import { UnrecoverableError } from 'bullmq';
 import { and, eq, inArray } from 'drizzle-orm';
 import sharp from 'sharp';
-import { CaptureError, WebsiteCapturer } from '../capture/website-capturer';
+import { CaptureError, VIEWPORT, WebsiteCapturer } from '../capture/website-capturer';
 import { DATABASE } from '../database.module';
 
 export const WEBSITE_CAPTURER = Symbol('WEBSITE_CAPTURER');
@@ -88,16 +88,29 @@ export class CaptureStep {
       });
     }
 
+    // The scroll video (release 3) is optional: a capture without one stores none and removes
+    // what an earlier attempt left, so the detail page never plays a different capture's video.
+    const videoPath = assetFilePath(assetId, 'capture');
+    if (result.video) {
+      const stored = await this.storage.put(videoPath, result.video, { mime: 'video/mp4' });
+      rows.push({
+        assetId,
+        kind: 'capture',
+        path: videoPath,
+        mime: 'video/mp4',
+        width: VIEWPORT.width,
+        height: VIEWPORT.height,
+        bytes: stored.bytes,
+      });
+    }
+
     await this.db.transaction(async (tx) => {
       await tx
         .delete(assetFiles)
         .where(
           and(
             eq(assetFiles.assetId, assetId),
-            inArray(
-              assetFiles.kind,
-              files.map((f) => f.kind),
-            ),
+            inArray(assetFiles.kind, [...files.map((f) => f.kind), 'capture' as const]),
           ),
         );
       await tx.insert(assetFiles).values(rows);
@@ -120,5 +133,8 @@ export class CaptureStep {
         .set({ statusReason: null, updatedAt: new Date() })
         .where(eq(assets.id, assetId));
     });
+    if (!result.video) {
+      await this.storage.delete(videoPath);
+    }
   }
 }

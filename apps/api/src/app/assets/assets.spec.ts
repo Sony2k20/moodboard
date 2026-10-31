@@ -3,11 +3,12 @@ import {
   NotFoundException,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+import { Writable } from 'node:stream';
 import { AssetSearchService } from './asset-search.service';
 import { AssetsController } from './assets.controller';
 import { AssetsService, titleFromFileName } from './assets.service';
-import { FilesController } from './files.controller';
+import { FilesController, parseRange } from './files.controller';
 
 const user = {
   id: 'u1',
@@ -111,6 +112,7 @@ describe('FilesController', () => {
   const storage = { stat: jest.fn(async () => null), get: jest.fn() };
   const controller = new FilesController(storage as never);
   const res = {} as Response;
+  const req = { headers: {} } as Request;
   const id = '11111111-2222-3333-4444-555555555555';
 
   beforeEach(() => storage.stat.mockClear());
@@ -123,7 +125,7 @@ describe('FilesController', () => {
   ])(
     'answers 404 for %s/%s without touching storage',
     async (assetId, file) => {
-      await expect(controller.file(assetId, file, res)).rejects.toBeInstanceOf(
+      await expect(controller.file(assetId, file, req, res)).rejects.toBeInstanceOf(
         NotFoundException,
       );
       expect(storage.stat).not.toHaveBeenCalled();
@@ -132,9 +134,70 @@ describe('FilesController', () => {
 
   it('answers 404 for a well-formed path that does not exist', async () => {
     await expect(
-      controller.file(id, 'thumb-sm.webp', res),
+      controller.file(id, 'thumb-sm.webp', req, res),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(storage.stat).toHaveBeenCalledWith(`${id}/thumb-sm.webp`);
+  });
+});
+
+describe('parseRange (0011)', () => {
+  it('reads the ranges a video player sends', () => {
+    expect(parseRange(undefined, 100)).toBeNull();
+    expect(parseRange('bytes=0-', 100)).toEqual({ start: 0, end: 99 });
+    expect(parseRange('bytes=10-19', 100)).toEqual({ start: 10, end: 19 });
+    expect(parseRange('bytes=90-500', 100)).toEqual({ start: 90, end: 99 });
+    expect(parseRange('bytes=-30', 100)).toEqual({ start: 70, end: 99 });
+  });
+
+  it('answers the whole file for what it does not understand, 416 for a range outside', () => {
+    expect(parseRange('bytes=0-1,5-6', 100)).toBeNull();
+    expect(parseRange('items=0-1', 100)).toBeNull();
+    expect(parseRange('bytes=100-', 100)).toBe('unsatisfiable');
+    expect(parseRange('bytes=20-10', 100)).toBe('unsatisfiable');
+  });
+
+  it('answers a range of the video with 206 and only those bytes', async () => {
+    const payload = Buffer.from('0123456789');
+    const storage = {
+      stat: async () => ({ path: 'p', bytes: payload.length, modifiedAt: new Date() }),
+      get: jest.fn(async (_: string, range?: { start: number; end: number }) => [
+        range ? payload.subarray(range.start, range.end + 1) : payload,
+      ]),
+    };
+    const chunks: Buffer[] = [];
+    const headers: Record<string, string> = {};
+    let status = 200;
+    const res = Object.assign(
+      new Writable({
+        write(chunk, _, done) {
+          chunks.push(Buffer.from(chunk));
+          done();
+        },
+      }),
+      {
+        setHeader: (name: string, value: string) => (headers[name] = value),
+        status(code: number) {
+          status = code;
+          return this;
+        },
+      },
+    );
+    const id = '11111111-2222-3333-4444-555555555555';
+    await new FilesController(storage as never).file(
+      id,
+      'capture.mp4',
+      { headers: { range: 'bytes=2-5' } } as Request,
+      res as unknown as Response,
+    );
+    expect(status).toBe(206);
+    expect(headers).toMatchObject({
+      'Content-Type': 'video/mp4',
+      'Content-Range': 'bytes 2-5/10',
+      'Content-Length': '4',
+      'Accept-Ranges': 'bytes',
+    });
+    expect(Buffer.concat(chunks).toString()).toBe('2345');
+    expect(storage.get).toHaveBeenCalledWith(`${id}/capture.mp4`, { start: 2, end: 5 });
   });
 });
 

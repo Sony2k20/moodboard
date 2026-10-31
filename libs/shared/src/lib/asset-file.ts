@@ -38,7 +38,7 @@ export type UserRole = z.infer<typeof UserRoleSchema>;
  * ```
  * <asset-id>/original.<ext>
  * <asset-id>/thumb-{sm,md,lg}.webp
- * <asset-id>/capture.webm
+ * <asset-id>/capture.mp4
  * <asset-id>/poster.webp
  * <asset-id>/frames/NN.webp
  * ```
@@ -66,7 +66,7 @@ export function assetFilePath(
     case 'thumb_lg':
       return `${assetId}/thumb-lg.webp`;
     case 'capture':
-      return `${assetId}/capture.webm`;
+      return `${assetId}/capture.mp4`;
     case 'poster':
       return `${assetId}/poster.webp`;
     case 'frame': {

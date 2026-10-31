@@ -96,6 +96,7 @@ export class AssetDetailPage {
     return {
       large: files.find((f) => f.kind === 'thumb_lg') ?? files.find((f) => f.kind === 'thumb_md'),
       original: files.find((f) => f.kind === 'original'),
+      video: files.find((f) => f.kind === 'capture'),
     };
   });
 

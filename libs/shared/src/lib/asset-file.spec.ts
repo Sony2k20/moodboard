@@ -8,7 +8,7 @@ describe('assetFilePath', () => {
       `${ASSET}/original.png`,
     );
     expect(assetFilePath(ASSET, 'thumb_md')).toBe(`${ASSET}/thumb-md.webp`);
-    expect(assetFilePath(ASSET, 'capture')).toBe(`${ASSET}/capture.webm`);
+    expect(assetFilePath(ASSET, 'capture')).toBe(`${ASSET}/capture.mp4`);
     expect(assetFilePath(ASSET, 'poster')).toBe(`${ASSET}/poster.webp`);
     expect(assetFilePath(ASSET, 'frame', { frameIndex: 7 })).toBe(
       `${ASSET}/frames/07.webp`,

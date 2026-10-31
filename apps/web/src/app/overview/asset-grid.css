@@ -40,6 +40,28 @@
 }
 
 /* The unconfirmed counter (0012): dashed, like the guesses it counts. */
+/* A website with its scroll video (0011 release 3). Bottom right, clear of the status badges. */
+.video {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+  font-size: 0.7rem;
+  transition: opacity 120ms;
+}
+
+/* The caption takes the bottom on hover; the badge steps aside. */
+.media:hover .video,
+.media:focus-visible .video {
+  opacity: 0;
+}
+
 .badge.guesses {
   left: auto;
   right: 0.5rem;

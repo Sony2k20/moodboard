@@ -9,7 +9,20 @@
 } @else if (asset.value(); as asset) {
 <article>
   <figure class="image">
-    @if (image().large; as large) {
+    @if (image().video; as video) {
+    <!-- The scroll video (0011 release 3): muted and looping, so it can play without asking. -->
+    <video
+      class="scroll-video"
+      [src]="video.url"
+      [poster]="image().large?.url ?? ''"
+      [attr.aria-label]="'detail.video' | transloco"
+      [muted]="true"
+      controls
+      loop
+      playsinline
+      preload="metadata"
+    ></video>
+    } @else if (image().large; as large) {
     <a [href]="image().original?.url ?? large.url" target="_blank" rel="noopener">
       <img [src]="large.url" [alt]="asset.title ?? ''" />
     </a>

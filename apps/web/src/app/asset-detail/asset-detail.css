@@ -21,11 +21,17 @@ article {
   margin: 0;
 }
 
-.image img {
+.image img,
+.scroll-video {
   display: block;
   max-width: 100%;
   max-height: 80vh;
   border-radius: 6px;
+}
+
+.scroll-video {
+  width: 100%;
+  background: #18181b;
 }
 
 .placeholder {

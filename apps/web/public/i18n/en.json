@@ -72,7 +72,8 @@
         "forbidden-target": "This address is not a public website, so it is not captured.",
         "unknown": "The capture failed."
       }
-    }
+    },
+    "video": "Scroll video"
   },
   "overview": {
     "search": "Search",
@@ -234,7 +235,8 @@
         "link": "Link",
         "card": "Card"
       }
-    }
+    },
+    "video": "Scroll video of the page"
   },
   "bulk": {
     "start": "Select",

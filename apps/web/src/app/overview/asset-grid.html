@@ -36,6 +36,12 @@
         <span aria-hidden="true">{{ item.unconfirmedFacets }}</span>
       </span>
       }
+      @if (item.hasVideo && !selecting()) {
+      <span class="video" [title]="'asset.video' | transloco">
+        <span aria-hidden="true">▶</span>
+        <span class="visually-hidden">{{ 'asset.video' | transloco }}</span>
+      </span>
+      }
       @if (!item.thumbnail && item.sourceUrl) {
       <span class="host">{{ host(item.sourceUrl) }}</span>
       }

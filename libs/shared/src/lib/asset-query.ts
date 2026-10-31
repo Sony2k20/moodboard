@@ -147,6 +147,8 @@ export interface AssetCard {
     readonly width: number | null;
     readonly height: number | null;
   } | null;
+  /** A website capture with its scroll video (0011 release 3), for the badge on the tile. */
+  readonly hasVideo: boolean;
   /** With origin, so a tile can show which values are a model's guess (0012). */
   readonly facets: readonly (FacetFilter & { readonly origin: Origin })[];
   readonly tags: readonly string[];

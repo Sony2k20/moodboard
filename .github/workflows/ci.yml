@@ -26,10 +26,13 @@ jobs:
 
       - run: npm ci
 
-      - name: Chromium for the capture tests
+      - name: Chromium and ffmpeg for the capture tests
         # The worker's capture tests drive a real browser against a local server (0011): the
-        # egress guard is only proven where Chromium actually makes the requests.
-        run: npx playwright install --with-deps chromium
+        # egress guard is only proven where Chromium actually makes the requests. ffmpeg, as in the
+        # worker image, so the scroll video is transcoded here rather than skipped.
+        run: |
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y --no-install-recommends ffmpeg
 
       - name: Lint, test, build
         run: npx nx run-many -t lint,test,build

@@ -34,6 +34,15 @@ describe('HostPathStorageService', () => {
     expect(await storage.stat(`${ASSET}/original.png`)).toBeNull();
   });
 
+  it('reads a byte range, both ends inclusive, for seeking a video (0011)', async () => {
+    await storage.put(`${ASSET}/capture.mp4`, new TextEncoder().encode('0123456789'));
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of await storage.get(`${ASSET}/capture.mp4`, { start: 2, end: 5 })) {
+      chunks.push(chunk);
+    }
+    expect(Buffer.concat(chunks).toString()).toBe('2345');
+  });
+
   it('deletes everything belonging to one asset', async () => {
     await storage.put(`${ASSET}/thumb-sm.webp`, new Uint8Array([1]));
     await storage.put(`${ASSET}/frames/01.webp`, new Uint8Array([1]));

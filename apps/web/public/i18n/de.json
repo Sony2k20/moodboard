@@ -72,7 +72,8 @@
         "forbidden-target": "Diese Adresse ist keine öffentliche Website und wird deshalb nicht erfasst.",
         "unknown": "Die Erfassung ist fehlgeschlagen."
       }
-    }
+    },
+    "video": "Scroll-Video"
   },
   "overview": {
     "search": "Suche",
@@ -234,7 +235,8 @@
         "link": "Link",
         "card": "Karte"
       }
-    }
+    },
+    "video": "Scroll-Video der Seite"
   },
   "bulk": {
     "start": "Auswählen",

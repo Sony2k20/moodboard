@@ -5,7 +5,8 @@
 # Chromium comes from `playwright install` on node:24-slim rather than from the Playwright base
 # image: that one pins its own Node version, and this one has to match the build stage (0011).
 # The full Chromium, not the headless shell — bot detection spots the shell more easily. ffmpeg
-# arrives with the scroll video, not before.
+# from Debian turns the scroll video into H.264 MP4 (0011 release 3); Playwright's own ffmpeg only
+# writes VP8.
 
 FROM node:24-slim AS build
 WORKDIR /src
@@ -30,6 +31,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 # is the one in package-lock.json, so the browser always matches the library driving it.
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN npx playwright install --with-deps chromium \
+    && apt-get install -y --no-install-recommends ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && chmod -R a+rX /ms-playwright
 

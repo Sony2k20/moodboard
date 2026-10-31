@@ -15,6 +15,12 @@ export interface StoredObject {
   readonly modifiedAt: Date;
 }
 
+/** A slice of an object, `start` and `end` both inclusive, as in HTTP `Range: bytes=start-end`. */
+export interface ByteRange {
+  readonly start: number;
+  readonly end: number;
+}
+
 export interface PutOptions {
   /** Content type to record or to set on the object, e.g. `image/webp`. */
   readonly mime?: string;
@@ -28,8 +34,12 @@ export interface StorageService {
     options?: PutOptions,
   ): Promise<StoredObject>;
 
-  /** Reads an object as a stream. Rejects when the path does not exist. */
-  get(path: string): Promise<AsyncIterable<Uint8Array>>;
+  /**
+   * Reads an object as a stream, or only the bytes `start` to `end`, both inclusive — what an
+   * HTTP `Range` request asks for, so a video can be seeked (0011). Rejects when the path does not
+   * exist.
+   */
+  get(path: string, range?: ByteRange): Promise<AsyncIterable<Uint8Array>>;
 
   /** Metadata without reading the payload. `null` when the path does not exist. */
   stat(path: string): Promise<StoredObject | null>;

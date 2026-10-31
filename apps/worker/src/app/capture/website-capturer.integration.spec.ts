@@ -1,6 +1,7 @@
 import { createServer, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
 import sharp from 'sharp';
+import { ffmpegAvailable } from './scroll-video';
 import { CaptureError, WebsiteCapturer } from './website-capturer';
 
 /**
@@ -40,9 +41,9 @@ describe('WebsiteCapturer', () => {
   let cssServer: Server;
   let base: string;
   let internalHits: string[];
-  const capturer = new WebsiteCapturer(async (host) =>
-    host === '127.0.0.1' ? host : 'forbidden',
-  );
+  const resolve = async (host: string) => (host === '127.0.0.1' ? host : 'forbidden');
+  // Everything but the video test runs without recording, which adds ~15 s per capture.
+  const capturer = new WebsiteCapturer(resolve, { video: false });
 
   beforeEach(() => {
     internalHits = [];
@@ -131,6 +132,20 @@ describe('WebsiteCapturer', () => {
       () => 'captured',
       (error: unknown) => (error instanceof CaptureError ? error.reason : String(error)),
     );
+
+  it('records the scroll as an H.264 MP4 when ffmpeg is there, and captures without it otherwise', async () => {
+    const result = await new WebsiteCapturer(resolve).capture(`${base}/consent-platform`);
+    expect(result.poster.byteLength).toBeGreaterThan(0);
+    if (!ffmpegAvailable()) {
+      expect(result.video).toBeNull();
+      return;
+    }
+    const video = result.video as Buffer;
+    // An MP4 starts with an `ftyp` box; +faststart puts `moov` before the media data.
+    expect(video.subarray(4, 8).toString('latin1')).toBe('ftyp');
+    expect(video.indexOf('moov')).toBeLessThan(video.indexOf('mdat'));
+    expect(video.indexOf('avc1')).toBeGreaterThan(0);
+  }, 120_000);
 
   it('takes a poster at DPR 2 and the full page at DPR 1', async () => {
     const result = await capturer.capture(`${base}/`);
