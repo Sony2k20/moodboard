@@ -1,6 +1,6 @@
 # 0014 — Vocabulary maintenance: project values
 
-> Status: accepted
+> Status: accepted — implemented, not yet released
 > Phase: 1
 > Created: 2026-10-31
 
@@ -82,7 +82,8 @@ client X" finds the key there rather than guessing it.
 
 - **A used value cannot be deleted** without reassigning its assets first, one bulk action per
   value.
-- **Deleting is permanent.** The value and its audit entry go; assets that had it never did.
+- **Deleting is permanent.** The value goes; its audit entries stay, with key and labels in
+  `diff`. Only an unused value can be deleted, so no asset loses anything.
 - **Two admins editing the same value:** the last save wins, as everywhere (`0006`).
 - **Labels are not checked for duplicates**, only keys are. Two values may read the same in one
   language.
@@ -105,3 +106,36 @@ once there are more than a handful.
 5. As a member, `/vocabulary` says it is for admins, and the api answers `403`.
 6. `audit_log` holds the create, the relabel and, after removing the assignment, the delete.
 7. MCP: `list_vocabulary` lists the value under `project`.
+
+## Decided during implementation
+
+1. **`CURATED_FACET_KEYS` in `@moodboard/shared`** names the facets admins maintain. The prompt
+   builds its facet list from the same constant, so a facet is either curated or classified,
+   never both.
+2. **Every write answers with the whole vocabulary.** The web replaces its cached copy with it, so
+   filter pills, the inspector and the bulk bar show a new value at once, without a reload.
+3. **Usage counts on the page come from the search's facet counts** — no new endpoint. They leave
+   out trashed assets; the delete check does not, and the page reports the conflict when only a
+   trashed asset still holds the value.
+4. **Errors are distinct:** an unknown facet or value is `404`, a classified facet `400`, a key
+   that exists or a value in use `409`, a member `403`.
+5. **The header wraps on a phone.** With the admin link it no longer fit in one line at 390 px.
+
+### Verified (before release)
+
+- **Api** (`vocabulary-admin.integration.spec.ts`, PGlite): values are added in order with both
+  labels and audited as `entity = 'facet_value'`; an existing key, a member, a classified and an
+  unknown facet are refused; relabelling keeps the key; a value held by a trashed asset cannot be
+  deleted, and can once that asset is purged; the seed run of the next deploy keeps admin values.
+- **Shared** (`vocabulary-admin.spec.ts`): the key proposal (umlauts, `ß`, punctuation) and the
+  schemas (key pattern, both labels, no key change in a patch).
+- **Against a stub api in Chromium** (1440 × 900, 390 × 844): typing "Client X Relaunch" proposes
+  `client-x-relaunch` and fills the German label; the value appears with 0 uses. Without a reload,
+  the overview shows a `project` pill and the inspector a `project` row; assigning the value
+  stores it as `human`, and `?facet=project:client-x-relaunch` finds the asset. Back on the page
+  it shows 1 use and its delete button is disabled; relabelling to "Client X GmbH" keeps the key;
+  after the assignment is removed it can be deleted. No horizontal scroll on a phone.
+- `nx run-many -t lint,test,build`: green for all projects.
+
+Not verified before release: Verification 5 (a member's view) in the browser — the stub only
+signs in an admin; the `403` is covered by the integration test.
