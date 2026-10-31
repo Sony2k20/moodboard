@@ -1,7 +1,7 @@
 # 0011 — Website capture
 
 > Status: accepted — release 1 of 3 deployed in v0.8.0 (2026-10-31); plan for 2 and 3 revised
-> the same day, see "Revised plan"; release 2 implemented, not yet deployed
+> the same day, see "Revised plan"; release 2 deployed in v0.9.0 (2026-10-31)
 > Phase: 1
 > Created: 2026-10-30
 
@@ -421,6 +421,38 @@ are the production check after the rollout.
 Not verified: a classification at prompt version 4 against the real model (no API key on the
 development machine), and captures of real sites with real banners. Both are the production
 check: Verification 1, 2 and 5, without the video.
+
+## Rollout (release 2)
+
+v0.9.0 on 2026-10-31. CI and publish green, migration `0013` applied, api, web and worker on
+0.9.0 without restarts.
+
+**Production check with https://gsap.com/** — Verification 1 without the video:
+
+- captured and classified at prompt version 4 for $0.064: 7,889 input tokens against about
+  5,900 for an upload, the difference being the technique context
+- `libraries`: GSAP and ScrollTrigger; `motion`: `scroll-reveal` and `hover-transform`
+- measured: the font (Mori), 9 transitions, 12 hover rules, 51 custom properties, colours and
+  radii (8px, 100px), element styles; the full record is about 8.5k characters, the model got
+  at most 4k
+- the description and the visual details use measured values (Mori, 100px pill radius, 8px
+  cards) instead of guessing them
+- the worker peaked at 218 MiB during the capture
+
+Seen on the way:
+
+- **No `@keyframes`**: gsap.com animates in JavaScript, which leaves no CSS animation to
+  find. Expected — "Movement without CSS traces" under Known limits.
+- **The `h1` is not the headline**: the visible 224px headline is not the page's `h1` (32px).
+  The extraction reports the element, not what looks like a heading.
+- **The card heuristic picked the gradient announcement bar**, not a card. The rule (own
+  background plus radius or shadow, between chip and section size) is loose; tighten it if
+  this repeats.
+- **The proxy refused `www.googletagmanager.com` and `static.cloudflareinsights.com`.** Both
+  are trackers, most likely answered with a sinkhole address by a DNS blocker in the network.
+  Refusing them is right; the capture is unaffected.
+
+Not yet checked in production: a OneTrust or Cookiebot banner (Verification 2).
 
 ## Rollout (release 1)
 
