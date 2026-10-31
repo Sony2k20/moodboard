@@ -1,6 +1,6 @@
 # 0012 — Browse and review: the overview with an inspector
 
-> Status: draft
+> Status: accepted — release 1 implemented, not yet deployed; release 2 waits on open question 1
 > Phase: 1
 > Created: 2026-10-31
 
@@ -173,3 +173,53 @@ values, and single-value facets accept one value, as in `0006`.
    5. When the queue is empty, the empty state shows and links back to the gallery.
 5. **MCP:** `search_assets` returns `unconfirmedFacets` per card. After "Confirm all" the asset
    from step 2 reports `0`.
+
+## Decided during implementation (release 1)
+
+1. **The card carries `origin` per facet value and `unconfirmedFacets`**, both additive. The
+   "Facets" view needs the origin to draw dashed chips without loading every detail.
+2. **"Undecided `ai` facet" has one definition**, `unconfirmedFacetKeys` in `@moodboard/shared`:
+   the facet holds an `ai` value, no `human` value and no decision row. The `human` value check
+   matches the guard from migration `0006`, which treats a human value as a decision too. The api
+   uses it for the cards, the web for an asset it has just edited, so the tile counter and the
+   inspector never disagree.
+3. **An edit in the inspector patches its tile in place** (`OverviewStore.patch`) from the
+   `AssetDetail` the write returns. The grid is not reloaded, so pages scrolled in stay. The facet
+   counts on the pills catch up with the next refresh.
+4. **"Confirm all" is one `PUT` per facet, one after the other.** Each is the ordinary facet edit
+   with its own decision row and audit entry. A failure part-way keeps what was saved, and the
+   panel shows that state.
+5. **`?asset=` is read by the overview, not by the search schema.** `AssetQuerySchema` stays strict
+   and shared with MCP. Changing only `asset` neither reloads the grid nor loses the scroll
+   position. A filter change keeps the inspector open.
+6. **The masonry measures tiles instead of computing them from the image ratio.** In the
+   "Facets" view a tile has chips under its image, and only the browser knows how they wrap. The
+   image box keeps its aspect ratio before the thumbnail loads, so nothing jumps.
+7. **The column count follows the grid's own width** (a container query: 5 above 1100 px, then 4,
+   3, 2). Beside the docked 380 px panel a 1440 px window gets four columns. Below 1100 px the
+   panel floats over the grid, and at phone width (≤ 720 px) it becomes a bottom sheet.
+8. **A pill opens its values under the pill row**, not as a popover, so the row can scroll
+   sideways on a phone without clipping what it opens. Escape or a click outside closes it.
+9. **The detail page `/assets/:id` is unchanged.** Tags, description, visual details and the
+   measured technique stay there. The inspector links to it ("Open page").
+
+### Verified (release 1)
+
+- **Against a stub api in Chromium** (1440 × 900, 1000 × 800, 390 × 844): five columns, four
+  with the inspector open, two on a phone, no horizontal scroll. Selecting a tile puts
+  `?asset=` into the URL, and a reload reopens it. Saving `mood` unchanged drops the tile
+  counter by one, and "Confirm all" removes it and every dashed chip. A filter pill sets
+  `facet=` and keeps `asset=`. Escape closes the values first, then the inspector. Below 1100 px
+  the panel floats, on a phone it is a bottom sheet with "Confirm guesses (N)" and "Copy prompt".
+  No console errors.
+- **Api** (`asset-search.integration.spec.ts`, PGlite): cards carry `origin` and
+  `unconfirmedFacets`, and a decision row lowers the count.
+- **Web** (`overview.store.spec.ts`): a filter change keeps `asset`, and a patched tile gets the
+  new counter. **Shared**: `unconfirmedFacetKeys`.
+- `nx run-many -t lint,test,build`: green, except the worker's capture integration test, which
+  cannot launch the browser in the development container (Playwright version mismatch, worker
+  code unchanged).
+
+Not verified: Verification 1.4 (re-classification by SQL), 2 (`audit_log` rows), 3's clipboard on
+a real phone and 5 (`search_assets` over MCP) need the deployed instance.
+
