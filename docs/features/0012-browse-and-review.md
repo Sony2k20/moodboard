@@ -1,7 +1,7 @@
 # 0012 — Browse and review: the overview with an inspector
 
 > Status: accepted — release 1 implemented in v0.10.0, rollout not yet recorded; release 2
-> (review mode) belongs to phase 1, decided 2026-10-31
+> (review mode) belongs to phase 1, decided 2026-10-31, implemented, not yet released
 > Phase: 1
 > Created: 2026-10-31
 
@@ -223,4 +223,48 @@ values, and single-value facets accept one value, as in `0006`.
 
 Not verified: Verification 1.4 (re-classification by SQL), 2 (`audit_log` rows), 3's clipboard on
 a real phone and 5 (`search_assets` over MCP) need the deployed instance.
+
+## Decided during implementation (release 2)
+
+1. **The queue is `GET /api/assets?review=1`**, a flag on the shared `AssetQuerySchema`. The
+   search's own `facet`, `q`, `tag` and `author` apply unchanged, the order turns to oldest first
+   and the cursor runs the other way. `search_assets` declares its own input and has no such
+   field, so the flag stays out of MCP, as decided above.
+2. **The SQL condition mirrors `unconfirmedFacetKeys`**: an `ai` value in a facet with no `human`
+   value and no decision row. Its tables are aliased, because the facet counts run it inside a
+   query that joins the same tables.
+3. **"Review N" counts with a second request** (`review=1&limit=1`, only its `total`) on every
+   load and refresh of the overview. It shows only when N is above zero. A count inside the main
+   search would have changed `AssetSearchResult`, which MCP shares.
+4. **Review mode is its own route, `/review`**, with the overview's filter parameters. "Back",
+   the end screen and `Esc` return to the gallery with the same filter. A reload starts the queue
+   afresh: confirmed assets have left it, skipped ones are back.
+5. **The current facet is the first undecided one in vocabulary order**; clicking another
+   undecided row makes it current. `1`–`9` cover the first nine values; the rest are a click.
+   `⇧⏎` saves the current facet with the chosen values and every other undecided facet with what
+   it holds. After the last facet the asset is marked done and stays on screen; `→` moves on.
+6. **A website shows its poster (the viewport) with a switch to the full page**, which scrolls
+   inside the stage. Uploads show `thumb_lg`.
+7. **On a phone** the stage shrinks to a third of the height and the key hints disappear, so the
+   current facet is in view without scrolling.
+
+### Verified (release 2)
+
+- **Api** (`asset-search.integration.spec.ts`, PGlite): the queue is oldest first, respects the
+  filter and pages forward by cursor; an asset leaves it once every guessed facet is decided or
+  holds a `human` value. The guard from migration `0006` refused the test's attempt to turn a
+  `human` value back into `ai`.
+- **Web** (`overview.store.spec.ts`): the overview asks for the queue size with the current filter.
+  **Shared**: the flag parses, refuses anything but `1`/`true` and round-trips.
+- **Against a stateful stub api in Chromium** (1440 × 900, 390 × 844): `mood: calm` shows
+  "Review 3". In review mode `2` adds a value, `⏎` saves the facet and makes the next one current,
+  `⇧⏎` saves the rest, and the stub received four `PUT …/facets/:facet` with the chosen values. `→`
+  moves on, and the filmstrip marks the first asset done. The full-page switch scrolls inside the
+  stage. `S` twice reaches the end screen ("1 confirmed, 2 skipped"); a reload brings back the two
+  skipped assets, and once they are confirmed it shows "Nothing left to review". `Esc` returns to
+  `/?facet=mood:calm`, where the button is gone. On a phone, tapping a value and "Confirm" saves
+  it. No horizontal scroll, no console errors.
+- `nx run-many -t lint,test,build`: green for all projects.
+
+Not verified: Verification 4 against real data, which needs the deployed instance.
 
