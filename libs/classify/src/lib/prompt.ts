@@ -5,7 +5,7 @@ import { ClassifyInput } from './classifier.port';
  * Bumped whenever this prompt or the vocabulary it renders changes. Every `analysis_run` records
  * it, which is what makes "re-classify everything below version N" possible (§5.5, §7.5).
  */
-export const PROMPT_VERSION = 4;
+export const PROMPT_VERSION = 5;
 
 /** `project` is curated by humans per client and never guessed by a model (analysis-result.schema). */
 const CLASSIFIED_FACETS = VOCABULARY.filter((facet) => facet.key !== 'project');
@@ -48,6 +48,11 @@ Guidelines:
 - design_notes: how it looks, for a designer who has to rebuild it without seeing it. Short, concrete, visual — one or two sentences per field, about 150 words in total. Name materials, textures, shadows and their direction, gradients, corner radii, shape language, how pictures are cropped and lit, how buttons, icons and cards are styled, the composition (splits, diagonals, overlaps, proportions). Do not repeat facet values or the description. Leave a field empty ("") when there is nothing worth noting.
 - free_tags: up to 10 short lowercase tags for what the facets cannot express (brand names, specific techniques, subject matter). Do not repeat facet values.
 - ocr_text: the legible text in the image, or null if there is none worth keeping.
+- facet_confidence: for every facet, how sure you are of it as a whole — the values you chose and the ones you left out — from 0 to 1. A person reviews the facets below 0.7, so be honest rather than uniform:
+  - 0.9 or more: plainly visible, any designer would agree.
+  - 0.7 to 0.9: likely; one value could be argued.
+  - 0.4 to 0.7: plausible but ambiguous, or a borderline value included or left out.
+  - below 0.4: a guess.
 - confidence: your overall confidence in this classification, from 0 to 1.`;
 
 /**

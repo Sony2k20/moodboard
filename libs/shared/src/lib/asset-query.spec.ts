@@ -1,4 +1,9 @@
-import { AssetQuerySchema, assetQueryParams, unconfirmedFacetKeys } from './asset-query';
+import {
+  AssetQuerySchema,
+  assetQueryParams,
+  uncertainFacetKeys,
+  unconfirmedFacetKeys,
+} from './asset-query';
 
 describe('AssetQuerySchema', () => {
   it('reads a query string key given once or several times', () => {
@@ -14,7 +19,7 @@ describe('AssetQuerySchema', () => {
   });
 
   it('defaults to an empty query with the default page size', () => {
-    expect(AssetQuerySchema.parse({})).toEqual({ facet: [], tag: [], review: false, limit: 60 });
+    expect(AssetQuerySchema.parse({})).toEqual({ facet: [], tag: [], review: 'off', limit: 60 });
   });
 
   it('treats an empty search as no search', () => {
@@ -38,7 +43,9 @@ describe('AssetQuerySchema', () => {
       tag: 'Dark-Mode',
       review: '1',
     });
-    expect(query.review).toBe(true);
+    expect(query.review).toBe('uncertain');
+    const all = AssetQuerySchema.parse({ review: 'all' });
+    expect(AssetQuerySchema.parse(assetQueryParams(all))).toEqual(all);
     expect(AssetQuerySchema.parse(assetQueryParams(query))).toEqual(query);
     expect(assetQueryParams(query)).not.toHaveProperty('limit');
   });
@@ -63,5 +70,34 @@ describe('unconfirmedFacetKeys', () => {
 
   it('never counts an empty facet, decided or not', () => {
     expect(unconfirmedFacetKeys([], ['mood'])).toEqual([]);
+  });
+});
+
+describe('uncertainFacetKeys (0013)', () => {
+  it('keeps the undecided facets below the threshold or of unknown confidence', () => {
+    expect(
+      uncertainFacetKeys(
+        [
+          { facet: 'mood', origin: 'ai', confidence: 0.5 },
+          { facet: 'theme', origin: 'ai', confidence: 0.95 },
+          { facet: 'layout', origin: 'ai', confidence: 0.7 },
+          { facet: 'finish', origin: 'ai', confidence: null },
+          { facet: 'style', origin: 'ai', confidence: 0.3 },
+          { facet: 'density', origin: 'human', confidence: null },
+        ],
+        ['style'],
+      ),
+    ).toEqual(['mood', 'finish']);
+  });
+
+  it('refuses a cursor rank on anything but digits', () => {
+    expect(
+      AssetQuerySchema.safeParse({ cursor: '412~1730000000000000~00000000-0000-4000-8000-000000000001' })
+        .success,
+    ).toBe(true);
+    expect(
+      AssetQuerySchema.safeParse({ cursor: '0.4~1730000000000000~00000000-0000-4000-8000-000000000001' })
+        .success,
+    ).toBe(false);
   });
 });

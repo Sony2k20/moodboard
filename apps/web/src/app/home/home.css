@@ -153,6 +153,12 @@ mb-filter-bar {
   text-decoration: none;
 }
 
+.review.quiet {
+  border-color: var(--line);
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
 .view {
   display: inline-flex;
   margin-left: auto;

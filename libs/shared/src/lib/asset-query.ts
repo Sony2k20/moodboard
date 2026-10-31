@@ -50,14 +50,26 @@ export const FacetFilterSchema = z
  * Keyset position: the creation time in microseconds since the epoch, and the id as tie-breaker.
  * Microseconds rather than an ISO string, because Postgres stores microseconds and a `Date` only
  * milliseconds — a cursor rounded to milliseconds skips or repeats assets created in the same one.
+ * The uncertain review queue sorts by confidence first, so its cursor leads with that rank (0013).
  */
-export const CURSOR_PATTERN = /^\d{1,20}~[0-9a-f-]{36}$/;
+export const CURSOR_PATTERN = /^(\d{1,4}~)?\d{1,20}~[0-9a-f-]{36}$/;
 
-/** A flag in the query string: absent is off, `1` or `true` is on, anything else is refused. */
-const flag = z.preprocess(
-  (value) =>
-    value === undefined ? false : value === '1' || value === 'true' ? true : value,
-  z.boolean(),
+/**
+ * Below this, a model's guess goes to review (0013). The api compares it as `real`, the column's
+ * own type, so the database and `uncertainFacetKeys` agree on a facet at exactly the threshold.
+ */
+export const REVIEW_CONFIDENCE_THRESHOLD = 0.7;
+
+/**
+ * The review queue (0012, 0013): `uncertain` holds assets with an undecided guess below the
+ * threshold, least confident first; `all` every undecided guess, oldest first.
+ */
+export type ReviewMode = 'off' | 'uncertain' | 'all';
+
+/** `?review=1` is the uncertain queue, `?review=all` every guess; absent is no queue at all. */
+const review = z.preprocess(
+  (value) => (value === undefined ? 'off' : value === '1' ? 'uncertain' : value),
+  z.enum(['off', 'uncertain', 'all']),
 );
 
 export const AssetQuerySchema = z
@@ -66,11 +78,8 @@ export const AssetQuerySchema = z
     q: optionalText(200),
     tag: many(z.string().trim().min(1).max(100), 20),
     author: z.uuid().optional(),
-    /**
-     * The review queue (0012): only assets with at least one undecided `ai` facet, oldest first.
-     * A curation tool for people — `search_assets` does not offer it.
-     */
-    review: flag,
+    /** The review queue (0012, 0013). A curation tool for people — `search_assets` does not offer it. */
+    review,
     cursor: z.string().regex(CURSOR_PATTERN, 'Invalid cursor').optional(),
     limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   })
@@ -95,8 +104,10 @@ export function assetQueryParams(
   if (query.author) {
     params['author'] = query.author;
   }
-  if (query.review) {
+  if (query.review === 'uncertain') {
     params['review'] = '1';
+  } else if (query.review === 'all') {
+    params['review'] = 'all';
   }
   if (query.cursor) {
     params['cursor'] = query.cursor;
@@ -164,6 +175,29 @@ export function unconfirmedFacetKeys(
     }
   }
   return keys;
+}
+
+/**
+ * The undecided facets a person should look at (0013): a model's guess below
+ * `REVIEW_CONFIDENCE_THRESHOLD`, or of unknown confidence. The rest of `unconfirmedFacetKeys` are
+ * confident guesses, left as they are. Mirrors the api's queue condition.
+ */
+export function uncertainFacetKeys(
+  values: readonly {
+    readonly facet: string;
+    readonly origin: Origin;
+    readonly confidence: number | null;
+  }[],
+  decidedFacets: readonly string[],
+): string[] {
+  return unconfirmedFacetKeys(values, decidedFacets).filter((facet) =>
+    values.some(
+      (v) =>
+        v.facet === facet &&
+        v.origin === 'ai' &&
+        (v.confidence === null || v.confidence < REVIEW_CONFIDENCE_THRESHOLD),
+    ),
+  );
 }
 
 export interface FacetValueCount {

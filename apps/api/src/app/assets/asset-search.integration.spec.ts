@@ -47,6 +47,8 @@ async function asset(input: {
   description?: string;
   status?: 'pending' | 'ready' | 'failed';
   deleted?: boolean;
+  /** Per facet, for the uncertain review queue (0013); 0.9 where not given. */
+  confidence?: Record<string, number | null>;
 }): Promise<string> {
   const createdAt = new Date(Date.UTC(2026, 9, 30, 12) - input.minutesAgo * 60_000);
   const [row] = await db
@@ -71,7 +73,12 @@ async function asset(input: {
       .where(and(eq(facets.key, facet), eq(facetValues.value, value)));
     await db
       .insert(assetFacetValues)
-      .values({ assetId: row.id, facetValueId: fv.id, origin: 'ai', confidence: 0.9 });
+      .values({
+        assetId: row.id,
+        facetValueId: fv.id,
+        origin: 'ai',
+        confidence: input.confidence && facet in input.confidence ? input.confidence[facet] : 0.9,
+      });
   }
   for (const name of input.tags ?? []) {
     await db.insert(tags).values({ name }).onConflictDoNothing();
@@ -271,22 +278,22 @@ describe('AssetSearchService.search', () => {
     await db.delete(assetFacetDecisions).where(eq(assetFacetDecisions.assetId, before.id));
   });
 
-  it('queues assets with an undecided ai facet, oldest first, within the filter (0012)', async () => {
-    expect(await titles({ review: '1' })).toEqual([
+  it('queues every asset with an undecided ai facet, oldest first, within the filter (0012)', async () => {
+    expect(await titles({ review: 'all' })).toEqual([
       'minimal light',
       'swiss dark',
       'swiss light',
       'editorial dark',
     ]);
-    expect(await titles({ review: '1', facet: 'theme:dark' })).toEqual([
+    expect(await titles({ review: 'all', facet: 'theme:dark' })).toEqual([
       'swiss dark',
       'editorial dark',
     ]);
 
-    const page = await search({ review: '1', limit: '2' });
+    const page = await search({ review: 'all', limit: '2' });
     expect(page.items.map((i) => i.title)).toEqual(['minimal light', 'swiss dark']);
     expect(page.total).toBe(4);
-    const next = await search({ review: '1', limit: '2', cursor: page.nextCursor });
+    const next = await search({ review: 'all', limit: '2', cursor: page.nextCursor });
     expect(next.items.map((i) => i.title)).toEqual(['swiss light', 'editorial dark']);
     expect(next.nextCursor).toBeNull();
   });
@@ -302,7 +309,7 @@ describe('AssetSearchService.search', () => {
 
     // Deciding one of two facets is not enough.
     await db.insert(assetFacetDecisions).values({ assetId: minimal.id, facetId: await id('style') });
-    expect(await titles({ review: '1' })).toContain('minimal light');
+    expect(await titles({ review: 'all' })).toContain('minimal light');
     await db.insert(assetFacetDecisions).values({ assetId: minimal.id, facetId: await id('theme') });
 
     // A person's value in a facet counts as deciding it, as in unconfirmedFacetKeys.
@@ -311,15 +318,15 @@ describe('AssetSearchService.search', () => {
       minutesAgo: 10,
       facets: ['style:swiss', 'theme:dark'],
     });
-    expect((await titles({ review: '1' }))[0]).toBe('corrected');
+    expect((await titles({ review: 'all' }))[0]).toBe('corrected');
     await db.insert(assetFacetDecisions).values({ assetId: corrected, facetId: await id('style') });
     await db
       .update(assetFacetValues)
       .set({ origin: 'human' })
       .where(eq(assetFacetValues.assetId, corrected));
 
-    expect(await titles({ review: '1' })).toEqual(['swiss dark', 'swiss light', 'editorial dark']);
-    const counts = (await search({ review: '1' })).counts.facets;
+    expect(await titles({ review: 'all' })).toEqual(['swiss dark', 'swiss light', 'editorial dark']);
+    const counts = (await search({ review: 'all' })).counts.facets;
     expect(counts).toContainEqual({ facet: 'style', value: 'swiss', count: 2 });
 
     await db.transaction(async (tx) => {
@@ -327,6 +334,62 @@ describe('AssetSearchService.search', () => {
       await tx.delete(assets).where(eq(assets.id, corrected));
     });
     await db.delete(assetFacetDecisions).where(eq(assetFacetDecisions.assetId, minimal.id));
+  });
+
+  it('queues only uncertain guesses, the least confident asset first (0013)', async () => {
+    const doubtful = await asset({
+      title: 'doubtful mood',
+      minutesAgo: 20,
+      facets: ['style:swiss', 'mood:calm'],
+      confidence: { mood: 0.45 },
+    });
+    const unknown = await asset({
+      title: 'unknown confidence',
+      minutesAgo: 30,
+      facets: ['style:swiss'],
+      confidence: { style: null },
+    });
+    const borderline = await asset({
+      title: 'at the threshold',
+      minutesAgo: 40,
+      facets: ['style:minimal', 'theme:dark'],
+      confidence: { style: 0.7, theme: 0.65 },
+    });
+    const ids = [doubtful, unknown, borderline];
+    try {
+      // The fixtures from beforeAll are all 0.9: confident, so not queued. A stored 0.7 is not
+      // below the threshold; 0.65 is.
+      expect(await titles({ review: '1' })).toEqual([
+        'unknown confidence',
+        'doubtful mood',
+        'at the threshold',
+      ]);
+
+      const page = await search({ review: '1', limit: '1' });
+      expect(page.nextCursor).toMatch(/^0~\d+~/);
+      const second = await search({ review: '1', limit: '1', cursor: page.nextCursor });
+      expect(second.items.map((i) => i.title)).toEqual(['doubtful mood']);
+      expect(second.nextCursor).toMatch(/^450~/);
+      const third = await search({ review: '1', limit: '1', cursor: second.nextCursor });
+      expect(third.items.map((i) => i.title)).toEqual(['at the threshold']);
+      expect(third.nextCursor).toBeNull();
+
+      // Deciding the doubtful facet takes the asset out, though its confident style is undecided.
+      const [mood] = await db.select({ id: facets.id }).from(facets).where(eq(facets.key, 'mood'));
+      await db.insert(assetFacetDecisions).values({ assetId: doubtful, facetId: mood.id });
+      expect(await titles({ review: '1' })).not.toContain('doubtful mood');
+      expect(await titles({ review: 'all' })).toContain('doubtful mood');
+    } finally {
+      await db.delete(assetFacetDecisions).where(inArray(assetFacetDecisions.assetId, ids));
+      await db.delete(assets).where(inArray(assets.id, ids));
+    }
+  });
+
+  it('refuses a cursor from another kind of query', async () => {
+    const page = await search({ review: 'all', limit: '1' });
+    await expect(
+      search({ review: '1', cursor: page.nextCursor }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
 

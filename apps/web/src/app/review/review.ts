@@ -17,6 +17,7 @@ import {
   AssetDetail,
   AssetQuery,
   AssetQuerySchema,
+  uncertainFacetKeys,
   unconfirmedFacetKeys,
   VocabularyFacet,
 } from '@moodboard/shared';
@@ -27,7 +28,12 @@ interface FacetRow {
   readonly facet: VocabularyFacet;
   readonly values: AssetDetail['facets'];
   readonly unconfirmed: boolean;
+  /** A step of this queue: uncertain, or in "all guesses" any unconfirmed facet (0013). */
+  readonly step: boolean;
 }
+
+/** `uncertain`: only what the model doubts (0013). `all`: every undecided guess, as in 0012. */
+export type QueueMode = 'uncertain' | 'all';
 
 /** What happened to an asset in this session. Never stored: a skipped asset comes back. */
 type Mark = 'done' | 'skipped';
@@ -37,10 +43,12 @@ const PAGE = 50;
 const AHEAD = 3;
 
 /**
- * Review mode (0012, release 2): the current filter's assets that still hold a model's guess,
- * oldest first, one at a time. Each facet is confirmed as a whole through the ordinary facet
- * write (0006), so a confirmation is a decision that survives every re-analysis (§5.6). Built for
- * the keyboard; every key has a button, so it also works by tapping.
+ * Review mode (0012, release 2): the current filter's assets that still hold a model's guess, one
+ * at a time. By default only the guesses the model is unsure about are steps, least confident
+ * asset first (0013); the confident ones sit in one line and can be opened. Each facet is
+ * confirmed as a whole through the ordinary facet write (0006), so a confirmation is a decision
+ * that survives every re-analysis (§5.6). Built for the keyboard; every key has a button, so it
+ * also works by tapping.
  */
 @Component({
   selector: 'mb-review',
@@ -56,6 +64,7 @@ export class ReviewPage {
 
   /** The filter the queue was opened with; "back" returns to the gallery with it. */
   protected readonly filter = signal<Record<string, string | string[]>>({});
+  protected readonly mode = signal<QueueMode>('uncertain');
   protected readonly queue = signal<readonly AssetCard[]>([]);
   protected readonly total = signal(0);
   private readonly nextCursor = signal<string | null>(null);
@@ -87,6 +96,7 @@ export class ReviewPage {
       return [];
     }
     const unconfirmed = new Set(unconfirmedFacetKeys(asset.facets, asset.decidedFacets));
+    const steps = new Set(this.stepKeys(asset));
     return this.vocabulary
       .facets()
       .filter((facet) => facet.values.length > 0)
@@ -94,10 +104,16 @@ export class ReviewPage {
         facet,
         values: asset.facets.filter((v) => v.facet === facet.key),
         unconfirmed: unconfirmed.has(facet.key),
+        step: steps.has(facet.key),
       }));
   });
 
-  protected readonly pending = computed(() => this.rows().filter((row) => row.unconfirmed));
+  /** The steps of this asset: what "Confirm all" saves, and what has to be done for ✓. */
+  protected readonly pending = computed(() => this.rows().filter((row) => row.step));
+  /** Unconfirmed, but sure enough not to be a step (0013): one line, each chip can be opened. */
+  protected readonly confident = computed(() =>
+    this.rows().filter((row) => row.unconfirmed && !row.step),
+  );
   /** Decided or a person's: collapsed into one line. Facets nobody filled are not listed. */
   protected readonly confirmed = computed(() => {
     const decided = this.asset.value()?.decidedFacets ?? [];
@@ -105,9 +121,17 @@ export class ReviewPage {
       (row) => !row.unconfirmed && (row.values.length > 0 || decided.includes(row.facet.key)),
     );
   });
+  /** A focused row (a step or an opened confident guess), else the first step. */
   protected readonly current = computed(() => {
-    const pending = this.pending();
-    return pending.find((row) => row.facet.key === this.focus()) ?? pending[0] ?? null;
+    const focused = this.rows().find(
+      (row) => row.unconfirmed && row.facet.key === this.focus(),
+    );
+    return focused ?? this.pending()[0] ?? null;
+  });
+  /** The steps, plus a confident guess while it is open, in vocabulary order. */
+  protected readonly shown = computed(() => {
+    const current = this.current();
+    return this.rows().filter((row) => row.step || row === current);
   });
 
   protected readonly image = computed(() => {
@@ -139,6 +163,7 @@ export class ReviewPage {
         raw[key] = values.length === 1 ? values[0] : values;
       }
       this.filter.set(raw);
+      this.mode.set(params.get('review') === 'all' ? 'all' : 'uncertain');
       void this.start(raw);
     });
     inject(DestroyRef).onDestroy(() => subscription.unsubscribe());
@@ -227,12 +252,13 @@ export class ReviewPage {
   }
 
   /**
-   * Saves every undecided facet: the current one with the chosen values, the others with the
-   * values they hold. One write per facet, as "Confirm all" in the inspector.
+   * Saves every step: the current one with the chosen values, the others with the values they
+   * hold. A confident guess is saved only while it is open — the rest stay `ai` (0013). One write
+   * per facet, as "Confirm all" in the inspector.
    */
   protected confirmAll(): Promise<void> {
-    const rows = this.pending();
     const current = this.current();
+    const rows = this.pending().concat(current && !current.step ? [current] : []);
     if (rows.length === 0) {
       return Promise.resolve();
     }
@@ -294,13 +320,22 @@ export class ReviewPage {
     return this.marks().get(card.id) ?? 'open';
   }
 
+  /** The link to this queue in the other mode, with the same filter. */
+  protected modeParams(mode: QueueMode): Record<string, string | string[]> {
+    return { ...this.filter(), review: mode === 'all' ? 'all' : '1' };
+  }
+
   /** The key that toggles an option, for the first nine. */
   protected key(position: number): string | null {
     return position < 9 ? String(position + 1) : null;
   }
 
   private async start(raw: Record<string, string | string[]>): Promise<void> {
-    const parsed = AssetQuerySchema.safeParse({ ...raw, review: '1', limit: String(PAGE) });
+    const parsed = AssetQuerySchema.safeParse({
+      ...raw,
+      review: this.mode() === 'all' ? 'all' : '1',
+      limit: String(PAGE),
+    });
     if (!parsed.success) {
       this.state.set('invalid');
       return;
@@ -381,9 +416,16 @@ export class ReviewPage {
       this.asset.value.set(updated);
       this.focus.set(null);
     }
-    if (unconfirmedFacetKeys(updated.facets, updated.decidedFacets).length === 0) {
+    if (this.stepKeys(updated).length === 0) {
       this.mark(updated.id, 'done');
     }
+  }
+
+  /** The facets this queue asks about — the same rule the api queues by. */
+  private stepKeys(asset: AssetDetail): string[] {
+    return this.mode() === 'all'
+      ? unconfirmedFacetKeys(asset.facets, asset.decidedFacets)
+      : uncertainFacetKeys(asset.facets, asset.decidedFacets);
   }
 
   private mark(id: string, mark: Mark): void {

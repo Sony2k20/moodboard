@@ -28,14 +28,19 @@ export const LLM_COST_LIMIT = Symbol('LLM_COST_LIMIT');
 /** Thrown when the month's budget is spent; the reconciler retries next month (§7.4). */
 export class CostLimitReachedError extends UnrecoverableError {}
 
-/** The facet rows a result implies: one per value, single-value facets as a one-element list. */
+/**
+ * The facet rows a result implies: one per value, single-value facets as a one-element list. Each
+ * carries its facet's confidence (0013), so review mode can tell a doubtful facet from a sure one.
+ */
 export function facetAssignments(
   result: AnalysisResult,
-): Array<{ facet: string; value: string }> {
+): Array<{ facet: string; value: string; confidence: number }> {
+  const confidence = result.facet_confidence as Record<string, number>;
   return Object.entries(result.facets).flatMap(([facet, value]) =>
     (Array.isArray(value) ? value : [value]).map((v) => ({
       facet,
       value: v as string,
+      confidence: confidence[facet],
     })),
   );
 }
@@ -169,15 +174,12 @@ export class ClassifyStep {
             eq(assetFacetValues.origin, 'ai'),
           ),
         );
-      const facetInserts = wanted
-        .map((w) => idOf.get(`${w.facet}:${w.value}`))
-        .filter((id): id is string => Boolean(id))
-        .map((facetValueId) => ({
-          assetId,
-          facetValueId,
-          origin: 'ai' as const,
-          confidence: result.confidence,
-        }));
+      const facetInserts = wanted.flatMap((w) => {
+        const facetValueId = idOf.get(`${w.facet}:${w.value}`);
+        return facetValueId
+          ? [{ assetId, facetValueId, origin: 'ai' as const, confidence: w.confidence }]
+          : [];
+      });
       if (facetInserts.length > 0) {
         await tx
           .insert(assetFacetValues)

@@ -12,7 +12,7 @@ import { z } from 'zod';
  * against it after the call, exactly as §7.2 describes for every adapter.
  *
  * What structured outputs does not support is removed from the grammar and enforced afterwards:
- * `maxItems` (free tags are cut to 10) and `minimum`/`maximum` (confidence is clamped).
+ * `maxItems` (free tags are cut to 10) and `minimum`/`maximum` (every confidence is clamped).
  */
 const UNSUPPORTED = ['maxItems', 'minimum', 'maximum', '$schema'];
 
@@ -42,6 +42,8 @@ export const OUTPUT_JSON_SCHEMA = strict(
   z.toJSONSchema(AnalysisResultSchema),
 ) as Record<string, unknown>;
 
+const clamp = (value: number) => Math.min(1, Math.max(0, value));
+
 /** Applies the limits the grammar cannot express, then validates against the contract. */
 export function parseAnalysisResult(json: unknown): AnalysisResult {
   if (json && typeof json === 'object') {
@@ -50,7 +52,15 @@ export function parseAnalysisResult(json: unknown): AnalysisResult {
       draft['free_tags'] = draft['free_tags'].slice(0, 10);
     }
     if (typeof draft['confidence'] === 'number') {
-      draft['confidence'] = Math.min(1, Math.max(0, draft['confidence']));
+      draft['confidence'] = clamp(draft['confidence']);
+    }
+    const perFacet = draft['facet_confidence'];
+    if (perFacet && typeof perFacet === 'object') {
+      for (const [key, value] of Object.entries(perFacet)) {
+        if (typeof value === 'number') {
+          (perFacet as Record<string, number>)[key] = clamp(value);
+        }
+      }
     }
   }
   return AnalysisResultSchema.parse(json);

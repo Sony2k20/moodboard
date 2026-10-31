@@ -95,7 +95,8 @@
       "images": "Bilder",
       "facets": "Facetten"
     },
-    "review": "Prüfen {{ count }}"
+    "review": "Prüfen {{ count }}",
+    "spotCheck": "Vermutungen stichprobenartig prüfen"
   },
   "inspector": {
     "label": "Asset-Inspektor",
@@ -142,7 +143,15 @@
       "done": "bestätigt",
       "skipped": "übersprungen",
       "open": "offen"
-    }
+    },
+    "modeLabel": "Warteschlange",
+    "mode": {
+      "uncertain": "Unsicher",
+      "all": "Alle Vermutungen"
+    },
+    "confident": "Sichere Vermutungen, bleiben wie sie sind: {{ count }}",
+    "assetDoneConfident": "An diesem Asset ist nichts mehr unsicher.",
+    "emptyUncertain": "Nichts Unsicheres mehr zu prüfen."
   },
   "detail": {
     "back": "Übersicht",

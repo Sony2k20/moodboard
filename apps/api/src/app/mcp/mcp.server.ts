@@ -134,7 +134,7 @@ export class McpServerFactory {
       {
         title: 'Get one design reference',
         description:
-          'One reference with all its metadata: facets with origin, description, visual details, palette, tags, and for a website the measured technique (captureTech). Also returns the image itself and a prompt for building a UI in its style.',
+          'One reference with all its metadata: facets with origin and confidence, description, visual details, palette, tags, and for a website the measured technique (captureTech). A facet value with origin "human" was set or confirmed by a person; with origin "ai" it is a model\'s guess, and confidence (0 to 1) is how sure the model was of that facet — treat a guess below 0.7 with care. Also returns the image itself and a prompt for building a UI in its style.',
         inputSchema: { id: z.uuid().describe('The asset id from search_assets') },
         annotations: { readOnlyHint: true },
       },

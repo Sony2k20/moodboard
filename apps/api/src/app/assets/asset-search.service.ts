@@ -25,6 +25,7 @@ import {
   FacetFilter,
   FacetValueCount,
   STORAGE_SERVICE,
+  REVIEW_CONFIDENCE_THRESHOLD,
   StorageService,
   TrashItem,
   unconfirmedFacetKeys,
@@ -107,9 +108,16 @@ export class AssetSearchService {
     const groups = await this.resolveFacets(query.facet);
     const where = (except: Except = null) => this.conditions(query, groups, except);
 
-    // The review queue is worked through front to back, so it runs oldest first (0012).
+    // A review queue is worked through front to back, so it runs oldest first (0012); the
+    // uncertain one puts the least confident asset first (0013), so its cursor carries that rank.
+    const ranked = query.review === 'uncertain';
     const cursor = query.cursor?.split('~');
-    const order = query.review ? asc : desc;
+    if (cursor && cursor.length !== (ranked ? 3 : 2)) {
+      throw new BadRequestException('This cursor belongs to another kind of query');
+    }
+    const [rankAfter, microsAfter, idAfter] = ranked ? cursor ?? [] : [undefined, ...(cursor ?? [])];
+    const rank = ranked ? this.uncertainRank() : sql`0`;
+    const order = query.review === 'off' ? desc : asc;
     const page = await this.db
       .select({
         id: assets.id,
@@ -120,6 +128,7 @@ export class AssetSearchService {
         sourceUrl: assets.sourceUrl,
         createdAt: assets.createdAt,
         micros: sql<string>`(extract(epoch from ${assets.createdAt}) * 1000000)::bigint::text`,
+        rank: sql<number>`${rank}`.mapWith(Number),
         authorId: users.id,
         authorName: users.displayName,
       })
@@ -128,12 +137,18 @@ export class AssetSearchService {
       .where(
         and(
           ...where(),
-          cursor
-            ? sql`(${assets.createdAt}, ${assets.id}) ${sql.raw(query.review ? '>' : '<')} ('epoch'::timestamptz + ${cursor[0]}::bigint * interval '1 microsecond', ${cursor[1]}::uuid)`
-            : undefined,
+          microsAfter === undefined
+            ? undefined
+            : ranked
+              ? sql`(${rank}, ${assets.createdAt}, ${assets.id}) > (${rankAfter}::int, 'epoch'::timestamptz + ${microsAfter}::bigint * interval '1 microsecond', ${idAfter}::uuid)`
+              : sql`(${assets.createdAt}, ${assets.id}) ${sql.raw(query.review === 'off' ? '<' : '>')} ('epoch'::timestamptz + ${microsAfter}::bigint * interval '1 microsecond', ${idAfter}::uuid)`,
         ),
       )
-      .orderBy(order(assets.createdAt), order(assets.id))
+      .orderBy(
+        ...(ranked ? [asc(rank)] : []),
+        order(assets.createdAt),
+        order(assets.id),
+      )
       .limit(query.limit + 1);
 
     const hasMore = page.length > query.limit;
@@ -149,7 +164,10 @@ export class AssetSearchService {
 
     return {
       items,
-      nextCursor: hasMore && last ? `${last.micros}~${last.id}` : null,
+      nextCursor:
+        hasMore && last
+          ? `${ranked ? `${last.rank}~` : ''}${last.micros}~${last.id}`
+          : null,
       total,
       counts: { facets: facetCounts, authors },
     };
@@ -381,18 +399,34 @@ export class AssetSearchService {
       conditions.push(eq(assets.createdBy, query.author));
     }
 
-    if (query.review) {
-      conditions.push(this.hasUnconfirmedFacet());
+    if (query.review !== 'off') {
+      conditions.push(
+        sql`exists (select 1 ${this.undecidedGuesses(query.review === 'uncertain')})`,
+      );
     }
     return conditions;
   }
 
   /**
-   * The asset holds an `ai` value in a facet that has no `human` value and no decision row — the
-   * SQL form of `unconfirmedFacetKeys` (0012), so the queue and the tile counter agree. Aliased
-   * throughout: the facet counts run this inside a query that joins the same tables.
+   * How doubtful the asset's most doubtful facet is (0013): its lowest confidence in thousandths,
+   * an unknown confidence counting as 0. An integer, so it goes into the cursor as it is; rounded,
+   * because `real` stores 0.45 as 0.4499….
    */
-  private hasUnconfirmedFacet(): SQL {
+  private uncertainRank(): SQL {
+    const guess = alias(assetFacetValues, 'review_guess');
+    return sql`(select round(min(coalesce(${guess.confidence}, 0)) * 1000)::int
+      ${this.undecidedGuesses(true)})`;
+  }
+
+  /**
+   * `from … where …` over the asset's `ai` values in facets with no `human` value and no decision
+   * row — the SQL form of `unconfirmedFacetKeys` (0012), so the queue and the tile counter agree.
+   * `uncertainOnly` keeps those below the review threshold or of unknown confidence, as
+   * `uncertainFacetKeys` does (0013); the threshold is cast to `real`, the column's type, so a
+   * stored 0.7 is not below it. Aliased throughout: the facet counts run this inside a query that
+   * joins the same tables.
+   */
+  private undecidedGuesses(uncertainOnly: boolean): SQL {
     const guess = alias(assetFacetValues, 'review_guess');
     const guessValue = alias(facetValues, 'review_guess_value');
     const person = alias(assetFacetValues, 'review_person');
@@ -400,12 +434,17 @@ export class AssetSearchService {
     const decision = alias(assetFacetDecisions, 'review_decision');
     // An alias in a `sql` template renders as its name only; the `from` needs the table too.
     const from = (table: PgTable, name: string) => sql`${table} as ${sql.identifier(name)}`;
-    return sql`exists (
-      select 1 from ${from(assetFacetValues, 'review_guess')}
+    return sql`from ${from(assetFacetValues, 'review_guess')}
       inner join ${from(facetValues, 'review_guess_value')}
         on ${guessValue.id} = ${guess.facetValueId}
       where ${guess.assetId} = ${assets.id}
         and ${guess.origin} = 'ai'
+        ${
+          uncertainOnly
+            ? sql`and (${guess.confidence} is null
+                or ${guess.confidence} < ${REVIEW_CONFIDENCE_THRESHOLD}::real)`
+            : sql``
+        }
         and not exists (
           select 1 from ${from(assetFacetDecisions, 'review_decision')}
           where ${decision.assetId} = ${assets.id} and ${decision.facetId} = ${guessValue.facetId})
@@ -415,7 +454,7 @@ export class AssetSearchService {
             on ${personValue.id} = ${person.facetValueId}
           where ${person.assetId} = ${assets.id}
             and ${person.origin} = 'human'
-            and ${personValue.facetId} = ${guessValue.facetId}))`;
+            and ${personValue.facetId} = ${guessValue.facetId})`;
   }
 
   private hasTag(name: string): SQL {

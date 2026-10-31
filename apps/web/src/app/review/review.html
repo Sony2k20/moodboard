@@ -6,6 +6,18 @@
     {{ 'review.position' | transloco: { index: index() + 1, total: total() } }}
   </span>
   }
+  <nav class="queue-mode" [attr.aria-label]="'review.modeLabel' | transloco">
+    <a
+      routerLink="/review"
+      [queryParams]="modeParams('uncertain')"
+      [attr.aria-current]="mode() === 'uncertain' ? 'page' : null"
+    >{{ 'review.mode.uncertain' | transloco }}</a>
+    <a
+      routerLink="/review"
+      [queryParams]="modeParams('all')"
+      [attr.aria-current]="mode() === 'all' ? 'page' : null"
+    >{{ 'review.mode.all' | transloco }}</a>
+  </nav>
   <p class="keys" aria-hidden="true">
     <span><kbd>1</kbd>–<kbd>9</kbd> {{ 'review.keys.toggle' | transloco }}</span>
     <span><kbd>⏎</kbd> {{ 'review.keys.confirm' | transloco }}</span>
@@ -57,7 +69,7 @@
     } @else if (!asset.value() || asset.value()?.id !== card.id) {
     <p class="note">…</p>
     } @else {
-    @for (row of pending(); track row.facet.key) {
+    @for (row of shown(); track row.facet.key) {
     @if (row === current()) {
     <form class="facet current" (submit)="$event.preventDefault(); confirm()">
       <p class="facet-head">
@@ -100,13 +112,35 @@
     </button>
     } }
 
-    @if (pending().length === 0) {
+    @if (!current()) {
     <p class="all-done" role="status">
-      {{ 'review.assetDone' | transloco }}
+      {{ (confident().length > 0 ? 'review.assetDoneConfident' : 'review.assetDone') | transloco: { count: confident().length } }}
       <button type="button" class="primary" (click)="next()">
         {{ 'review.nextAsset' | transloco }} <kbd>→</kbd>
       </button>
     </p>
+    }
+
+    @if (confident().length > 0) {
+    <div class="confident">
+      <p class="confident-head">{{ 'review.confident' | transloco: { count: confident().length } }}</p>
+      <p class="values">
+        @for (row of confident(); track row.facet.key) {
+        @if (row !== current()) {
+        <button
+          type="button"
+          class="confident-facet"
+          [title]="vocabulary.text(row.facet.label)"
+          (click)="pick(row)"
+        >
+          <span class="label">{{ vocabulary.text(row.facet.label) }}</span>
+          @for (value of row.values; track value.value) {
+          <span class="origin-chip" data-origin="ai">{{ vocabulary.valueLabel(row.facet.key, value.value) }}</span>
+          }
+        </button>
+        } }
+      </p>
+    </div>
     }
 
     @if (confirmed().length > 0) {
@@ -144,7 +178,10 @@
 } @else {
 <div class="end" role="status">
   @if (queue().length === 0) {
-  <p>{{ 'review.empty' | transloco }}</p>
+  <p>{{ (mode() === 'uncertain' ? 'review.emptyUncertain' : 'review.empty') | transloco }}</p>
+  @if (mode() === 'uncertain') {
+  <a routerLink="/review" [queryParams]="modeParams('all')">{{ 'review.mode.all' | transloco }}</a>
+  }
   } @else {
   <p>{{ 'review.end' | transloco: { done: doneCount(), skipped: skippedCount() } }}</p>
   <button type="button" (click)="previous()"><kbd>←</kbd> {{ 'review.previous' | transloco }}</button>

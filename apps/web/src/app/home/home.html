@@ -61,6 +61,11 @@
       <a class="review" routerLink="/review" [queryParams]="store.filterParams()">
         {{ 'overview.review' | transloco: { count: store.reviewCount() } }}
       </a>
+      } @else if (store.hasGuesses()) {
+      <!-- Nothing uncertain, but confident guesses are left: the way to spot-check them (0013). -->
+      <a class="review quiet" routerLink="/review" [queryParams]="store.spotCheckParams()">
+        {{ 'overview.spotCheck' | transloco }}
+      </a>
       }
       <div class="view" role="group" [attr.aria-label]="'overview.view.label' | transloco">
         <button

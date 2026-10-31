@@ -56,6 +56,23 @@ export const DesignNotesSchema = z.object({
 });
 export type DesignNotes = z.infer<typeof DesignNotesSchema>;
 
+const FacetsSchema = z.object({
+  type: TypeEnum,
+  ui_pattern: z.array(UiPatternEnum),
+  style: z.array(StyleEnum),
+  mood: z.array(MoodEnum),
+  theme: ThemeEnum,
+  density: DensityEnum,
+  typography: z.array(TypographyEnum),
+  layout: z.array(LayoutEnum),
+  motion: z.array(MotionEnum),
+  industry: z.array(IndustryEnum),
+  imagery: z.array(ImageryEnum),
+  finish: z.array(FinishEnum),
+});
+
+const ConfidenceSchema = z.number().min(0).max(1);
+
 export const AnalysisResultSchema = z.object({
   title: z
     .string()
@@ -63,20 +80,16 @@ export const AnalysisResultSchema = z.object({
   description: z
     .string()
     .describe('2-4 sentences, factual, English, for full-text search'),
-  facets: z.object({
-    type: TypeEnum,
-    ui_pattern: z.array(UiPatternEnum),
-    style: z.array(StyleEnum),
-    mood: z.array(MoodEnum),
-    theme: ThemeEnum,
-    density: DensityEnum,
-    typography: z.array(TypographyEnum),
-    layout: z.array(LayoutEnum),
-    motion: z.array(MotionEnum),
-    industry: z.array(IndustryEnum),
-    imagery: z.array(ImageryEnum),
-    finish: z.array(FinishEnum),
-  }),
+  facets: FacetsSchema,
+  /**
+   * How sure the model is of each facet as a whole — the values chosen and the ones left out
+   * (0013). Review mode queues only the facets below `REVIEW_CONFIDENCE_THRESHOLD`.
+   */
+  facet_confidence: z.object(
+    Object.fromEntries(
+      Object.keys(FacetsSchema.shape).map((key) => [key, ConfidenceSchema]),
+    ) as { [K in keyof typeof FacetsSchema.shape]: typeof ConfidenceSchema },
+  ),
   design_notes: DesignNotesSchema,
   free_tags: z.array(z.string()).max(10),
   ocr_text: z.string().nullable(),

@@ -27,6 +27,27 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* "Uncertain | All guesses" (0013): which queue this is. */
+.queue-mode {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.queue-mode a {
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.queue-mode a[aria-current='page'] {
+  background: var(--ink);
+  color: var(--surface);
+}
+
 .keys {
   display: flex;
   flex-wrap: wrap;
@@ -273,6 +294,46 @@ button:disabled {
   padding: 0.75rem;
   border-radius: 10px;
   background: var(--wash);
+}
+
+/* Confident guesses (0013): left as they are, one click away from being corrected. */
+.confident {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.confident-head {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.confident .values {
+  margin: 0;
+}
+
+.confident-facet {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.2rem 0.4rem;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.confident-facet:hover {
+  background: var(--wash);
+}
+
+.confident-facet .label {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .confirmed summary {

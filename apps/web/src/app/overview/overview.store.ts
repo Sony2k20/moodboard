@@ -52,7 +52,7 @@ export class OverviewStore {
     authors: [],
   });
   readonly nextCursor = signal<string | null>(null);
-  /** How many matching assets the review queue holds (0012), for "Review N". */
+  /** How many matching assets have an uncertain guess (0012, 0013), for "Review N". */
   readonly reviewCount = signal(0);
   readonly loading = signal(false);
   readonly error = signal<'invalid' | 'failed' | null>(null);
@@ -70,6 +70,12 @@ export class OverviewStore {
   readonly filterParams = computed(() =>
     assetQueryParams({ ...this.query(), cursor: undefined, limit: undefined }),
   );
+
+  /** The "All guesses" queue for the current filter, for spot checks (0013). */
+  readonly spotCheckParams = computed(() => ({ ...this.filterParams(), review: 'all' }));
+
+  /** A loaded tile still holds a model's guess nobody has decided. */
+  readonly hasGuesses = computed(() => this.items().some((item) => item.unconfirmedFacets > 0));
 
   readonly hasFilters = computed(() => {
     const q = this.query();
@@ -336,7 +342,7 @@ export class OverviewStore {
   /** The size of the review queue for the current filter; one card is enough to get the total. */
   private async countReview(generation: number): Promise<void> {
     try {
-      const { total } = await this.api.search({ ...this.query(), review: true, limit: 1 });
+      const { total } = await this.api.search({ ...this.query(), review: 'uncertain', limit: 1 });
       if (generation === this.generation) {
         this.reviewCount.set(total);
       }

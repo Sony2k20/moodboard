@@ -166,7 +166,7 @@ describe('AssetsController.search', () => {
       ],
       q: 'warm',
       tag: [],
-      review: false,
+      review: 'off',
       limit: 20,
     });
   });

@@ -95,7 +95,8 @@
       "images": "Images",
       "facets": "Facets"
     },
-    "review": "Review {{ count }}"
+    "review": "Review {{ count }}",
+    "spotCheck": "Spot-check guesses"
   },
   "inspector": {
     "label": "Asset inspector",
@@ -142,7 +143,15 @@
       "done": "confirmed",
       "skipped": "skipped",
       "open": "open"
-    }
+    },
+    "modeLabel": "Queue",
+    "mode": {
+      "uncertain": "Uncertain",
+      "all": "All guesses"
+    },
+    "confident": "Confident guesses, left as they are: {{ count }}",
+    "assetDoneConfident": "Nothing uncertain left on this asset.",
+    "emptyUncertain": "Nothing uncertain left to review."
   },
   "detail": {
     "back": "Overview",
