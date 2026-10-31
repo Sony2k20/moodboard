@@ -8,6 +8,7 @@ import {
   assets,
   assetSearch,
   assetTags,
+  captureTech,
   Database,
   facets,
   facetValues,
@@ -20,6 +21,7 @@ import {
   AssetQuery,
   AssetSearchResult,
   AuthorCount,
+  EMPTY_CSS_TECHNIQUE,
   FacetFilter,
   FacetValueCount,
   STORAGE_SERVICE,
@@ -175,7 +177,7 @@ export class AssetSearchService {
       return null;
     }
 
-    const [files, facetRows, tagRows, colors, [run], decisions] = await Promise.all([
+    const [files, facetRows, tagRows, colors, [run], decisions, [tech]] = await Promise.all([
       this.db
         .select({
           kind: assetFiles.kind,
@@ -227,6 +229,7 @@ export class AssetSearchService {
         .innerJoin(facets, eq(facets.id, assetFacetDecisions.facetId))
         .where(eq(assetFacetDecisions.assetId, id))
         .orderBy(asc(facets.sortOrder)),
+      this.db.select().from(captureTech).where(eq(captureTech.assetId, id)).limit(1),
     ]);
 
     return {
@@ -252,6 +255,18 @@ export class AssetSearchService {
         ? { ...run, createdAt: run.createdAt.toISOString() }
         : null,
       decidedFacets: decisions.map((d) => d.facet),
+      captureTech: tech
+        ? {
+            fonts: tech.fonts,
+            libraries: tech.libraries,
+            css: { ...EMPTY_CSS_TECHNIQUE, ...tech.cssProperties },
+            tokens: tech.tokens,
+            elements: tech.elements,
+            pageTitle: tech.pageTitle,
+            viewport: tech.viewport,
+            capturedAt: tech.capturedAt.toISOString(),
+          }
+        : null,
     };
   }
 

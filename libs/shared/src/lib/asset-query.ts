@@ -3,6 +3,7 @@ import { LocalizedText } from './localized-text';
 import { AssetStatus, Origin } from './asset-file';
 import { DesignNotes } from './analysis-result.schema';
 import { CaptureFailure } from './capture';
+import { CaptureTechRecord } from './capture-technique';
 
 /**
  * The one search query (0005). The web overview parses its URL into this schema, `GET
@@ -194,6 +195,8 @@ export interface AssetDetail {
    * show. A re-analysis does not change these.
    */
   readonly decidedFacets: readonly string[];
+  /** What the capture measured on a website's live page (0011); `null` for uploads. */
+  readonly captureTech: CaptureTechRecord | null;
 }
 
 /** `GET /api/vocabulary`, and later `list_vocabulary`. Ordered by `sort_order`. */

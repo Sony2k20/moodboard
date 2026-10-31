@@ -1,3 +1,4 @@
+import { CssTechnique, DesignTokens, ElementStyles } from '@moodboard/shared';
 import { sql } from 'drizzle-orm';
 import {
   customType,
@@ -54,9 +55,9 @@ export const captureTech = pgTable('capture_tech', {
     .references(() => assets.id, { onDelete: 'cascade' }),
   /** `font-family` values actually in use. */
   fonts: jsonb('fonts').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
-  /** Transition, animation and transform properties found on visible elements. */
+  /** Transition, animation, transform and `:hover` values, counted (0011). */
   cssProperties: jsonb('css_properties')
-    .$type<Record<string, unknown>>()
+    .$type<Partial<CssTechnique>>()
     .notNull()
     .default(sql`'{}'::jsonb`),
   /** Detected library signatures: GSAP, ScrollTrigger, Lenis, AOS, Framer Motion, … */
@@ -64,6 +65,12 @@ export const captureTech = pgTable('capture_tech', {
     .$type<string[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  /** `:root` custom properties and counted colours, radii, shadows, font sizes (0011 release 2). */
+  tokens: jsonb('tokens').$type<DesignTokens>(),
+  /** Computed styles of representative elements: headings, body text, button, link, card. */
+  elements: jsonb('elements').$type<ElementStyles>(),
+  /** The page's `<title>` at capture time; the asset's own title is the model's or a person's. */
+  pageTitle: text('page_title'),
   /** The viewport the capture ran at, e.g. `1440x900@2`. */
   viewport: text('viewport').notNull(),
   capturedAt: tstz('captured_at').notNull().defaultNow(),

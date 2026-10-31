@@ -55,6 +55,7 @@ const asset = (change: Partial<AssetDetail> = {}): AssetDetail => ({
   decidedFacets: [],
   designNotes: null,
   designNotesOrigin: 'ai',
+  captureTech: null,
   ...change,
 });
 
@@ -156,5 +157,68 @@ describe('buildPrompt', () => {
     expect(prompt).not.toContain('photographs');
     expect(prompt).not.toContain('flatten');
     expect(prompt).not.toContain('Visual details');
+  });
+
+  it('adds what the capture measured, and the rule to use it exactly', () => {
+    const prompt = buildPrompt(
+      asset({
+        type: 'website',
+        captureTech: {
+          fonts: ['Inter', 'Editorial New'],
+          libraries: ['GSAP', 'ScrollTrigger'],
+          css: {
+            transition: [
+              {
+                value: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0s',
+                count: 12,
+              },
+            ],
+            animation: [],
+            transform: [],
+            hover: [{ value: 'transform: translateY(-4px)', count: 3 }],
+            keyframes: [],
+          },
+          tokens: {
+            customProperties: [{ name: '--accent', value: '#ff4f00' }],
+            colors: [{ value: 'rgb(17, 17, 17)', count: 40 }],
+            radii: [{ value: '999px', count: 6 }],
+            shadows: [],
+            fontSizes: [],
+          },
+          elements: {
+            button: {
+              fontFamily: 'Inter',
+              fontSize: '16px',
+              lineHeight: '24px',
+              fontWeight: '600',
+              borderRadius: '999px',
+              boxShadow: 'rgba(0, 0, 0, 0.2) 0px 8px 24px 0px',
+            },
+          },
+          pageTitle: 'Studio',
+          viewport: '1440x900@2',
+          capturedAt: '2026-10-31T08:00:00.000Z',
+        },
+      }),
+      vocabulary,
+    );
+    expect(prompt).toContain(
+      [
+        'Measured on the live page:',
+        '- Fonts: Inter, Editorial New',
+        '- Libraries: GSAP, ScrollTrigger',
+        '- Button: Inter 16px/24px 600, radius 999px, shadow rgba(0, 0, 0, 0.2) 0px 8px 24px 0px',
+        '- Colours (most used): rgb(17, 17, 17)',
+        '- Corner radii: 999px',
+        '- Transitions: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0s',
+        '- On hover: transform: translateY(-4px)',
+        '- CSS custom properties: --accent: #ff4f00',
+      ].join('\n'),
+    );
+    expect(prompt).toContain('Use the measured values exactly');
+  });
+
+  it('says nothing about measurements for an upload', () => {
+    expect(buildPrompt(asset(), vocabulary)).not.toContain('measured');
   });
 });

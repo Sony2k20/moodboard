@@ -144,6 +144,32 @@
       "typography": "Typography",
       "components": "Components",
       "details": "Details"
+    },
+    "capturedAt": "captured {{ date }}",
+    "technique": {
+      "title": "Measured technique",
+      "measured": "measured on the live page, {{ viewport }}",
+      "empty": "The capture measured nothing on this page. Canvas and WebGL pages often leave no CSS traces; the picture is all there is.",
+      "fonts": "Fonts",
+      "libraries": "Libraries",
+      "colors": "Colours",
+      "shadows": "Shadows",
+      "transitions": "Transitions",
+      "animations": "Animations",
+      "hover": "On hover",
+      "transforms": "Transforms",
+      "fontSizes": "Font sizes",
+      "radii": "Corner radii",
+      "keyframes": "Keyframes",
+      "customProperties": "{{ count }} CSS custom properties",
+      "element": {
+        "h1": "Heading 1",
+        "h2": "Heading 2",
+        "body": "Body text",
+        "button": "Button",
+        "link": "Link",
+        "card": "Card"
+      }
     }
   },
   "bulk": {

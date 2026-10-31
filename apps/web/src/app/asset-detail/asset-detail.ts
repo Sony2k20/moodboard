@@ -14,7 +14,10 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import {
   AssetDetail,
   buildPrompt,
+  describeElementStyle,
   DESIGN_NOTE_KEYS,
+  ELEMENT_ROLES,
+  hasTechnique,
   VocabularyFacet,
 } from '@moodboard/shared';
 import { AssetsApi } from '../assets/assets-api.service';
@@ -127,6 +130,30 @@ export class AssetDetailPage {
       const text = notes?.[key]?.trim();
       return text ? [{ key, text }] : [];
     });
+  });
+
+  /** What a website capture measured (0011), shaped for the panel; `null` for uploads. */
+  protected readonly technique = computed(() => {
+    const tech = this.asset.value()?.captureTech;
+    if (!tech) {
+      return null;
+    }
+    return {
+      record: tech,
+      measured: hasTechnique(tech),
+      elements: ELEMENT_ROLES.flatMap((role) => {
+        const style = tech.elements?.[role];
+        return style ? [{ role, text: describeElementStyle(style) }] : [];
+      }),
+      lists: [
+        { key: 'transitions', values: tech.css.transition },
+        { key: 'animations', values: tech.css.animation },
+        { key: 'hover', values: tech.css.hover },
+        { key: 'transforms', values: tech.css.transform },
+        { key: 'fontSizes', values: tech.tokens?.fontSizes ?? [] },
+        { key: 'radii', values: tech.tokens?.radii ?? [] },
+      ].filter((list) => list.values.length > 0),
+    };
   });
 
   /** Deleting: own assets, or any as an admin (§9). The api checks it again. */

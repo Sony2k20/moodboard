@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { assetFiles, assets, Database } from '@moodboard/db';
+import { assetFiles, assets, captureTech, Database } from '@moodboard/db';
 import {
   assetFilePath,
   CaptureFailure,
@@ -28,7 +28,8 @@ export class FinalCaptureError extends UnrecoverableError {
 /**
  * `capture` (§8.2, 0011), the first step for a website. It produces the two images every later
  * step works from: the poster (viewport, DPR 2), which thumbnails, colours and the model see, and
- * the full page as `original`, the archived record of the site as it was.
+ * the full page as `original`, the archived record of the site as it was. Release 2 adds what
+ * the browser measured, in `capture_tech`, which `classify` hands the model as text.
  *
  * Idempotent like the image steps: a retry replaces what an earlier attempt stored.
  */
@@ -100,6 +101,20 @@ export class CaptureStep {
           ),
         );
       await tx.insert(assetFiles).values(rows);
+      const technique = {
+        fonts: [...result.technique.fonts],
+        libraries: [...result.technique.libraries],
+        cssProperties: result.technique.css,
+        tokens: result.technique.tokens,
+        elements: result.technique.elements,
+        pageTitle: result.pageTitle,
+        viewport: result.viewport,
+        capturedAt: new Date(),
+      };
+      await tx
+        .insert(captureTech)
+        .values({ assetId, ...technique })
+        .onConflictDoUpdate({ target: captureTech.assetId, set: technique });
       await tx
         .update(assets)
         .set({ statusReason: null, updatedAt: new Date() })

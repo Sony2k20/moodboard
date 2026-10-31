@@ -5,6 +5,7 @@ export * from './lib/analysis-result.schema';
 export * from './lib/storage.service';
 export * from './lib/pipeline';
 export * from './lib/capture';
+export * from './lib/capture-technique';
 export * from './lib/sniff-format';
 export * from './lib/asset-query';
 export * from './lib/tags';

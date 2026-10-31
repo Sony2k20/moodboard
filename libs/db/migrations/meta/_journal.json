@@ -92,6 +92,13 @@
       "when": 1793394390580,
       "tag": "0012_capture_status_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793437712757,
+      "tag": "0013_capture_technique",
+      "breakpoints": true
     }
   ]
 }

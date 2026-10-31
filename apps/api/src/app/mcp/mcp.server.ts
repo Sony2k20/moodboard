@@ -20,7 +20,8 @@ const INSTRUCTIONS = `A team's design memory: classified design references (scre
 
 Call list_vocabulary first: facet filters only accept its values, as "facet:value". Values within one facet are combined with OR, different facets, tags and the author with AND.
 Values with origin "human" were set or confirmed by a person and outweigh the model's ("ai").
-get_asset returns the reference image itself and a ready build prompt — look at the image before building from it.`;
+get_asset returns the reference image itself and a ready build prompt — look at the image before building from it.
+For a captured website (type "website"), get_asset also returns captureTech: fonts, design tokens, element styles, transitions and hover rules measured on the live page. Those values are exact — prefer them over what the image suggests.`;
 
 const text = (value: unknown): CallToolResult => ({
   content: [
@@ -132,7 +133,7 @@ export class McpServerFactory {
       {
         title: 'Get one design reference',
         description:
-          'One reference with all its metadata: facets with origin, description, visual details, palette, tags. Also returns the image itself and a prompt for building a UI in its style.',
+          'One reference with all its metadata: facets with origin, description, visual details, palette, tags, and for a website the measured technique (captureTech). Also returns the image itself and a prompt for building a UI in its style.',
         inputSchema: { id: z.uuid().describe('The asset id from search_assets') },
         annotations: { readOnlyHint: true },
       },

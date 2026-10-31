@@ -5,7 +5,7 @@ import {
   ClassifyOutput,
 } from './classifier.port';
 import { OUTPUT_JSON_SCHEMA, parseAnalysisResult } from './output-schema';
-import { PROMPT_VERSION, SYSTEM_PROMPT } from './prompt';
+import { PROMPT_VERSION, SYSTEM_PROMPT, userText } from './prompt';
 
 /** USD per million tokens, input / output. The model that served the request is what is billed. */
 const PRICES: Record<string, { input: number; output: number }> = {
@@ -69,12 +69,6 @@ export class AnthropicClassifier implements AssetClassifier {
         data: Buffer.from(image.data).toString('base64'),
       },
     }));
-    const context = [
-      input.context?.title && `Title: ${input.context.title}`,
-      input.context?.sourceUrl && `Source: ${input.context.sourceUrl}`,
-    ]
-      .filter(Boolean)
-      .join('\n');
 
     const response = await this.client.beta.messages.create({
       model: this.modelId,
@@ -93,7 +87,7 @@ export class AnthropicClassifier implements AssetClassifier {
             ...images,
             {
               type: 'text',
-              text: `${context ? `${context}\n\n` : ''}Classify this design reference.`,
+              text: userText(input),
             },
           ],
         },

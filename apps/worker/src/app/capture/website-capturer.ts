@@ -1,8 +1,10 @@
 import { Logger } from '@nestjs/common';
-import { CaptureFailure } from '@moodboard/shared';
+import { CaptureFailure, CaptureTechnique, EMPTY_CSS_TECHNIQUE } from '@moodboard/shared';
 import { Browser, chromium, errors, Page, Response } from 'playwright';
 import sharp from 'sharp';
+import { ConsentOutcome, dismissConsent, remainingOverlays } from './consent';
 import { EgressProxy, REFUSED_HEADER, Resolver, resolvePublic } from './egress-guard';
+import { extractTechnique } from './technique';
 
 /** The viewport of every capture (§8.2): a common laptop, rendered at retina density. */
 export const VIEWPORT = { width: 1440, height: 900 } as const;
@@ -33,8 +35,12 @@ export interface CaptureResult {
   /** Full-page screenshot at DPR 1, PNG, at most `MAX_FULL_PAGE_HEIGHT` tall. */
   readonly fullPage: Buffer;
   readonly pageTitle: string | null;
-  /** `1440x900@2`, as `capture_tech.viewport` will record it. */
+  /** `1440x900@2`, as `capture_tech.viewport` records it. */
   readonly viewport: string;
+  /** What the browser measured on the page (release 2). */
+  readonly technique: CaptureTechnique;
+  /** Which cookie-banner tier dismissed something, if any. */
+  readonly consent: ConsentOutcome;
 }
 
 /**
@@ -135,7 +141,21 @@ export class WebsiteCapturer {
     await page.waitForLoadState('networkidle', { timeout: NETWORK_IDLE_TIMEOUT_MS }).catch(() => {
       // Pages with polling or analytics never go quiet; "load" plus the scroll below is enough.
     });
+    // A banner over the page spoils both the picture and the measurement, so it goes first.
+    const consent = await dismissConsent(page).catch(() => null);
+    const overlays = await remainingOverlays(page).catch(() => []);
+    if (overlays.length > 0) {
+      this.logger.warn(
+        `An overlay still covers ${new URL(page.url()).host} after the consent tiers ` +
+          `(${consent ?? 'none'}): ${overlays.join(', ')}`,
+      );
+    }
     await page.evaluate(SCROLL_THROUGH);
+    // A measurement that fails costs the technique, not the picture.
+    const technique = await extractTechnique(page).catch((error: unknown): CaptureTechnique => {
+      this.logger.warn(`Technique extraction failed for ${url}: ${String(error)}`);
+      return { fonts: [], libraries: [], css: EMPTY_CSS_TECHNIQUE, tokens: null, elements: null };
+    });
 
     const poster = await page.screenshot({ type: 'png', animations: 'disabled' });
     if (await isBlank(poster)) {
@@ -159,6 +179,8 @@ export class WebsiteCapturer {
       fullPage,
       pageTitle,
       viewport: `${VIEWPORT.width}x${VIEWPORT.height}@${DEVICE_SCALE_FACTOR}`,
+      technique,
+      consent,
     };
   }
 

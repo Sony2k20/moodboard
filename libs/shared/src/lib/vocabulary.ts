@@ -383,8 +383,8 @@ export const MOTION_FACET = defineFacet({
   isMultiValue: true,
   label: { en: 'Motion', de: 'Bewegung' },
   description: {
-    en: 'Animation and movement. A single screenshot cannot fill this facet — it is what the capture keyframes are for (§8.2).',
-    de: 'Animation und Bewegung. Ein einzelner Screenshot kann dieses Facet nicht füllen — dafür gibt es die Keyframes der Capture (§8.2).',
+    en: 'Animation and movement. A single screenshot cannot fill this facet — the technique measured during a website capture can (§8.2).',
+    de: 'Animation und Bewegung. Ein einzelner Screenshot kann dieses Facet nicht füllen — die bei einer Website-Capture gemessene Technik schon (§8.2).',
   },
   values: MOTION_VALUES,
   valueLabels: {

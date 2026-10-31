@@ -1,4 +1,4 @@
-import { AnalysisResult } from '@moodboard/shared';
+import { AnalysisResult, CaptureTechnique } from '@moodboard/shared';
 
 /**
  * The classification port (concept §7.2).
@@ -27,7 +27,10 @@ export interface ClassifyInput {
   readonly context?: {
     readonly sourceUrl?: string;
     readonly title?: string;
-    readonly captureTech?: Record<string, unknown>;
+    /** A website's `<title>` at capture time (0011). */
+    readonly pageTitle?: string;
+    /** What the capture measured on the live page (0011 release 2). */
+    readonly captureTech?: CaptureTechnique;
   };
 }
 

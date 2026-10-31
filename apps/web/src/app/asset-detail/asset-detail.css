@@ -294,3 +294,55 @@ textarea {
 .prompt .copy + .copy {
   margin-left: 0.4rem;
 }
+
+.technique h3 {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.technique code {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.token-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.token {
+  display: grid;
+  gap: 0.15rem;
+  width: 6.5rem;
+  font-size: 0.75rem;
+}
+
+.token span {
+  height: 2rem;
+  border-radius: 4px;
+}
+
+.token .color {
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1);
+}
+
+.token.shadow span {
+  margin: 0.4rem;
+  background: #fff;
+}
+
+.values {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.technique details {
+  margin-top: 0.9rem;
+  font-size: 0.9rem;
+}

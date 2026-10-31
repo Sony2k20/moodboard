@@ -102,6 +102,6 @@ describe('prompt', () => {
       expect(SYSTEM_PROMPT).toContain(`- ${key} —`);
     }
     expect(SYSTEM_PROMPT).not.toContain('- project —');
-    expect(PROMPT_VERSION).toBe(3);
+    expect(PROMPT_VERSION).toBe(4);
   });
 });

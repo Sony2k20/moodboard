@@ -11,12 +11,13 @@ import {
   assetFacetValues,
   assets,
   assetTags,
+  captureTech,
   Database,
   facets,
   facetValues,
   tags,
 } from '@moodboard/db';
-import { AnalysisResult, normaliseTags } from '@moodboard/shared';
+import { AnalysisResult, EMPTY_CSS_TECHNIQUE, normaliseTags } from '@moodboard/shared';
 import { UnrecoverableError } from 'bullmq';
 import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { DATABASE } from '../database.module';
@@ -81,6 +82,13 @@ export class ClassifyStep {
       throw new UnrecoverableError(`Asset ${assetId} does not exist`);
     }
 
+    // A website's measured technique (0011): the model reads it as text next to the poster.
+    const [tech] = await this.db
+      .select()
+      .from(captureTech)
+      .where(eq(captureTech.assetId, assetId))
+      .limit(1);
+
     const image = await this.images.modelImage(assetId);
     let output;
     try {
@@ -89,6 +97,16 @@ export class ClassifyStep {
         context: {
           title: asset.title ?? undefined,
           sourceUrl: asset.sourceUrl ?? undefined,
+          pageTitle: tech?.pageTitle ?? undefined,
+          captureTech: tech
+            ? {
+                fonts: tech.fonts,
+                libraries: tech.libraries,
+                css: { ...EMPTY_CSS_TECHNIQUE, ...tech.cssProperties },
+                tokens: tech.tokens,
+                elements: tech.elements,
+              }
+            : undefined,
         },
       });
     } catch (error) {

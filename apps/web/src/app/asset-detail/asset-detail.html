@@ -41,6 +41,9 @@
       · {{ original.width }} × {{ original.height }}
       }
       }
+      @if (asset.captureTech; as tech) {
+      · {{ 'detail.capturedAt' | transloco: { date: (tech.capturedAt | date: 'medium') } }}
+      }
     </figcaption>
     }
   </figure>
@@ -140,6 +143,93 @@
         <dd>{{ note.text }}</dd>
         }
       </dl>
+    </section>
+    }
+
+    @if (technique(); as tech) {
+    <section class="technique">
+      <h2>
+        {{ 'detail.technique.title' | transloco }}
+        <span class="origin">{{ 'detail.technique.measured' | transloco: { viewport: tech.record.viewport } }}</span>
+      </h2>
+      @if (!tech.measured) {
+      <p class="none">{{ 'detail.technique.empty' | transloco }}</p>
+      } @else {
+      <dl class="notes">
+        @if (tech.record.fonts.length > 0) {
+        <dt>{{ 'detail.technique.fonts' | transloco }}</dt>
+        <dd>{{ tech.record.fonts.join(', ') }}</dd>
+        }
+        @if (tech.record.libraries.length > 0) {
+        <dt>{{ 'detail.technique.libraries' | transloco }}</dt>
+        <dd>
+          @for (library of tech.record.libraries; track library) {
+          <span class="chip">{{ library }}</span>
+          }
+        </dd>
+        }
+        @for (element of tech.elements; track element.role) {
+        <dt>{{ 'detail.technique.element.' + element.role | transloco }}</dt>
+        <dd><code>{{ element.text }}</code></dd>
+        }
+      </dl>
+
+      @if (tech.record.tokens?.colors?.length) {
+      <h3>{{ 'detail.technique.colors' | transloco }}</h3>
+      <div class="token-swatches">
+        @for (color of tech.record.tokens!.colors; track color.value) {
+        <div class="token" [title]="color.value">
+          <span class="color" [style.background]="color.value"></span>
+          <code>{{ color.value }}</code>
+          <small>×{{ color.count }}</small>
+        </div>
+        }
+      </div>
+      }
+
+      @if (tech.record.tokens?.shadows?.length) {
+      <h3>{{ 'detail.technique.shadows' | transloco }}</h3>
+      <div class="token-swatches">
+        @for (shadow of tech.record.tokens!.shadows.slice(0, 6); track shadow.value) {
+        <div class="token shadow" [title]="shadow.value">
+          <span [style.box-shadow]="shadow.value"></span>
+          <code>{{ shadow.value }}</code>
+        </div>
+        }
+      </div>
+      }
+
+      @for (list of tech.lists; track list.key) {
+      <h3>{{ 'detail.technique.' + list.key | transloco }}</h3>
+      <ul class="values">
+        @for (item of list.values; track item.value) {
+        <li><code>{{ item.value }}</code> <small>×{{ item.count }}</small></li>
+        }
+      </ul>
+      }
+
+      @if (tech.record.css.keyframes.length > 0) {
+      <h3>{{ 'detail.technique.keyframes' | transloco }}</h3>
+      <ul class="values">
+        @for (frames of tech.record.css.keyframes; track frames.name) {
+        <li><code>@keyframes {{ frames.name }} {{ frames.css }}</code></li>
+        }
+      </ul>
+      }
+
+      @if (tech.record.tokens?.customProperties?.length) {
+      <details>
+        <summary>
+          {{ 'detail.technique.customProperties' | transloco: { count: tech.record.tokens!.customProperties.length } }}
+        </summary>
+        <ul class="values">
+          @for (property of tech.record.tokens!.customProperties; track property.name) {
+          <li><code>{{ property.name }}: {{ property.value }}</code></li>
+          }
+        </ul>
+      </details>
+      }
+      }
     </section>
     }
 

@@ -144,6 +144,32 @@
       "typography": "Typografie",
       "components": "Komponenten",
       "details": "Details"
+    },
+    "capturedAt": "erfasst {{ date }}",
+    "technique": {
+      "title": "Gemessene Technik",
+      "measured": "auf der Live-Seite gemessen, {{ viewport }}",
+      "empty": "Die Erfassung hat auf dieser Seite nichts gemessen. Canvas- und WebGL-Seiten hinterlassen oft keine CSS-Spuren; dann gibt es nur das Bild.",
+      "fonts": "Schriften",
+      "libraries": "Bibliotheken",
+      "colors": "Farben",
+      "shadows": "Schatten",
+      "transitions": "Transitions",
+      "animations": "Animationen",
+      "hover": "Bei Hover",
+      "transforms": "Transforms",
+      "fontSizes": "Schriftgrößen",
+      "radii": "Eckenradien",
+      "keyframes": "Keyframes",
+      "customProperties": "{{ count }} CSS-Custom-Properties",
+      "element": {
+        "h1": "Überschrift 1",
+        "h2": "Überschrift 2",
+        "body": "Fließtext",
+        "button": "Button",
+        "link": "Link",
+        "card": "Karte"
+      }
     }
   },
   "bulk": {
