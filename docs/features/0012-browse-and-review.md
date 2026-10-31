@@ -277,9 +277,11 @@ on the `0.11.0` images, no errors in the api or worker logs.
   is now `human`; the queue is empty.
 - **Verification 2 (`audit_log`):** the review left 34 `asset.facet_set` entries, one per saved
   facet, and `asset_facet_decision` holds the matching rows.
-- **Not verified:** 1.4 (re-classification of a confirmed asset) needs a write to `analysis_run`
-  in SQL, which was not permitted this time, as in `0006`. 3 (clipboard on a phone) and 5
-  (`search_assets` over MCP) were not run.
+- **Verification 1.4:** settled by the prompt version 5 re-analysis of `0013` (v0.12.0): every
+  confirmed facet stayed `human`, value for value.
+  At the v0.11.0 rollout it was still open: triggering it needs a write to `analysis_run` in SQL,
+  which was not permitted, as in `0006`.
+- **Not verified:** 3 (clipboard on a phone) and 5 (`search_assets` over MCP) were not run.
 
 ### Finding: the confidence is per run, not per facet
 

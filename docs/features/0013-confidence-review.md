@@ -1,6 +1,6 @@
 # 0013 — Review what the model is unsure about
 
-> Status: accepted — implemented, not yet released
+> Status: accepted — implemented, deployed in v0.12.0 (2026-10-31)
 > Phase: 1 (decided 2026-10-31)
 > Created: 2026-10-31
 
@@ -177,3 +177,23 @@ left ("Nothing uncertain left. N confident guesses remain."). No database conten
 - `nx run-many -t lint,test,build`: green for all projects.
 
 Not verified: Verification 1, 2 and 6 need prompt version 5 running in production on real uploads.
+
+## Rollout
+
+v0.12.0 deployed 2026-10-31 (gitops `c9a8c86`): ArgoCD synced and healthy, api, web and worker
+on the `0.12.0` images.
+
+- **Verification 1 (prompt):** the reconciler re-classified all three live assets at prompt
+  version 5 within ten minutes of the deploy, $0.18 in total.
+- **Verification 2 (spread):** the model's `facet_confidence` across the three runs ranges from
+  0.4 to 0.97 over 36 facets, two of them below 0.7 (`industry` 0.4, `motion` 0.6). The scale
+  works: the numbers differ by facet instead of repeating the run's own. The three assets are
+  fully `human`, so none of these numbers reached `asset_facet_value`; the queue stays empty
+  until new uploads.
+- **Human values survive the re-analysis:** the website asset holds the same 26 `human` values as
+  before the run, value for value. This also settles `0012` verification 1.4.
+- **During the rollout**, the old worker classified one asset once more at prompt version 4
+  before it stopped, and the new one then re-classified it at version 5. Harmless, one extra
+  call; a rolling update of the worker can do this whenever the prompt version changes.
+- **Not verified:** 3–5 (the queue in the UI) and 6 (`get_asset` over MCP) need new uploads and a
+  signed-in session.
