@@ -94,7 +94,8 @@
       "label": "Anzeigen",
       "images": "Bilder",
       "facets": "Facetten"
-    }
+    },
+    "review": "Prüfen {{ count }}"
   },
   "inspector": {
     "label": "Asset-Inspektor",
@@ -109,6 +110,39 @@
     "confirmAll": "Alle bestätigen",
     "confirmN": "Vermutungen bestätigen ({{ count }})",
     "copyPrompt": "Prompt für Claude kopieren"
+  },
+  "review": {
+    "title": "Prüfen",
+    "back": "Galerie",
+    "backToGallery": "Zurück zur Galerie",
+    "position": "{{ index }} von {{ total }}",
+    "preview": "Vorschau",
+    "viewport": "Viewport",
+    "fullPage": "Ganze Seite",
+    "confirm": "Bestätigen",
+    "confirmAll": "Alle {{ count }} bestätigen",
+    "assetDone": "Alle Facetten dieses Assets sind bestätigt.",
+    "nextAsset": "Nächstes Asset",
+    "confirmed": "Bereits bestätigte Facetten: {{ count }}",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "skip": "Überspringen",
+    "empty": "Nichts mehr zu prüfen.",
+    "end": "Ende der Warteschlange: {{ done }} bestätigt, {{ skipped }} übersprungen.",
+    "queue": "Prüf-Warteschlange",
+    "keys": {
+      "toggle": "Wert",
+      "confirm": "bestätigen",
+      "confirmAll": "alle",
+      "skip": "überspringen",
+      "move": "Asset"
+    },
+    "mark": {
+      "current": "aktuell",
+      "done": "bestätigt",
+      "skipped": "übersprungen",
+      "open": "offen"
+    }
   },
   "detail": {
     "back": "Übersicht",

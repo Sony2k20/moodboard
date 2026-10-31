@@ -52,6 +52,8 @@ export class OverviewStore {
     authors: [],
   });
   readonly nextCursor = signal<string | null>(null);
+  /** How many matching assets the review queue holds (0012), for "Review N". */
+  readonly reviewCount = signal(0);
   readonly loading = signal(false);
   readonly error = signal<'invalid' | 'failed' | null>(null);
   /** Where "back to the overview" goes from a detail page: the last search, not a blank one. */
@@ -63,6 +65,11 @@ export class OverviewStore {
   readonly bulkError = signal<'forbidden' | 'failed' | null>(null);
 
   readonly view = signal<GridView>(readView());
+
+  /** The current filter as the review mode's URL takes it: no page position. */
+  readonly filterParams = computed(() =>
+    assetQueryParams({ ...this.query(), cursor: undefined, limit: undefined }),
+  );
 
   readonly hasFilters = computed(() => {
     const q = this.query();
@@ -107,6 +114,7 @@ export class OverviewStore {
     const generation = ++this.generation;
     this.stopPolling();
     this.loading.set(true);
+    void this.countReview(generation);
     try {
       const result = await this.api.search(this.query());
       if (generation !== this.generation) {
@@ -166,6 +174,7 @@ export class OverviewStore {
   async refresh(): Promise<void> {
     const generation = this.generation;
     this.stopPolling();
+    void this.countReview(generation);
     try {
       const result = await this.api.search(this.query());
       if (generation !== this.generation) {
@@ -322,6 +331,18 @@ export class OverviewStore {
     void this.router.navigate(['/'], {
       queryParams: { ...assetQueryParams(next), ...(asset ? { asset } : {}) },
     });
+  }
+
+  /** The size of the review queue for the current filter; one card is enough to get the total. */
+  private async countReview(generation: number): Promise<void> {
+    try {
+      const { total } = await this.api.search({ ...this.query(), review: true, limit: 1 });
+      if (generation === this.generation) {
+        this.reviewCount.set(total);
+      }
+    } catch {
+      // Without a count the button stays hidden; the grid does not depend on it.
+    }
   }
 
   private apply(result: AssetSearchResult, items: readonly AssetCard[]): void {

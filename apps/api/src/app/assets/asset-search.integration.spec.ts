@@ -8,6 +8,7 @@ import {
   assets,
   assetTags,
   Database,
+  declareActor,
   facets,
   facetValues,
   schema,
@@ -268,6 +269,64 @@ describe('AssetSearchService.search', () => {
     const [after] = (await search({ facet: 'ui_pattern:hero' })).items;
     expect(after.unconfirmedFacets).toBe(2);
     await db.delete(assetFacetDecisions).where(eq(assetFacetDecisions.assetId, before.id));
+  });
+
+  it('queues assets with an undecided ai facet, oldest first, within the filter (0012)', async () => {
+    expect(await titles({ review: '1' })).toEqual([
+      'minimal light',
+      'swiss dark',
+      'swiss light',
+      'editorial dark',
+    ]);
+    expect(await titles({ review: '1', facet: 'theme:dark' })).toEqual([
+      'swiss dark',
+      'editorial dark',
+    ]);
+
+    const page = await search({ review: '1', limit: '2' });
+    expect(page.items.map((i) => i.title)).toEqual(['minimal light', 'swiss dark']);
+    expect(page.total).toBe(4);
+    const next = await search({ review: '1', limit: '2', cursor: page.nextCursor });
+    expect(next.items.map((i) => i.title)).toEqual(['swiss light', 'editorial dark']);
+    expect(next.nextCursor).toBeNull();
+  });
+
+  it('leaves an asset out of the queue once every guessed facet is decided or human', async () => {
+    const id = (key: string) =>
+      db
+        .select({ id: facets.id })
+        .from(facets)
+        .where(eq(facets.key, key))
+        .then(([row]) => row.id);
+    const [minimal] = (await search({ facet: 'style:minimal' })).items;
+
+    // Deciding one of two facets is not enough.
+    await db.insert(assetFacetDecisions).values({ assetId: minimal.id, facetId: await id('style') });
+    expect(await titles({ review: '1' })).toContain('minimal light');
+    await db.insert(assetFacetDecisions).values({ assetId: minimal.id, facetId: await id('theme') });
+
+    // A person's value in a facet counts as deciding it, as in unconfirmedFacetKeys.
+    const corrected = await asset({
+      title: 'corrected',
+      minutesAgo: 10,
+      facets: ['style:swiss', 'theme:dark'],
+    });
+    expect((await titles({ review: '1' }))[0]).toBe('corrected');
+    await db.insert(assetFacetDecisions).values({ assetId: corrected, facetId: await id('style') });
+    await db
+      .update(assetFacetValues)
+      .set({ origin: 'human' })
+      .where(eq(assetFacetValues.assetId, corrected));
+
+    expect(await titles({ review: '1' })).toEqual(['swiss dark', 'swiss light', 'editorial dark']);
+    const counts = (await search({ review: '1' })).counts.facets;
+    expect(counts).toContainEqual({ facet: 'style', value: 'swiss', count: 2 });
+
+    await db.transaction(async (tx) => {
+      await declareActor(tx, 'purge');
+      await tx.delete(assets).where(eq(assets.id, corrected));
+    });
+    await db.delete(assetFacetDecisions).where(eq(assetFacetDecisions.assetId, minimal.id));
   });
 });
 

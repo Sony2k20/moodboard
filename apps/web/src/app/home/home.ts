@@ -8,7 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { parseCaptureUrl } from '@moodboard/shared';
 import { AssetGrid } from '../overview/asset-grid';
@@ -28,7 +28,7 @@ const ASSET_ID = /^[0-9a-f-]{36}$/i;
  */
 @Component({
   selector: 'mb-home',
-  imports: [TranslocoPipe, PercentPipe, AssetGrid, BulkBar, FilterBar, Inspector],
+  imports: [TranslocoPipe, PercentPipe, RouterLink, AssetGrid, BulkBar, FilterBar, Inspector],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })

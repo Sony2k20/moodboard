@@ -44,8 +44,9 @@ describe('OverviewStore', () => {
   let store: OverviewStore;
   let router: Router;
 
-  const search = () =>
-    http.expectOne((req) => req.method === 'GET' && req.url === '/api/assets');
+  const isSearch = (review: boolean) => (req: { method: string; url: string; params: { has(name: string): boolean } }) =>
+    req.method === 'GET' && req.url === '/api/assets' && req.params.has('review') === review;
+  const search = () => http.expectOne(isSearch(false));
   const flush = async (req: TestRequest, body: AssetSearchResult) => {
     req.flush(body);
     await Promise.resolve();
@@ -68,7 +69,22 @@ describe('OverviewStore', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    // Every load also asks for the size of the review queue; only one test looks at it.
+    http.match(isSearch(true));
     http.verify();
+  });
+
+  it('counts the review queue for the current filter (0012)', async () => {
+    const done = store.follow({ facet: 'mood:calm' });
+    const review = http.expectOne(isSearch(true));
+    expect(review.request.params.get('review')).toBe('1');
+    expect(review.request.params.get('limit')).toBe('1');
+    expect(review.request.params.getAll('facet')).toEqual(['mood:calm']);
+    review.flush({ ...result([card('a')]), total: 7 });
+    await flush(search(), result([card('a')]));
+    await done;
+
+    expect(store.reviewCount()).toBe(7);
   });
 
   it('sends the URL query to the api with the same parameter names', async () => {

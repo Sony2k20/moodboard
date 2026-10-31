@@ -143,6 +143,16 @@ mb-filter-bar {
   font-size: 0.9rem;
 }
 
+/* "Review N" (0012): the way into the review queue for the current filter. */
+.review {
+  padding: 0.2rem 0.75rem;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .view {
   display: inline-flex;
   margin-left: auto;

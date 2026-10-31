@@ -1,0 +1,397 @@
+/* Review mode (0012): a dark stage around the image, the facets beside it, the queue below. */
+:host {
+  display: grid;
+  gap: 1rem;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+}
+
+.head h1 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.back {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.position {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+  margin: 0 0 0 auto;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.1em;
+  padding: 0 0.3em;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: 600 0.72rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+}
+
+.note {
+  color: var(--ink-soft);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+}
+
+.work {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 1rem;
+  align-items: start;
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  border-radius: 12px;
+  background: #18181b;
+  overflow: hidden;
+}
+
+.frame {
+  display: grid;
+  place-items: center;
+  height: calc(100vh - 16rem);
+  min-height: 320px;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.frame img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* The whole page of a website: as wide as the stage, scrolled inside it. */
+.frame.scroll {
+  place-items: start center;
+  overflow-y: auto;
+}
+
+.frame.scroll img {
+  max-height: none;
+}
+
+.mode {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 1;
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.12);
+}
+
+.mode button {
+  padding: 0.2rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: #d4d4d8;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.mode button[aria-pressed='true'] {
+  background: #fafafa;
+  color: #18181b;
+}
+
+.panel {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.title a {
+  text-decoration: none;
+}
+
+.facet {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.facet.current {
+  border-color: var(--ink);
+}
+
+.facet.waiting {
+  grid-template-columns: 7rem minmax(0, 1fr);
+  align-items: baseline;
+  cursor: pointer;
+}
+
+.facet-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.facet-head small {
+  color: var(--ink-soft);
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.none {
+  color: var(--ink-faint);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.option {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.25rem 0.65rem 0.25rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.option[aria-pressed='true'] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.option[aria-pressed='true'] kbd {
+  border-color: transparent;
+  background: rgb(255 255 255 / 0.18);
+  color: var(--surface);
+}
+
+.actions,
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.actions button,
+.steps button,
+.all-done button,
+.end button {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.panel button.primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.panel button.primary kbd {
+  border-color: transparent;
+  background: rgb(255 255 255 / 0.18);
+  color: var(--surface);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.all-done {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: var(--wash);
+}
+
+.confirmed summary {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.facet-line {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: baseline;
+  margin: 0.4rem 0 0;
+}
+
+.steps {
+  justify-content: space-between;
+  margin-top: 0.4rem;
+}
+
+.end {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  border-radius: 12px;
+  background: var(--wash);
+  text-align: center;
+}
+
+.end p {
+  margin: 0;
+}
+
+.filmstrip {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.25rem 0 0.5rem;
+  list-style: none;
+  overflow-x: auto;
+}
+
+.filmstrip button {
+  position: relative;
+  display: block;
+  width: 64px;
+  height: 48px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: var(--wash);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.filmstrip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.filmstrip [data-mark='current'] button {
+  border-color: var(--ink);
+}
+
+.filmstrip [data-mark='done'] img,
+.filmstrip [data-mark='skipped'] img {
+  opacity: 0.35;
+}
+
+.filmstrip [data-mark='done'] button::after,
+.filmstrip [data-mark='skipped'] button::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.filmstrip [data-mark='done'] button::after {
+  content: '✓';
+  color: var(--ink);
+}
+
+.filmstrip [data-mark='skipped'] button::after {
+  content: '↷';
+  color: var(--ink-soft);
+}
+
+/* Narrower than the stage plus the panel: stacked, the image first. */
+@media (max-width: 960px) {
+  .work {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .frame {
+    height: 52vh;
+    min-height: 0;
+    padding: 0.75rem;
+  }
+
+  .keys {
+    display: none;
+  }
+}
+
+/* Phone: tapped, not typed — a smaller stage so the current facet is in view, no key hints. */
+@media (max-width: 720px) {
+  .frame {
+    height: 34vh;
+  }
+
+  button kbd {
+    display: none;
+  }
+
+  .option {
+    padding-left: 0.65rem;
+  }
+}

@@ -53,12 +53,24 @@ export const FacetFilterSchema = z
  */
 export const CURSOR_PATTERN = /^\d{1,20}~[0-9a-f-]{36}$/;
 
+/** A flag in the query string: absent is off, `1` or `true` is on, anything else is refused. */
+const flag = z.preprocess(
+  (value) =>
+    value === undefined ? false : value === '1' || value === 'true' ? true : value,
+  z.boolean(),
+);
+
 export const AssetQuerySchema = z
   .object({
     facet: many(FacetFilterSchema, 50),
     q: optionalText(200),
     tag: many(z.string().trim().min(1).max(100), 20),
     author: z.uuid().optional(),
+    /**
+     * The review queue (0012): only assets with at least one undecided `ai` facet, oldest first.
+     * A curation tool for people — `search_assets` does not offer it.
+     */
+    review: flag,
     cursor: z.string().regex(CURSOR_PATTERN, 'Invalid cursor').optional(),
     limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
   })
@@ -82,6 +94,9 @@ export function assetQueryParams(
   }
   if (query.author) {
     params['author'] = query.author;
+  }
+  if (query.review) {
+    params['review'] = '1';
   }
   if (query.cursor) {
     params['cursor'] = query.cursor;

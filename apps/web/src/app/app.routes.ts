@@ -8,6 +8,10 @@ export const appRoutes: Route[] = [
       import('./asset-detail/asset-detail').then((m) => m.AssetDetailPage),
   },
   {
+    path: 'review',
+    loadComponent: () => import('./review/review').then((m) => m.ReviewPage),
+  },
+  {
     path: 'trash',
     loadComponent: () => import('./trash/trash').then((m) => m.TrashPage),
   },

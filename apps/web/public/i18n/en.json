@@ -94,7 +94,8 @@
       "label": "Show",
       "images": "Images",
       "facets": "Facets"
-    }
+    },
+    "review": "Review {{ count }}"
   },
   "inspector": {
     "label": "Asset inspector",
@@ -109,6 +110,39 @@
     "confirmAll": "Confirm all",
     "confirmN": "Confirm guesses ({{ count }})",
     "copyPrompt": "Copy prompt for Claude"
+  },
+  "review": {
+    "title": "Review",
+    "back": "Gallery",
+    "backToGallery": "Back to the gallery",
+    "position": "{{ index }} of {{ total }}",
+    "preview": "Preview",
+    "viewport": "Viewport",
+    "fullPage": "Full page",
+    "confirm": "Confirm",
+    "confirmAll": "Confirm all {{ count }}",
+    "assetDone": "Every facet of this asset is confirmed.",
+    "nextAsset": "Next asset",
+    "confirmed": "Facets already confirmed: {{ count }}",
+    "previous": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "empty": "Nothing left to review.",
+    "end": "End of the queue: {{ done }} confirmed, {{ skipped }} skipped.",
+    "queue": "Review queue",
+    "keys": {
+      "toggle": "value",
+      "confirm": "confirm",
+      "confirmAll": "all",
+      "skip": "skip",
+      "move": "asset"
+    },
+    "mark": {
+      "current": "current",
+      "done": "confirmed",
+      "skipped": "skipped",
+      "open": "open"
+    }
   },
   "detail": {
     "back": "Overview",

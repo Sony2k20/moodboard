@@ -1,0 +1,173 @@
+<header class="head">
+  <a class="back" routerLink="/" [queryParams]="filter()">← {{ 'review.back' | transloco }}</a>
+  <h1>{{ 'review.title' | transloco }}</h1>
+  @if (state() === 'ready' && card()) {
+  <span class="position" role="status">
+    {{ 'review.position' | transloco: { index: index() + 1, total: total() } }}
+  </span>
+  }
+  <p class="keys" aria-hidden="true">
+    <span><kbd>1</kbd>–<kbd>9</kbd> {{ 'review.keys.toggle' | transloco }}</span>
+    <span><kbd>⏎</kbd> {{ 'review.keys.confirm' | transloco }}</span>
+    <span><kbd>⇧⏎</kbd> {{ 'review.keys.confirmAll' | transloco }}</span>
+    <span><kbd>S</kbd> {{ 'review.keys.skip' | transloco }}</span>
+    <span><kbd>←</kbd><kbd>→</kbd> {{ 'review.keys.move' | transloco }}</span>
+  </p>
+</header>
+
+@switch (state()) { @case ('loading') {
+<p class="note">…</p>
+} @case ('invalid') {
+<p role="alert" class="note">{{ 'overview.invalid' | transloco }}</p>
+} @case ('failed') {
+<p role="alert" class="note">{{ 'overview.failed' | transloco }}</p>
+} @default { @if (card(); as card) {
+<div class="work">
+  <section class="stage" [attr.aria-label]="'review.preview' | transloco">
+    @if (asset.value()?.type === 'website' && image().full) {
+    <div class="mode" role="group">
+      <button type="button" [attr.aria-pressed]="!fullPage()" (click)="fullPage.set(false)">
+        {{ 'review.viewport' | transloco }}
+      </button>
+      <button type="button" [attr.aria-pressed]="fullPage()" (click)="fullPage.set(true)">
+        {{ 'review.fullPage' | transloco }}
+      </button>
+    </div>
+    }
+    <div class="frame" [class.scroll]="fullPage()">
+      @if (fullPage() ? image().full : image().viewport; as file) {
+      <img [src]="file.url" [alt]="card.title ?? ''" />
+      } @else if (card.thumbnail; as thumb) {
+      <img [src]="thumb.url" [alt]="card.title ?? ''" />
+      }
+    </div>
+  </section>
+
+  <section class="panel" [attr.aria-label]="'detail.facets' | transloco">
+    <h2 class="title">
+      <a [routerLink]="['/assets', card.id]">{{ card.title ?? ('asset.untitled' | transloco) }}</a>
+    </h2>
+
+    @if (saveError()) {
+    <p role="alert" class="error">{{ 'detail.saveFailed' | transloco }}</p>
+    }
+
+    @if (asset.error()) {
+    <p role="alert" class="note">{{ 'detail.failed' | transloco }}</p>
+    } @else if (!asset.value() || asset.value()?.id !== card.id) {
+    <p class="note">…</p>
+    } @else {
+    @for (row of pending(); track row.facet.key) {
+    @if (row === current()) {
+    <form class="facet current" (submit)="$event.preventDefault(); confirm()">
+      <p class="facet-head">
+        <span class="label">{{ vocabulary.text(row.facet.label) }}</span>
+        <small>{{ (row.facet.isMultiValue ? 'inspector.multi' : 'inspector.single') | transloco }}</small>
+      </p>
+      <div class="options" role="group" [attr.aria-label]="vocabulary.text(row.facet.label)">
+        @for (option of row.facet.values; track option.value; let i = $index) {
+        <button
+          type="button"
+          class="option"
+          [attr.aria-pressed]="draft().has(option.value)"
+          [title]="vocabulary.text(option.description)"
+          (click)="toggle(row.facet, option.value)"
+        >
+          @if (key(i); as k) {<kbd>{{ k }}</kbd>}
+          {{ vocabulary.text(option.label) }}
+        </button>
+        }
+      </div>
+      <div class="actions">
+        <button type="submit" class="primary" [disabled]="saving()">
+          {{ 'review.confirm' | transloco }} <kbd>⏎</kbd>
+        </button>
+        @if (pending().length > 1) {
+        <button type="button" [disabled]="saving()" (click)="confirmAll()">
+          {{ 'review.confirmAll' | transloco: { count: pending().length } }} <kbd>⇧⏎</kbd>
+        </button>
+        }
+      </div>
+    </form>
+    } @else {
+    <button type="button" class="facet waiting" (click)="pick(row)">
+      <span class="label">{{ vocabulary.text(row.facet.label) }}</span>
+      <span class="values">
+        @for (value of row.values; track value.value) {
+        <span class="origin-chip" data-origin="ai">{{ vocabulary.valueLabel(row.facet.key, value.value) }}</span>
+        }
+      </span>
+    </button>
+    } }
+
+    @if (pending().length === 0) {
+    <p class="all-done" role="status">
+      {{ 'review.assetDone' | transloco }}
+      <button type="button" class="primary" (click)="next()">
+        {{ 'review.nextAsset' | transloco }} <kbd>→</kbd>
+      </button>
+    </p>
+    }
+
+    @if (confirmed().length > 0) {
+    <details class="confirmed">
+      <summary>{{ 'review.confirmed' | transloco: { count: confirmed().length } }}</summary>
+      @for (row of confirmed(); track row.facet.key) {
+      <p class="facet-line">
+        <span class="label">{{ vocabulary.text(row.facet.label) }}</span>
+        <span class="values">
+          @for (value of row.values; track value.value) {
+          <span class="origin-chip" data-origin="human">{{ vocabulary.valueLabel(row.facet.key, value.value) }}</span>
+          } @empty {
+          <span class="none">—</span>
+          }
+        </span>
+      </p>
+      }
+    </details>
+    }
+    }
+
+    <nav class="steps">
+      <button type="button" [disabled]="index() === 0 || saving()" (click)="previous()">
+        <kbd>←</kbd> {{ 'review.previous' | transloco }}
+      </button>
+      <button type="button" [disabled]="saving()" (click)="skip()">
+        {{ 'review.skip' | transloco }} <kbd>S</kbd>
+      </button>
+      <button type="button" [disabled]="saving()" (click)="next()">
+        {{ 'review.next' | transloco }} <kbd>→</kbd>
+      </button>
+    </nav>
+  </section>
+</div>
+} @else {
+<div class="end" role="status">
+  @if (queue().length === 0) {
+  <p>{{ 'review.empty' | transloco }}</p>
+  } @else {
+  <p>{{ 'review.end' | transloco: { done: doneCount(), skipped: skippedCount() } }}</p>
+  <button type="button" (click)="previous()"><kbd>←</kbd> {{ 'review.previous' | transloco }}</button>
+  }
+  <a routerLink="/" [queryParams]="filter()">{{ 'review.backToGallery' | transloco }}</a>
+</div>
+}
+
+@if (queue().length > 0) {
+<ol class="filmstrip" [attr.aria-label]="'review.queue' | transloco">
+  @for (item of queue(); track item.id; let i = $index) {
+  <li [attr.data-mark]="markOf(item, i)">
+    <button
+      type="button"
+      [attr.aria-current]="i === index() ? 'step' : null"
+      [title]="(item.title ?? '') + ' · ' + ('review.mark.' + markOf(item, i) | transloco)"
+      (click)="go(i)"
+    >
+      @if (item.thumbnail; as thumb) {
+      <img [src]="thumb.url" alt="" loading="lazy" />
+      }
+    </button>
+  </li>
+  }
+</ol>
+} } }

@@ -45,6 +45,7 @@ import {
   SQL,
   sql,
 } from 'drizzle-orm';
+import { alias, PgTable } from 'drizzle-orm/pg-core';
 import { DATABASE } from '../database.module';
 
 /** A condition that one facet's selection contributes; dropped when counting that facet. */
@@ -106,7 +107,9 @@ export class AssetSearchService {
     const groups = await this.resolveFacets(query.facet);
     const where = (except: Except = null) => this.conditions(query, groups, except);
 
+    // The review queue is worked through front to back, so it runs oldest first (0012).
     const cursor = query.cursor?.split('~');
+    const order = query.review ? asc : desc;
     const page = await this.db
       .select({
         id: assets.id,
@@ -126,11 +129,11 @@ export class AssetSearchService {
         and(
           ...where(),
           cursor
-            ? sql`(${assets.createdAt}, ${assets.id}) < ('epoch'::timestamptz + ${cursor[0]}::bigint * interval '1 microsecond', ${cursor[1]}::uuid)`
+            ? sql`(${assets.createdAt}, ${assets.id}) ${sql.raw(query.review ? '>' : '<')} ('epoch'::timestamptz + ${cursor[0]}::bigint * interval '1 microsecond', ${cursor[1]}::uuid)`
             : undefined,
         ),
       )
-      .orderBy(desc(assets.createdAt), desc(assets.id))
+      .orderBy(order(assets.createdAt), order(assets.id))
       .limit(query.limit + 1);
 
     const hasMore = page.length > query.limit;
@@ -377,7 +380,42 @@ export class AssetSearchService {
     if (query.author && except !== 'author') {
       conditions.push(eq(assets.createdBy, query.author));
     }
+
+    if (query.review) {
+      conditions.push(this.hasUnconfirmedFacet());
+    }
     return conditions;
+  }
+
+  /**
+   * The asset holds an `ai` value in a facet that has no `human` value and no decision row — the
+   * SQL form of `unconfirmedFacetKeys` (0012), so the queue and the tile counter agree. Aliased
+   * throughout: the facet counts run this inside a query that joins the same tables.
+   */
+  private hasUnconfirmedFacet(): SQL {
+    const guess = alias(assetFacetValues, 'review_guess');
+    const guessValue = alias(facetValues, 'review_guess_value');
+    const person = alias(assetFacetValues, 'review_person');
+    const personValue = alias(facetValues, 'review_person_value');
+    const decision = alias(assetFacetDecisions, 'review_decision');
+    // An alias in a `sql` template renders as its name only; the `from` needs the table too.
+    const from = (table: PgTable, name: string) => sql`${table} as ${sql.identifier(name)}`;
+    return sql`exists (
+      select 1 from ${from(assetFacetValues, 'review_guess')}
+      inner join ${from(facetValues, 'review_guess_value')}
+        on ${guessValue.id} = ${guess.facetValueId}
+      where ${guess.assetId} = ${assets.id}
+        and ${guess.origin} = 'ai'
+        and not exists (
+          select 1 from ${from(assetFacetDecisions, 'review_decision')}
+          where ${decision.assetId} = ${assets.id} and ${decision.facetId} = ${guessValue.facetId})
+        and not exists (
+          select 1 from ${from(assetFacetValues, 'review_person')}
+          inner join ${from(facetValues, 'review_person_value')}
+            on ${personValue.id} = ${person.facetValueId}
+          where ${person.assetId} = ${assets.id}
+            and ${person.origin} = 'human'
+            and ${personValue.facetId} = ${guessValue.facetId}))`;
   }
 
   private hasTag(name: string): SQL {

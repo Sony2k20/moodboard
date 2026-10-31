@@ -14,7 +14,7 @@ describe('AssetQuerySchema', () => {
   });
 
   it('defaults to an empty query with the default page size', () => {
-    expect(AssetQuerySchema.parse({})).toEqual({ facet: [], tag: [], limit: 60 });
+    expect(AssetQuerySchema.parse({})).toEqual({ facet: [], tag: [], review: false, limit: 60 });
   });
 
   it('treats an empty search as no search', () => {
@@ -28,6 +28,7 @@ describe('AssetQuerySchema', () => {
     expect(AssetQuerySchema.safeParse({ cursor: '2026-10-30' }).success).toBe(false);
     expect(AssetQuerySchema.safeParse({ limit: '500' }).success).toBe(false);
     expect(AssetQuerySchema.safeParse({ sort: 'title' }).success).toBe(false);
+    expect(AssetQuerySchema.safeParse({ review: 'yes' }).success).toBe(false);
   });
 
   it('round-trips through its URL form', () => {
@@ -35,7 +36,9 @@ describe('AssetQuerySchema', () => {
       facet: ['style:editorial', 'ui_pattern:empty-state'],
       q: 'warm earthy',
       tag: 'Dark-Mode',
+      review: '1',
     });
+    expect(query.review).toBe(true);
     expect(AssetQuerySchema.parse(assetQueryParams(query))).toEqual(query);
     expect(assetQueryParams(query)).not.toHaveProperty('limit');
   });
