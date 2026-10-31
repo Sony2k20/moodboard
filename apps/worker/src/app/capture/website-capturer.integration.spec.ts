@@ -137,6 +137,8 @@ describe('WebsiteCapturer', () => {
     const result = await new WebsiteCapturer(resolve).capture(`${base}/consent-platform`);
     expect(result.poster.byteLength).toBeGreaterThan(0);
     if (!ffmpegAvailable()) {
+      // CI installs ffmpeg as the image does; there this branch would hide a broken transcode.
+      expect(process.env['CI']).toBeFalsy();
       expect(result.video).toBeNull();
       return;
     }
