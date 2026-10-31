@@ -1,7 +1,7 @@
 # 0012 — Browse and review: the overview with an inspector
 
-> Status: accepted — release 1 implemented in v0.10.0, rollout not yet recorded; release 2
-> (review mode) belongs to phase 1, decided 2026-10-31, implemented, not yet released
+> Status: accepted — release 1 in v0.10.0, release 2 (review mode, phase 1 since 2026-10-31) in
+> v0.11.0; both deployed 2026-10-31, see "Rollout"
 > Phase: 1
 > Created: 2026-10-31
 
@@ -267,4 +267,28 @@ a real phone and 5 (`search_assets` over MCP) need the deployed instance.
 - `nx run-many -t lint,test,build`: green for all projects.
 
 Not verified: Verification 4 against real data, which needs the deployed instance.
+
+## Rollout
+
+v0.11.0 deployed 2026-10-31 (gitops `3e3bdcd`): ArgoCD synced and healthy, api, web and worker
+on the `0.11.0` images, no errors in the api or worker logs.
+
+- **Verification 4 (review):** done by the user on the three live assets. Every facet of all three
+  is now `human`; the queue is empty.
+- **Verification 2 (`audit_log`):** the review left 34 `asset.facet_set` entries, one per saved
+  facet, and `asset_facet_decision` holds the matching rows.
+- **Not verified:** 1.4 (re-classification of a confirmed asset) needs a write to `analysis_run`
+  in SQL, which was not permitted this time, as in `0006`. 3 (clipboard on a phone) and 5
+  (`search_assets` over MCP) were not run.
+
+### Finding: the confidence is per run, not per facet
+
+The user's first review had to go through every facet of every asset, and asked whether review
+should only cover what the model is unsure about. It cannot today: the classification returns
+**one** `confidence` for the whole run (`libs/classify/src/lib/prompt.ts`), and the classify step
+writes that number onto every `ai` value of the asset. Production holds three distinct values
+(0.72, 0.80, 0.90) across 94 `ai` rows. Sorting or filtering the queue by `confidence` (open
+question 3) would sort assets, not facets, and the per-facet `confidence` column carries no
+information of its own. A queue that skips confident guesses needs a confidence per facet from
+the model first — a prompt change, so a new prompt version and a re-analysis.
 
