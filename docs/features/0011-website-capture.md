@@ -543,6 +543,16 @@ on the `0.14.0` images.
 - `/files/…/capture.mp4` is behind the session like every other file (`401` without one).
 - The worker's memory before the first capture with video: 171 MiB peak since start
   (`/sys/fs/cgroup/memory.peak`), limit 2560 MiB.
-- **Not verified yet:** Verification 1 and 2 with a real site, and the memory peak during a
-  recorded capture (§4.6), which `memory.peak` will show after the first one. Release 3 counts as
-  done once both are in.
+**Production check with https://gsap.com/** (2026-10-31, pasted by the user) — Verification 1
+in full:
+
+- The asset was  61 s after it was created. The worker logged
+  , then classified it at prompt version 5 for
+  /usr/bin/bash.069.
+- : H.264, 1440×900, , 30 fps, exactly 11.0 s, 1.3 MB. Frames at 0.5 s,
+  5 s and 10.5 s show the hero with no loading frame before it, a scroll-triggered text reveal
+  in mid-animation, and the footer. No cookie banner in any of them.
+-  lists GSAP and ScrollTrigger, and  holds   (with  and ).
+- **Memory peak** during the capture with recording: **773 MiB** (), against a
+  limit of 2560 MiB; 258 MiB once it was done. Release 3 counts as done.
+- Not run: Verification 2 with a OneTrust or Cookiebot site. gsap.com shows no banner.

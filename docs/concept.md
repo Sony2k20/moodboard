@@ -910,7 +910,7 @@ readable by Claude Code.
 - [x] Cookie banner heuristics (§8.3) — 0011 release 2
 - [x] Technique extraction with design tokens → classification context, so `motion` gets
   genuinely filled — 0011 release 2
-- [ ] Scroll video and player in the detail view — 0011 release 3
+- [x] Scroll video and player in the detail view — 0011 release 3, v0.14.0
 
 **Overview**
 - [x] Masonry grid, facet filters, full-text search, author filter

@@ -197,3 +197,7 @@ on the `0.12.0` images.
   call; a rolling update of the worker can do this whenever the prompt version changes.
 - **Not verified:** 3–5 (the queue in the UI) and 6 (`get_asset` over MCP) need new uploads and a
   signed-in session.
+
+**First new upload at prompt version 5** (gsap.com, 2026-10-31): its eleven `ai` facets carry
+their own numbers in `asset_facet_value.confidence`, from 0.75 (`imagery`) to 0.95 (`theme`) —
+Verification 1 holds. None is below 0.7, so the asset is not queued for review.
