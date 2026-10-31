@@ -893,7 +893,8 @@ readable by Claude Code.
 - [x] Data model §5.1-5.3, §5.5 — including `origin` and `analysis_run` from day one
 - [x] Migration as an initContainer in front of api and worker, with an advisory lock (§4.11)
 - [x] Facet vocabulary as a seed, with English and German labels (§13)
-- [ ] Admin maintenance for the vocabulary
+- [ ] Admin maintenance for the vocabulary — `project` values (0014); the classified facets stay
+  in code, a new value there is a prompt version
 
 **Ingest and Classification**
 - [x] Upload: drag & drop, clipboard paste, multi-upload
