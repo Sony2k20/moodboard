@@ -917,7 +917,7 @@ readable by Claude Code.
   0011) and the inspector beside the grid (0012 release 1)
 - [x] Multi-select + bulk tagging
 - [x] Review mode: confirm model guesses facet by facet from the keyboard — 0012 release 2
-- [ ] Review only what the model is unsure about: a confidence per facet — 0013
+- [x] Review only what the model is unsure about: a confidence per facet — 0013
 
 **Internationalisation**
 - [x] Transloco setup, `en.json` and `de.json`, language switcher, `user.locale` persisted (§13)

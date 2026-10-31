@@ -1,6 +1,6 @@
 # 0013 — Review what the model is unsure about
 
-> Status: accepted
+> Status: accepted — implemented, not yet released
 > Phase: 1 (decided 2026-10-31)
 > Created: 2026-10-31
 
@@ -137,3 +137,43 @@ left ("Nothing uncertain left. N confident guesses remain."). No database conten
    It becomes `human` and stays through a re-classification.
 5. **All guesses:** the switch shows every undecided facet, as in `0012`.
 6. **MCP:** `get_asset` on a new upload shows differing `confidence` values across its facets.
+
+## Decided during implementation
+
+1. **`facet_confidence` is a closed object with one key per classified facet**, built from the
+   `facets` schema's own keys, so a new facet cannot be added without its confidence. Values
+   outside 0..1 are clamped after the call, like the overall `confidence`.
+2. **`review` takes three values:** absent (no queue), `1` (uncertain, the default of review
+   mode) and `all`. `AssetQuery.review` is `'off' | 'uncertain' | 'all'`.
+3. **The uncertain queue sorts by a rank:** the asset's lowest uncertain confidence in thousandths,
+   rounded (`real` stores 0.45 as 0.4499…), an unknown one counting as 0. Its cursor leads with
+   that rank (`rank~micros~id`). A cursor from another kind of query is a `400`, not a wrong page.
+4. **The threshold is compared as `real`**, the column's type, so a stored 0.7 is not below it in
+   SQL either, and `uncertainFacetKeys` and the api agree on it.
+5. **A confident guess opened in review mode** takes its place in vocabulary order and is saved by
+   `⏎` like a step. `⇧⏎` saves the steps plus the open one; the other confident guesses stay `ai`.
+   An asset is done when no step is left.
+6. **"Spot-check guesses"** appears in the overview instead of "Review N" when nothing uncertain
+   is left but a loaded tile still holds a guess, and opens `review=all`. Without it, the "All
+   guesses" queue would only be reachable by URL once the uncertain queue is empty.
+
+### Verified
+
+- **Classify** (`output-schema.spec.ts`, `classify.step.spec.ts`): the grammar requires every
+  facet's confidence and keeps the object closed; out-of-range values are clamped; every value row
+  carries its facet's number. The prompt is version 5 and anchors the scale.
+- **Api** (`asset-search.integration.spec.ts`, PGlite): the uncertain queue leaves out the
+  confident fixtures, puts an unknown confidence first, then 0.45, then an asset whose lowest
+  uncertain facet is 0.65 next to one at exactly 0.7 (not queued). Paging by the ranked cursor
+  returns each once. Deciding the doubtful facet takes the asset out of `review=1` but not out of
+  `review=all`. A cursor from the other queue is refused.
+- **Shared**: `uncertainFacetKeys`, the three `review` values and their round trip.
+- **Against a stub api in Chromium** (1440 × 900): "Review 4" for four assets with an uncertain
+  facet, least confident first. The first asset shows only `mood` (0.4) as a step and `theme`,
+  `layout` in the confident line; `⏎` marks it done. On the next one, a confident `theme` opens in
+  place and saves. "All guesses" lists all six assets, oldest first, every undecided facet a step.
+  With nothing uncertain left, review mode says so and links to "All guesses", and the overview
+  shows "Spot-check guesses". No console errors.
+- `nx run-many -t lint,test,build`: green for all projects.
+
+Not verified: Verification 1, 2 and 6 need prompt version 5 running in production on real uploads.
