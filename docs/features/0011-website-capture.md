@@ -1,6 +1,7 @@
 # 0011 — Website capture
 
-> Status: accepted — release 1 of 3 implemented, not yet deployed
+> Status: accepted — release 1 of 3 deployed in v0.8.0 (2026-10-31); plan for 2 and 3 revised
+> the same day, see "Revised plan"
 > Phase: 1
 > Created: 2026-10-30
 
@@ -36,8 +37,8 @@ hand-made screenshot is a poor archive of it.
   2. **Context B (`recordVideo` at 1440×900):** start from A's `storageState` so the consent is
      already given. Load the page, then scroll evenly over 10 s. Animations fire fresh. The time
      at which the scroll starts is recorded so the load can be cut off later.
-  3. **ffmpeg:** trim the video to the scroll, transcode it to H.264 MP4 (`+faststart`, no
-     audio) and extract 8 evenly spaced keyframes as WebP.
+  3. **ffmpeg:** trim the video to the scroll and transcode it to H.264 MP4 (`+faststart`, no
+     audio). ~~Extract 8 evenly spaced keyframes as WebP~~ — dropped in the revised plan.
 - **Files**, all in the existing `asset_file` kinds:
 
   | Kind | Content |
@@ -45,7 +46,8 @@ hand-made screenshot is a poor archive of it.
   | `original` | Full-page screenshot, DPR 1, height capped at 16,000 px, WebP. The archived record of the page (§8.3) |
   | `poster` | Viewport screenshot, DPR 2. Thumbnails and colours are derived from it, not from the full page |
   | `capture` | The scroll video, MP4 |
-  | `frame` | 8 keyframes, `frames/00.webp` … `frames/07.webp`; the order is in the path |
+
+  `frame` stays unused: the revised plan sends no keyframes to the model.
 
 - **Pipeline for websites:** `capture → thumbnails → colors → classify`. `normalize` is skipped
   because the worker produced these images itself. `nextPipelineStep` takes the asset type.
@@ -82,15 +84,16 @@ hand-made screenshot is a poor archive of it.
   2. **In the cluster:** an optional egress NetworkPolicy for the worker in the chart, with an
      allow list for the database, Valkey and DNS, and only public addresses on ports 80 and 443.
      It is the layer below, for anything Chromium might do outside its proxy settings.
-- **Classification with frames.** `classify` sends the poster and the 8 keyframes, labelled in
-  order. The user message also carries the capture context: host, page `<title>`, fonts,
-  detected libraries, and the most frequent transition and animation values. The system prompt
-  gains one guideline: frames are a scroll recording in order, and measured technique outranks
-  guessing for `motion`. That makes this **prompt version 4**.
+- **Classification with measured technique** (revised). `classify` sends the poster as before,
+  plus the capture context as text: host, page `<title>`, fonts, design tokens, libraries,
+  transitions and animations (see "Revised plan"). The system prompt gains one guideline: for
+  `motion`, measured technique outranks the picture. That makes this **prompt version 4**.
+  ~~The poster and 8 keyframes~~ — dropped: eight stills make the model guess at movement, and
+  they nearly double the cost per capture.
 - **Detail view** for website assets:
   - a video player (`poster` attribute, muted, loop, controls)
   - the full-page screenshot, scrollable
-  - a capture technique panel: fonts, libraries, transitions and easings
+  - a capture technique panel: fonts, design tokens, libraries, transitions and easings
   - the source URL and the capture date
 - **Overview card:** the poster as thumbnail, plus a small video badge.
 - **Build prompt** (0008) and `get_asset` include the capture technique. That is the part an
@@ -122,9 +125,11 @@ hand-made screenshot is a poor archive of it.
   machine-readable and never translated (§13.3).
 - `capture_tech` (§5.3) exists already and gets filled. `css_properties` holds counted
   transition, animation and transform values: `{ "transition": [{ "value": "…", "count": n }] }`.
-- `asset_file` stays unchanged. Frame order is in the path, and `assetFilePath` already takes
-  `frameIndex`. The extension of `capture` changes from `webm` to `mp4` in the helper; no
-  captures are stored yet.
+- `capture_tech` gets two nullable `jsonb` columns in release 2 (revised plan): `tokens` (CSS
+  custom properties and counted colours, radii, shadows, font sizes) and `elements` (computed
+  styles of representative elements). Additive.
+- `asset_file` stays unchanged. The extension of `capture` changes from `webm` to `mp4` in the
+  helper; no video is stored yet.
 - `analysis_run` already records `prompt_version`. A run for a website records version 4, and
   `raw_response` keeps what the model saw.
 
@@ -134,10 +139,14 @@ image, so human corrections win in the same way.
 ## Vocabulary impact
 
 **No re-analysis.** The vocabulary does not change. `type: website` and the `motion` values
-already exist. Prompt version 4 adds a guideline that only applies when frames are present. For
-the existing v3 image assets the prompt makes no difference, so re-classifying them would buy
-nothing. This is the one case where `prompt_version < 4` does **not** mean "worth re-running".
-The doc says so here so that nobody re-runs them by reflex later.
+already exist. Prompt version 4 adds a guideline that only applies when capture context is
+present. For the existing v3 image assets the prompt makes no difference, so re-classifying them
+would buy nothing. This is the one case where `prompt_version < 4` does **not** mean "worth
+re-running". The doc says so here so that nobody re-runs them by reflex later.
+
+Websites captured with release 1 have no technique to send: re-classifying them would not help
+either, only a new capture would. They are a handful of test captures; whoever wants them
+measured adds the URL again.
 
 ## i18n impact
 
@@ -158,14 +167,14 @@ The doc says so here so that nobody re-runs them by reflex later.
   answers like today: `id` and `pending`. The note says that a capture takes up to two minutes
   and can fail with a reason that `get_asset` will show.
 - **`get_asset`** for websites adds:
-  - `capture_tech`
+  - `capture_tech`, design tokens and element styles included
   - `source_url`
   - `status_reason` when the capture failed
   - the build prompt including the technique section
   - the poster as image content
 
-  The new optional `frames: boolean` (default `false`) also returns the 8 keyframes. They cost
-  the agent around 12k tokens, so they are not sent by default.
+  ~~`frames: boolean`~~ — dropped with the keyframes. The video is for people; an agent gets
+  the measured technique, which costs it a few hundred tokens instead of around 12k.
 - **`search_assets`** does not change. `type:website` and `motion:*` already filter.
 - **`list_vocabulary`** does not change.
 
@@ -183,8 +192,12 @@ The doc says so here so that nobody re-runs them by reflex later.
   watching it.
 - **Pages taller than 16,000 px** are cut off in the full-page screenshot. The video still
   covers the whole page.
-- **Duration and cost:** 30–90 s per capture, about $0.10 per classification (§7.4). Since
-  captures run one at a time, ten URLs dropped at once take around ten minutes.
+- **Duration and cost:** 30–90 s per capture. The first production capture was classified for
+  $0.057; the technique context adds roughly 1–2k input tokens, about one cent. Since captures
+  run one at a time, ten URLs dropped at once take around ten minutes.
+- **Movement without CSS traces** — canvas, WebGL, or GSAP tweens whose easing lives in
+  JavaScript — is not measured. A library found is reported (`GSAP`), its exact easing is not.
+  Such motion shows only in the video, and `motion` may stay empty until a person sets it.
 - **Chromium without its sandbox** (see the open questions). A renderer exploit on a captured
   page would run with the worker's rights.
 - **Image size:** the worker image grows by roughly 500–700 MB.
@@ -206,20 +219,73 @@ The doc says so here so that nobody re-runs them by reflex later.
    Valkey. Those go in the ArgoCD values and in `infra.local.md`, not here. Before relying on the
    policy, check that the cluster's network setup actually enforces NetworkPolicies.
 
-## Implementation order
+## Revised plan (2026-10-31)
 
-There are three releases, each deployable on its own:
+The primary consumer is an agent that has to rebuild the feel of a site (§1). Three layers serve
+it unequally:
 
-1. **Image and guard:** the new worker image, the URL input (web and MCP), the egress check and
-   `status_reason`. The capture step only takes the screenshots and fails properly. Website
-   assets get thumbnails, colours and a v3 classification of the poster.
-2. **Technique and context:** the extraction, `capture_tech`, the cookie banner tiers, the
-   detail panel and the build prompt section.
-3. **Video and frames:** context B, ffmpeg, keyframes, prompt v4, the player and `frames` in
-   `get_asset`. This is where `motion` gets filled.
+1. **The picture** (release 1, done). Necessary, but for an agent the weakest layer: from a
+   screenshot the model guesses fonts, spacing and shadows.
+2. **The measured technique.** What the browser can measure, nobody has to guess.
+   `button: radius 999px, shadow 0 8px 24px …, transition 0.6s cubic-bezier(0.16,1,0.3,1)` can be
+   built directly, and text costs an agent far less than an image. This is the most valuable
+   layer, so it grows beyond the draft: design tokens and element styles join fonts, libraries
+   and transitions.
+3. **Movement.** The video is worth it for people, who want to see the animation. Eight
+   keyframes to the model are not: inferring movement from stills stays a guess, at nearly
+   double the cost. The measured transitions and a detected scroll library are the stronger
+   signal for `motion`.
 
-Release 1 checks the riskiest part, Chromium in the cluster with `/dev/shm` and memory limits,
-before the logic on top depends on it.
+**Trade-off accepted:** motion without CSS traces (canvas, WebGL, easing inside GSAP calls) is
+not measured. It shows in the video, and `motion` stays empty there until a person sets it.
+Keyframes to the model can come back if this turns out to miss much — they are additive.
+
+### Release 2 — banners, technique, prompt v4
+
+In this order, because a banner over the page spoils both the picture and the measurement:
+
+1. **Cookie banners**, the three tiers from Scope, in context A after the load and before the
+   scroll. Plus a check afterwards: a fixed element still covering more than 30 % of the viewport
+   is logged with the host, so the heuristic can be improved from real misses.
+2. **Technique extraction** in context A after the scroll, through a CDP session
+   (`CSS.getStyleSheetText`) rather than `document.styleSheets` — the CSSOM cannot read
+   cross-origin stylesheets, and most sites load theirs from a CDN. It produces:
+   - `fonts`: families from `document.fonts` that actually loaded, plus the families in use on
+     visible text
+   - `libraries`: `window.gsap`, `ScrollTrigger`, `Lenis`, `[data-aos]`, Framer Motion's
+     `data-framer-*`, Swiper, Locomotive Scroll — globals, attributes and script URLs
+   - `css_properties`: counted `transition`, `animation` (with its `@keyframes` name and
+     timing), `transform`, and the `:hover` rules that change `transform`, `box-shadow` or
+     colour — the source of `hover-transform`
+   - `tokens` (new column): `:root` custom properties (at most 200), and counted colours,
+     border radii, box shadows and font sizes over visible elements, top 12 each
+   - `elements` (new column): computed styles of `h1`, `h2`, body text, the first button-like
+     element, a link, and the most frequent card-like element (background plus radius or
+     shadow): font family, size, weight, line height, letter spacing, colour, background,
+     radius, shadow, padding
+
+   Capped at about 4k characters of JSON when serialised for the model. The full record stays
+   in the database.
+3. **Prompt v4:** the capture context goes into the user message as text; the system prompt
+   gains the one guideline that measured technique outranks the picture for `motion`. The
+   system prompt stays stable and cacheable (§7.3).
+4. **Detail panel** (fonts, tokens as swatches and values, element styles, libraries,
+   transitions) and the **build prompt section** (0008), which `get_asset` returns as before.
+
+Migration: two nullable `jsonb` columns on `capture_tech`. Tests: extraction against local
+fixture pages — one with a OneTrust-like banner, a cross-origin stylesheet served from a second
+local origin, a `:hover` transform and a fake `window.gsap`.
+
+### Release 3 — the video, for people
+
+Context B with `recordVideo` from A's `storageState`, ffmpeg in the image, trim and transcode to
+MP4, the player on the detail page and a video badge on the card. No keyframes, no `frames` in
+`get_asset`, no prompt change. The worker's memory peak during recording is measured in
+production before the release counts as done (§4.6).
+
+Release 1 checked the riskiest part first, Chromium in the cluster. Release 3 is now the
+cheapest to drop or postpone if something more urgent comes up; release 2 is the one that
+makes a website reference useful to an agent.
 
 ## Verification
 
@@ -233,11 +299,13 @@ In the running application, after release 3:
    - `motion` contains `scroll-reveal`
 2. Paste a site with a OneTrust or Cookiebot banner. The poster and the video show no banner.
 3. Paste a site behind a Cloudflare challenge. The asset ends as `failed` with the reason
-   `blocked` and no image, and the detail page offers Retry capture.
+   `blocked` and no image, and the detail page offers Capture again.
 4. Paste `http://localhost:3000`, a cluster service name and a private LAN address. All three
    end as `forbidden-target`, and the worker log shows no navigation to them.
-5. Through MCP, call `add_asset` with `url`, then `get_asset` with `frames: true`. This returns
-   the technique, the build prompt with its technique section, the poster and 8 frames.
+5. Through MCP, call `add_asset` with `url`, then `get_asset`. This returns the technique with
+   tokens and element styles, the build prompt with its technique section, and the poster.
+   Hand that to Claude Code and have it build a button and a card: the radius, shadow and
+   easing match the measured values.
 6. During two parallel URL captures, `kubectl top pod` shows the worker below its limit. The
    second capture waits in the queue instead of running alongside the first.
 
@@ -298,3 +366,22 @@ Not verified: the worker image itself. Docker is not installed on the developmen
 the image is first built by the publish workflow after the push. Also not verified: a capture in the cluster
 (`/dev/shm`, memory, real sites) and the NetworkPolicy under the cluster's network setup. Those
 are the production check after the rollout.
+
+## Rollout (release 1)
+
+v0.8.0 on 2026-10-31. CI and both publish runs were green on the first attempt, the worker image
+with Chromium included. Migration `0012` applied, api, web and worker on 0.8.0. The worker
+started at 135 MiB.
+
+**Production check, first part:** a website captured from the URL field came through and was
+classified at prompt version 3 for $0.057. The worker stood at 226 MiB afterwards, well below
+its limit. Chromium therefore starts in the cluster with the `/dev/shm` mount, under UID 1000,
+from `/ms-playwright`.
+
+Not yet checked in production:
+
+- `forbidden-target` for an internal address
+- `blocked` for a challenged site
+- the memory peak during a capture, as opposed to after it
+- the NetworkPolicy, which stays off (`worker.egress.restrict: false`) until the database
+  selector is confirmed in the cluster

@@ -743,12 +743,14 @@ Hence the deterministic job is the main path. The agent approach still has a pla
 **WebM/MP4 rather than GIF** — a GIF of the same length is several times the size at worse
 quality.
 
-Two steps are what make this part valuable:
+What makes this part valuable — originally two steps, now one:
 
-- **Step 11: keyframes instead of a single image for the analysis.** From a sequence of frames
-  the model can describe the movement and fill the `motion` facet. A single screenshot cannot do
-  this in principle — animation is precisely what a still frame lacks.
-- **Step 8: technique extraction.** JavaScript running in the page context collects things no
+- ~~**Step 11: keyframes instead of a single image for the analysis.**~~ Revised in 0011: from
+  eight stills the model still guesses at movement, at nearly double the cost per capture. The
+  measured technique of step 8 is the stronger signal for `motion`; the video is kept for
+  people. Keyframes to the model remain possible later, additively.
+- **Step 8: technique extraction**, extended in 0011 by design tokens and the computed styles of
+  representative elements. JavaScript running in the page context collects things no
   screenshot shows: the `font-family` values actually in use, every `transition` and `animation`
   property on visible elements, transform types, and the signatures of known libraries
   (`window.gsap`, `window.ScrollTrigger`, `data-aos` attributes, Lenis, Framer Motion). That is
@@ -893,16 +895,19 @@ readable by Claude Code.
 
 **Ingest and Classification**
 - [x] Upload: drag & drop, clipboard paste, multi-upload
-- [ ] Job pipeline: normalize → thumbnails → colors → capture → classify → index — all but
-  `capture` and `index` run since 0004
+- [x] Job pipeline — uploads: normalize → thumbnails → colors → classify (0004); websites:
+  capture → thumbnails → colors → classify (0011). `index` is dropped: the `asset_search`
+  trigger keeps the vector current (0001)
 - [x] Anthropic adapter + provider interface
 
-**Website Capture**
-- [ ] Playwright in the worker image, `/dev/shm` mount, resource limits (§4.6)
-- [ ] Drop in a URL → screenshot, scroll video, keyframes, technique extraction (§8.2)
-- [ ] Cookie banner heuristics, proper error reporting (§8.3)
-- [ ] Multi-image analysis: keyframes into classification → `motion` gets genuinely filled
-- [ ] Video player in the detail view
+**Website Capture** — plan revised in 0011: the model gets the measured technique, not keyframes
+- [x] Playwright in the worker image, `/dev/shm` mount, resource limits (§4.6) — 0011, v0.8.0
+- [x] Drop in a URL → screenshots, proper error reporting, egress guard (§8.2, §8.3) — 0011,
+  v0.8.0
+- [ ] Cookie banner heuristics (§8.3) — 0011 release 2
+- [ ] Technique extraction with design tokens → classification context, so `motion` gets
+  genuinely filled — 0011 release 2
+- [ ] Scroll video and player in the detail view — 0011 release 3
 
 **Overview**
 - [x] Masonry grid, facet filters, full-text search, author filter
