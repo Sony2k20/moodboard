@@ -1,6 +1,6 @@
 # 0014 — Vocabulary maintenance: project values
 
-> Status: accepted — implemented, not yet released
+> Status: accepted — implemented, deployed in v0.13.0 (2026-10-31)
 > Phase: 1
 > Created: 2026-10-31
 
@@ -139,3 +139,15 @@ once there are more than a handful.
 
 Not verified before release: Verification 5 (a member's view) in the browser — the stub only
 signs in an admin; the `403` is covered by the integration test.
+
+## Rollout
+
+v0.13.0 deployed 2026-10-31 (gitops `9e65a6d`): ArgoCD synced and healthy, api, web and worker
+on the `0.13.0` images, no errors in the api log.
+
+- The api maps `POST`, `PATCH` and `DELETE /api/vocabulary/:facet/values…`; without a session all
+  three answer `401`, and `/vocabulary` is served.
+- The deploy's seed run left the vocabulary as it was: the classified facets hold their coded
+  values, `project` none yet. One user has the role `admin`.
+- **Not verified:** 1–7 in a signed-in session. They need the admin to add a first project value;
+  the `audit_log` entries can then be read back.
