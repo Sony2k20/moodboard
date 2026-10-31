@@ -913,7 +913,8 @@ readable by Claude Code.
 
 **Overview**
 - [x] Masonry grid, facet filters, full-text search, author filter
-- [ ] Detail view: editable metadata, colours, capture technique
+- [x] Detail view: editable metadata, colours, capture technique — the detail page (0006,
+  0011) and the inspector beside the grid (0012 release 1)
 - [x] Multi-select + bulk tagging
 
 **Internationalisation**
