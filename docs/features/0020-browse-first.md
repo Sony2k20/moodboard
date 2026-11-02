@@ -1,6 +1,6 @@
 # 0020 — Browse first: a calmer overview
 
-> Status: accepted — implemented
+> Status: accepted — implemented, deployed in v0.20.0 (2026-11-02)
 > Phase: 3
 > Created: 2026-11-02
 
@@ -158,3 +158,12 @@ Against the stub api in Chromium:
 
 Not verified before release: real assets with guesses on tiles in the Facets view, and a
 signed-in session against production.
+
+## Rollout
+
+v0.20.0 deployed 2026-11-02 (gitops `6a1dce4`): ArgoCD synced and healthy, api, web and worker
+on the `0.20.0` images. No migration. The web app serves the new translations ("Library",
+"More filters"); without a session `GET /api/me` answers `401`.
+
+**Not verified:** the new layout in a signed-in session with real assets — guesses on tiles in
+the Facets view, adding to a real board from the inspector.
