@@ -15,3 +15,4 @@ export * from './lib/api-token';
 export * from './lib/vocabulary-admin';
 export * from './lib/analysis';
 export * from './lib/font';
+export * from './lib/component';

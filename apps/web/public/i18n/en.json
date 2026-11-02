@@ -50,7 +50,8 @@
       "unsupported": "Not a supported file. Images: PNG, JPEG, WebP, GIF. Fonts: WOFF2, WOFF, TTF, OTF.",
       "invalidUrl": "Not a web address. Use an http or https URL.",
       "failed": "Upload failed. Try again in a moment."
-    }
+    },
+    "component": "Or write a component in code"
   },
   "asset": {
     "untitled": "Untitled",
@@ -408,5 +409,30 @@
     "manufacturer": "Foundry",
     "version": "Version",
     "license": "Licence"
+  },
+  "component": {
+    "new": "New component",
+    "intro": "Paste the HTML, CSS and JavaScript of a component. The preview runs it as you type; saving keeps the code as the reference and a rendering as its picture.",
+    "title": "Title (optional)",
+    "titleHint": "Left empty, the model names it",
+    "fields": {
+      "html": "HTML",
+      "css": "CSS",
+      "js": "JavaScript"
+    },
+    "width": "Preview width",
+    "preview": "Component preview",
+    "scaled": "Shown at {{ percent }} % of {{ width }} px",
+    "save": "Save component",
+    "code": "Code",
+    "edit": "Edit code",
+    "cancel": "Cancel",
+    "copy": "Copy",
+    "copied": "Copied",
+    "saved": "Saved. The picture and the classification follow in about a minute.",
+    "error": {
+      "invalid": "The code could not be saved: HTML is required, and each field holds at most 100,000 characters.",
+      "failed": "The component could not be saved. Try again in a moment."
+    }
   }
 }

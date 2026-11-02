@@ -50,7 +50,8 @@
       "unsupported": "Kein unterstütztes Format. Bilder: PNG, JPEG, WebP, GIF. Schriften: WOFF2, WOFF, TTF, OTF.",
       "invalidUrl": "Keine Webadresse. Bitte eine http- oder https-URL angeben.",
       "failed": "Upload fehlgeschlagen. Bitte gleich noch einmal versuchen."
-    }
+    },
+    "component": "Oder eine Komponente als Code schreiben"
   },
   "asset": {
     "untitled": "Ohne Titel",
@@ -408,5 +409,30 @@
     "manufacturer": "Schriftenhaus",
     "version": "Version",
     "license": "Lizenz"
+  },
+  "component": {
+    "new": "Neue Komponente",
+    "intro": "Füge HTML, CSS und JavaScript einer Komponente ein. Die Vorschau führt sie beim Tippen aus; beim Speichern bleibt der Code die Referenz und ein Rendering ihr Bild.",
+    "title": "Titel (optional)",
+    "titleHint": "Leer gelassen, benennt sie das Modell",
+    "fields": {
+      "html": "HTML",
+      "css": "CSS",
+      "js": "JavaScript"
+    },
+    "width": "Vorschaubreite",
+    "preview": "Vorschau der Komponente",
+    "scaled": "Dargestellt mit {{ percent }} % von {{ width }} px",
+    "save": "Komponente speichern",
+    "code": "Code",
+    "edit": "Code bearbeiten",
+    "cancel": "Abbrechen",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "saved": "Gespeichert. Bild und Klassifizierung folgen in etwa einer Minute.",
+    "error": {
+      "invalid": "Der Code konnte nicht gespeichert werden: HTML ist nötig, und jedes Feld fasst höchstens 100.000 Zeichen.",
+      "failed": "Die Komponente konnte nicht gespeichert werden. Bitte gleich noch einmal versuchen."
+    }
   }
 }

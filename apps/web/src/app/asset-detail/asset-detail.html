@@ -9,7 +9,11 @@
 } @else if (asset.value(); as asset) {
 <article>
   <figure class="image">
-    @if (asset.font && image().original; as original) {
+    @if (asset.component; as component) {
+    <!-- A component (0018): its code runs here; the rendering is only the tile's picture. -->
+    <mb-component-preview [code]="component" />
+    <mb-component-code [assetId]="asset.id" [code]="component" (saved)="this.asset.reload()" />
+    } @else if (asset.font && image().original; as original) {
     <!-- A font (0017): rendered live from its file; the drawn specimen is the tile's picture. -->
     <mb-font-specimen [font]="asset.font" [url]="original.url" />
     } @else if (image().video; as video) {

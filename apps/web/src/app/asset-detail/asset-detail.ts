@@ -21,6 +21,8 @@ import {
   VocabularyFacet,
 } from '@moodboard/shared';
 import { FontSpecimen } from './font-specimen';
+import { ComponentCodeView } from '../components/component-code';
+import { ComponentPreview } from '../components/component-preview';
 import { AssetsApi } from '../assets/assets-api.service';
 import { Vocabulary } from '../assets/vocabulary';
 import { SessionService } from '../auth/session.service';
@@ -43,7 +45,15 @@ type Editing = 'title' | 'description' | `facet:${string}` | null;
  */
 @Component({
   selector: 'mb-asset-detail',
-  imports: [RouterLink, TranslocoPipe, DatePipe, FontSpecimen, PercentPipe],
+  imports: [
+    RouterLink,
+    TranslocoPipe,
+    DatePipe,
+    ComponentCodeView,
+    ComponentPreview,
+    FontSpecimen,
+    PercentPipe,
+  ],
   templateUrl: './asset-detail.html',
   styleUrl: './asset-detail.css',
 })

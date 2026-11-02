@@ -1,4 +1,5 @@
 import {
+  componentForModel,
   CURATED_FACET_KEYS,
   FontMeta,
   hasTechnique,
@@ -90,6 +91,13 @@ export function userText(input: ClassifyInput): string {
       '',
       'The image is a screenshot of this website, captured at 1440x900. Measured technique from the live page (JSON; "×n" counts visible elements or rules):',
       techniqueForModel(context.captureTech),
+    );
+  }
+  if (context?.component) {
+    lines.push(
+      '',
+      `The image is this component's code rendered in a browser at ${context.component.width} px wide. The code is the reference; hover states, transitions and animations exist only in it:`,
+      componentForModel(context.component),
     );
   }
   if (context?.font) {

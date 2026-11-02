@@ -57,6 +57,7 @@ const asset = (change: Partial<AssetDetail> = {}): AssetDetail => ({
   designNotesOrigin: 'ai',
   captureTech: null,
   font: null,
+  component: null,
   ...change,
 });
 

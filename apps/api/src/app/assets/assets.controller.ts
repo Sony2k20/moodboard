@@ -12,6 +12,7 @@ import {
   Patch,
   PayloadTooLargeException,
   Post,
+  Put,
   Query,
   UnsupportedMediaTypeException,
   UploadedFile,
@@ -22,6 +23,8 @@ import {
   AssetDetail,
   AssetQuerySchema,
   AssetSearchResult,
+  ComponentCodeSchema,
+  ComponentCreateSchema,
   MAX_FONT_BYTES,
   MAX_UPLOAD_BYTES,
   parseCaptureUrl,
@@ -120,6 +123,32 @@ export class AssetsController {
       userId: user.id,
     });
     return { id };
+  }
+
+  /** A component from its code (0018). Answers before it is rendered; the worker renders. */
+  @Post('components')
+  @HttpCode(202)
+  async createComponent(@Body() body: unknown, @User() user: CurrentUser): Promise<{ id: string }> {
+    const { title, ...code } = parseBody(ComponentCreateSchema, body);
+    const { id } = await this.assets.ingestComponent({ code, title, userId: user.id });
+    return { id };
+  }
+
+  /** A new version of a component's code (0018); answers with the asset as stored. */
+  @Put(':id/component')
+  async updateComponent(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+    @User() user: CurrentUser,
+  ): Promise<AssetDetail> {
+    if (!(await this.assets.updateComponent(id, parseBody(ComponentCodeSchema, body), user.id))) {
+      throw new NotFoundException('No component with this id');
+    }
+    const asset = await this.assetSearch.detail(id);
+    if (!asset) {
+      throw new NotFoundException();
+    }
+    return asset;
   }
 
   /** Another attempt at a failed capture (0011). */

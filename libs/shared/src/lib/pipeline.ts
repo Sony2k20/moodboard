@@ -13,7 +13,8 @@ export const PIPELINE_QUEUE = 'pipeline';
 
 /**
  * `capture` runs in a queue of its own with concurrency 1 (0011): one Chromium at a time, and a
- * minute-long capture never holds up the image jobs behind it.
+ * minute-long capture never holds up the image jobs behind it. A component's `render` (0018)
+ * needs the same browser and shares the queue.
  */
 export const CAPTURE_QUEUE = 'capture';
 
@@ -21,6 +22,7 @@ export const PIPELINE_STEPS = [
   'normalize',
   'capture',
   'specimen',
+  'render',
   'thumbnails',
   'colors',
   'classify',
@@ -31,14 +33,16 @@ export type PipelineStep = (typeof PIPELINE_STEPS)[number];
 /**
  * Which way an asset goes through the steps. An upload starts with `normalize`; a website has no
  * upload to check — its images come out of `capture`, made by the worker itself (0011). A font
- * (0017) is checked by the api when it parses it; `specimen` draws its picture.
+ * (0017) is checked by the api when it parses it; `specimen` draws its picture. A component's
+ * picture is its code, rendered by `render` (0018).
  */
-export type PipelineKind = 'image' | 'website' | 'font';
+export type PipelineKind = 'image' | 'website' | 'font' | 'component';
 
 const PIPELINES: Record<PipelineKind, readonly PipelineStep[]> = {
   image: ['normalize', 'thumbnails', 'colors', 'classify'],
   website: ['capture', 'thumbnails', 'colors', 'classify'],
   font: ['specimen', 'thumbnails', 'colors', 'classify'],
+  component: ['render', 'thumbnails', 'colors', 'classify'],
 };
 
 export interface PipelineJobData {
@@ -49,7 +53,7 @@ export interface PipelineJobData {
 
 /** The pipeline an asset of this `asset.type` goes through. */
 export function pipelineKindOf(type: string): PipelineKind {
-  return type === 'website' || type === 'font' ? type : 'image';
+  return type === 'website' || type === 'font' || type === 'component' ? type : 'image';
 }
 
 export function firstPipelineStep(kind: PipelineKind): PipelineStep {
@@ -66,7 +70,7 @@ export function nextPipelineStep(
 }
 
 export function pipelineQueueOf(step: PipelineStep): string {
-  return step === 'capture' ? CAPTURE_QUEUE : PIPELINE_QUEUE;
+  return step === 'capture' || step === 'render' ? CAPTURE_QUEUE : PIPELINE_QUEUE;
 }
 
 /**

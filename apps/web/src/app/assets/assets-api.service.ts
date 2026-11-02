@@ -5,6 +5,7 @@ import {
   AnalysisRequestResult,
   AnalysisSummary,
   AssetDetail,
+  ComponentCode,
   AssetQuery,
   assetQueryParams,
   AssetSearchResult,
@@ -102,6 +103,16 @@ export class AssetsApi {
 
   restore(id: string): Promise<AssetDetail> {
     return firstValueFrom(this.http.post<AssetDetail>(`${this.url(id)}/restore`, {}));
+  }
+
+  // Components as code (0018).
+
+  createComponent(code: ComponentCode & { title?: string }): Promise<{ id: string }> {
+    return firstValueFrom(this.http.post<{ id: string }>('/api/assets/components', code));
+  }
+
+  updateComponent(id: string, code: ComponentCode): Promise<AssetDetail> {
+    return firstValueFrom(this.http.put<AssetDetail>(`${this.url(id)}/component`, code));
   }
 
   retryCapture(id: string): Promise<{ id: string }> {

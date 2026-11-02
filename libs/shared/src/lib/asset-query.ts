@@ -4,6 +4,7 @@ import { AssetStatus, Origin } from './asset-file';
 import { DesignNotes } from './analysis-result.schema';
 import { CaptureFailure } from './capture';
 import { CaptureTechRecord } from './capture-technique';
+import { ComponentCode } from './component';
 import { FontMeta } from './font';
 
 /**
@@ -277,6 +278,8 @@ export interface AssetDetail {
   readonly captureTech: CaptureTechRecord | null;
   /** What a font file says about itself (0017); `null` for every other asset. */
   readonly font: FontMeta | null;
+  /** A component's code (0018) — the asset itself; the image is its rendering. */
+  readonly component: ComponentCode | null;
 }
 
 /** `GET /api/vocabulary`, and later `list_vocabulary`. Ordered by `sort_order`. */

@@ -153,6 +153,7 @@ export class CommandPalette {
     return [
       page('overview', t('palette.pages.overview'), go('/'), ['home']),
       page('review', t('palette.pages.review'), go('/review')),
+      page('component', t('component.new'), go('/components/new'), ['code', 'html', 'css', 'komponente']),
       page('trash', t('trash.title'), go('/trash')),
       page('tokens', t('tokens.nav'), go('/tokens'), ['api', 'mcp']),
       page('vocabulary', t('vocabulary.nav'), go('/vocabulary'), ['facets']),

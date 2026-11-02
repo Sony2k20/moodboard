@@ -6,6 +6,7 @@ import {
   assetFonts,
   assets,
   auditLog,
+  componentCode,
   Database,
   facets,
   facetValues,
@@ -13,6 +14,7 @@ import {
 import { and, eq, isNull } from 'drizzle-orm';
 import {
   assetFilePath,
+  ComponentCode,
   FONT_FORMATS,
   FontFormat,
   STORAGE_SERVICE,
@@ -216,6 +218,79 @@ export class AssetsService {
       this.logger.warn(`Font ${id} stored, but the queue is unreachable; the reconciler will pick it up`);
     }
     return { id, enqueued };
+  }
+
+  /**
+   * A component from its code (0018). The code is the asset; the worker renders it into the
+   * picture. `type: component` is the person's decision, a given title theirs too.
+   */
+  async ingestComponent(input: {
+    code: ComponentCode;
+    title?: string;
+    userId: string;
+  }): Promise<{ id: string; enqueued: boolean }> {
+    const id = randomUUID();
+    const title = input.title?.trim().slice(0, 200) || null;
+    await this.db.transaction(async (tx) => {
+      await tx.insert(assets).values({
+        id,
+        type: 'component',
+        title,
+        titleOrigin: title ? 'human' : 'ai',
+        createdBy: input.userId,
+        status: 'pending',
+      });
+      await tx.insert(componentCode).values({ assetId: id, ...input.code, updatedBy: input.userId });
+      await decideType(tx, id, 'component', input.userId);
+      await tx.insert(auditLog).values({
+        userId: input.userId,
+        action: 'asset.created',
+        entity: 'asset',
+        entityId: id,
+        diff: { source: 'component', chars: input.code.html.length + input.code.css.length + input.code.js.length },
+      });
+    });
+    const enqueued = await this.queue.startPipeline(id, 'component');
+    if (!enqueued) {
+      this.logger.warn(`Component ${id} recorded, but the queue is unreachable; the reconciler will pick it up`);
+    }
+    return { id, enqueued };
+  }
+
+  /**
+   * A new version of a component's code (0018), by anyone — editing is open (§9). The previous
+   * code goes to the audit log; the pipeline renders and classifies again, and the guards keep
+   * what people set on the facets (§5.6). `false` when the asset is no live component.
+   */
+  async updateComponent(id: string, code: ComponentCode, userId: string): Promise<boolean> {
+    const updated = await this.db.transaction(async (tx) => {
+      const [previous] = await tx
+        .select({ html: componentCode.html, css: componentCode.css, js: componentCode.js, width: componentCode.width })
+        .from(componentCode)
+        .innerJoin(assets, eq(assets.id, componentCode.assetId))
+        .where(and(eq(componentCode.assetId, id), isNull(assets.deletedAt)))
+        .limit(1);
+      if (!previous) {
+        return false;
+      }
+      await tx
+        .update(componentCode)
+        .set({ ...code, updatedBy: userId, updatedAt: new Date() })
+        .where(eq(componentCode.assetId, id));
+      await tx.update(assets).set({ updatedAt: new Date() }).where(eq(assets.id, id));
+      await tx.insert(auditLog).values({
+        userId,
+        action: 'component.updated',
+        entity: 'asset',
+        entityId: id,
+        diff: { before: previous },
+      });
+      return true;
+    });
+    if (updated) {
+      await this.queue.startPipeline(id, 'component');
+    }
+    return updated;
   }
 
   /**

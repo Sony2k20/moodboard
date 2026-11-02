@@ -10,6 +10,7 @@ import {
   analysisRuns,
   assetFacetValues,
   assetFonts,
+  componentCode,
   assets,
   assetTags,
   captureTech,
@@ -102,6 +103,13 @@ export class ClassifyStep {
       .where(eq(assetFonts.assetId, assetId))
       .limit(1);
 
+    // A component's code (0018): what the rendering cannot show — transitions, states, structure.
+    const [component] = await this.db
+      .select()
+      .from(componentCode)
+      .where(eq(componentCode.assetId, assetId))
+      .limit(1);
+
     const image = await this.images.modelImage(assetId);
     let output;
     try {
@@ -121,6 +129,7 @@ export class ClassifyStep {
               }
             : undefined,
           font: font ?? undefined,
+          component: component ?? undefined,
         },
       });
     } catch (error) {

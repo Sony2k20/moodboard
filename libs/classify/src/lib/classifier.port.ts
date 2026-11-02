@@ -1,4 +1,4 @@
-import { AnalysisResult, CaptureTechnique, FontMeta } from '@moodboard/shared';
+import { AnalysisResult, CaptureTechnique, ComponentCode, FontMeta } from '@moodboard/shared';
 
 /**
  * The classification port (concept §7.2).
@@ -33,6 +33,8 @@ export interface ClassifyInput {
     readonly captureTech?: CaptureTechnique;
     /** What an uploaded font file states about itself (0017); its image is the specimen. */
     readonly font?: FontMeta;
+    /** A component's code (0018); its image is the code's rendering. */
+    readonly component?: ComponentCode;
   };
 }
 

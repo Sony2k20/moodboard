@@ -22,7 +22,8 @@ Call list_vocabulary first: facet filters only accept its values, as "facet:valu
 Values with origin "human" were set or confirmed by a person and outweigh the model's ("ai").
 get_asset returns the reference image itself and a ready build prompt — look at the image before building from it.
 For a captured website (type "website"), get_asset also returns captureTech: fonts, design tokens, element styles, transitions and hover rules measured on the live page. Those values are exact — prefer them over what the image suggests.
-For a font (type "font"), the image is a specimen drawn from the uploaded file, and get_asset returns font: family, style, weight, variable axes, OpenType features, designer and licence as the file states them. The original file is the font itself — use its family name in font-family, and respect its licence.`;
+For a font (type "font"), the image is a specimen drawn from the uploaded file, and get_asset returns font: family, style, weight, variable axes, OpenType features, designer and licence as the file states them. The original file is the font itself — use its family name in font-family, and respect its licence.
+For a component (type "component"), get_asset returns component: the HTML, CSS and JavaScript it is made of. The code is the reference — the image is only its rendering, and hover states, transitions and animations exist only in the code. Build from the code.`;
 
 const text = (value: unknown): CallToolResult => ({
   content: [

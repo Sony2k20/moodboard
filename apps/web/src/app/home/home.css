@@ -195,3 +195,11 @@ mb-filter-bar {
 .empty {
   color: var(--ink-soft);
 }
+
+/* Components are written, not dropped (0018). */
+.new-component {
+  flex-basis: 100%;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}

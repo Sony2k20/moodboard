@@ -13,6 +13,8 @@ import { ImageSteps } from './pipeline/image.steps';
 import { PipelineRunner } from './pipeline/pipeline.runner';
 import { Reconciler } from './pipeline/reconciler';
 import { SpecimenStep } from './pipeline/specimen.step';
+import { COMPONENT_RENDERER, RenderStep } from './pipeline/render.step';
+import { ComponentRenderer } from './capture/component-renderer';
 import { StorageModule } from './storage.module';
 import { Purger, TRASH_RETENTION_DAYS } from './trash/purger';
 
@@ -56,6 +58,8 @@ function classifierFromEnv(): AssetClassifier | null {
     { provide: WEBSITE_CAPTURER, useFactory: () => new WebsiteCapturer() },
     CaptureStep,
     SpecimenStep,
+    { provide: COMPONENT_RENDERER, useFactory: () => new ComponentRenderer() },
+    RenderStep,
     ClassifyStep,
     PipelineRunner,
     Reconciler,

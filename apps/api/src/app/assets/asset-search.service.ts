@@ -10,6 +10,7 @@ import {
   assetSearch,
   assetTags,
   captureTech,
+  componentCode,
   Database,
   facets,
   facetValues,
@@ -208,7 +209,8 @@ export class AssetSearchService {
       return null;
     }
 
-    const [files, facetRows, tagRows, colors, [run], decisions, [tech], [font]] = await Promise.all([
+    const [files, facetRows, tagRows, colors, [run], decisions, [tech], [font], [component]] =
+      await Promise.all([
       this.db
         .select({
           kind: assetFiles.kind,
@@ -262,6 +264,11 @@ export class AssetSearchService {
         .orderBy(asc(facets.sortOrder)),
       this.db.select().from(captureTech).where(eq(captureTech.assetId, id)).limit(1),
       this.db.select().from(assetFonts).where(eq(assetFonts.assetId, id)).limit(1),
+      this.db
+        .select({ html: componentCode.html, css: componentCode.css, js: componentCode.js, width: componentCode.width })
+        .from(componentCode)
+        .where(eq(componentCode.assetId, id))
+        .limit(1),
     ]);
 
     return {
@@ -300,6 +307,7 @@ export class AssetSearchService {
           }
         : null,
       font: font ? fontMeta(font) : null,
+      component: component ?? null,
     };
   }
 
