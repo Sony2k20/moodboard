@@ -271,12 +271,40 @@ button:disabled {
   margin: 0.5rem 0 0;
 }
 
+/* "All facets (N)" (0020): the empty ones, for editing. */
+.more {
+  justify-self: start;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.empty {
+  margin: 0;
+  padding: 0.5rem 0.25rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+
+/* Copy prompt and Add to board, side by side whatever the width (0020). */
 .actions-bar {
-  display: grid;
+  display: flex;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-top: 1px solid var(--line);
   background: var(--surface);
+  font-size: 0.9rem;
+}
+
+.actions-bar > * {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .guesses {
@@ -284,7 +312,7 @@ button:disabled {
   flex-wrap: wrap;
   gap: 0.25rem 0.5rem;
   justify-content: space-between;
-  margin: 0;
+  margin: 0 0 0.5rem;
   color: var(--ink-soft);
   font-size: 0.85rem;
 }
@@ -300,49 +328,18 @@ button:disabled {
   cursor: pointer;
 }
 
+/* The same height as the add-to-board button beside it, which sizes itself in em. */
 .actions-bar .copy {
-  padding: 0.55rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.45em 0.9em;
+  font-size: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.narrow {
-  display: none;
-}
-
-/* Phone: a bottom sheet, its two actions side by side. */
+/* Phone: a bottom sheet. */
 @media (max-width: 720px) {
   .preview img {
     max-height: 32vh;
-  }
-
-  .actions-bar {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .guesses > span {
-    display: none;
-  }
-
-  .guesses {
-    display: contents;
-  }
-
-  .guesses .link {
-    border: 1px solid var(--ink);
-    border-radius: 999px;
-    padding: 0.55rem 0.5rem;
-    text-decoration: none;
-  }
-
-  .guesses .narrow {
-    display: inline;
-  }
-
-  .guesses .wide {
-    display: none;
-  }
-
-  .actions-bar:not(:has(.guesses)) .copy {
-    grid-column: 1 / -1;
   }
 }

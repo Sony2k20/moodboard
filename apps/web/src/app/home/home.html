@@ -1,4 +1,18 @@
-<section class="upload" [class.dragging]="dragging()">
+@if (showPanel()) {
+<section
+  class="upload"
+  [class.dragging]="dragging()"
+  [attr.aria-label]="'upload.title' | transloco"
+  (keydown.escape)="$event.stopPropagation(); closePanel()"
+>
+  @if (uploads.panelOpen()) {
+  <button
+    type="button"
+    class="close"
+    [attr.aria-label]="'upload.close' | transloco"
+    (click)="closePanel()"
+  >×</button>
+  }
   <span>{{ 'upload.drop' | transloco }}</span>
   <label class="pick">
     {{ 'upload.pick' | transloco }}
@@ -30,6 +44,12 @@
   </form>
   <a class="new-component" routerLink="/components/new">{{ 'upload.component' | transloco }}</a>
 </section>
+} @else if (dragging()) {
+<!-- The panel is closed, but a drop still lands anywhere on the page (0020). -->
+<div class="drop-overlay" aria-hidden="true">
+  <p>{{ 'upload.overlay' | transloco }}</p>
+</div>
+}
 
 @if (uploads.uploads().length > 0) {
 <ul class="in-flight">
@@ -64,7 +84,7 @@
       </a>
       } @else if (store.hasGuesses()) {
       <!-- Nothing uncertain, but confident guesses are left: the way to spot-check them (0013). -->
-      <a class="review quiet" routerLink="/review" [queryParams]="store.spotCheckParams()">
+      <a class="review" routerLink="/review" [queryParams]="store.spotCheckParams()">
         {{ 'overview.spotCheck' | transloco }}
       </a>
       }

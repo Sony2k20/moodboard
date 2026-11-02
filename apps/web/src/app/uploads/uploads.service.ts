@@ -26,8 +26,14 @@ export class UploadsService {
   readonly uploads = signal<UploadItem[]>([]);
   /** Counts finished uploads; the overview refreshes whenever it changes. */
   readonly completed = signal(0);
+  /**
+   * The library's add panel (0020): opened by "+ Add" in the header, shown by the library, and
+   * closed once something is on its way — the progress list and then the new tile take over.
+   */
+  readonly panelOpen = signal(false);
 
   upload(files: readonly File[]): void {
+    this.panelOpen.set(false);
     for (const file of files) {
       const key = this.nextKey++;
       this.uploads.update((list) => [
@@ -73,6 +79,7 @@ export class UploadsService {
    * and shows up in the overview as a pending asset, like an upload being processed.
    */
   capture(url: string): void {
+    this.panelOpen.set(false);
     const key = this.nextKey++;
     this.uploads.update((list) => [...list, { key, name: url, progress: 0, error: null }]);
     this.http.post<{ id: string }>('/api/assets/websites', { url }).subscribe({

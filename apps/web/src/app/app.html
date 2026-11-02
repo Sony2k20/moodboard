@@ -1,36 +1,63 @@
 <header class="bar">
   <a class="brand" routerLink="/">{{ 'app.title' | transloco }}</a>
   @if (session.user(); as user) {
-  <button type="button" class="palette-open" (click)="palette.open()">
-    {{ 'palette.open' | transloco }}
+  <nav class="nav">
+    <a
+      routerLink="/"
+      routerLinkActive="current"
+      [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' }"
+    >{{ 'app.nav.library' | transloco }}</a>
+    <a routerLink="/boards" routerLinkActive="current">{{ 'boards.nav' | transloco }}</a>
+  </nav>
+  <button type="button" class="add" [attr.aria-pressed]="uploads.panelOpen()" (click)="toggleAdd()">
+    {{ 'app.add' | transloco }}
   </button>
-  <a routerLink="/boards">{{ 'boards.nav' | transloco }}</a>
-  <a routerLink="/trash">{{ 'trash.title' | transloco }}</a>
-  <a routerLink="/tokens">{{ 'tokens.nav' | transloco }}</a>
-  @if (user.role === 'admin') {
-  <a routerLink="/vocabulary">{{ 'vocabulary.nav' | transloco }}</a>
-  <a routerLink="/analysis">{{ 'analysis.nav' | transloco }}</a>
-  }
-  <span class="user">
-    {{ user.displayName }} @if (user.role === 'admin') {
-    <small>· {{ 'auth.roleAdmin' | transloco }}</small>
-    }
-  </span>
-  <label class="locale">
-    <span class="visually-hidden">{{ 'app.language' | transloco }}</span>
-    <!-- [selected] per option, not [value] on the select: that is applied before the options
-         exist, and the browser then shows the first one. -->
-    <select (change)="changeLocale($event)">
-      @for (locale of locales; track locale) {
-      <option [value]="locale" [selected]="locale === user.locale">
-        {{ 'app.locale.' + locale | transloco }}
-      </option>
+  <div class="account" (keydown.escape)="closeMenu(toggle)">
+    <button
+      #toggle
+      type="button"
+      class="account-toggle"
+      aria-controls="account-menu"
+      [attr.aria-expanded]="menuOpen()"
+      [attr.aria-label]="'app.account' | transloco: { name: user.displayName }"
+      (click)="menuOpen.set(!menuOpen())"
+    >
+      <span class="name">{{ user.displayName }}</span>
+      <span class="initial" aria-hidden="true">{{ user.displayName.charAt(0) }}</span>
+      <span class="caret" aria-hidden="true">▾</span>
+    </button>
+    @if (menuOpen()) {
+    <div id="account-menu" class="menu" (click)="onMenuClick($event)">
+      <p class="who">
+        {{ user.displayName }} @if (user.role === 'admin') {
+        <small>{{ 'auth.roleAdmin' | transloco }}</small>
+        }
+      </p>
+      <label class="locale">
+        <span>{{ 'app.language' | transloco }}</span>
+        <!-- [selected] per option, not [value] on the select: that is applied before the options
+             exist, and the browser then shows the first one. -->
+        <select (change)="changeLocale($event)">
+          @for (locale of locales; track locale) {
+          <option [value]="locale" [selected]="locale === user.locale">
+            {{ 'app.locale.' + locale | transloco }}
+          </option>
+          }
+        </select>
+      </label>
+      <hr />
+      <button type="button" (click)="palette.open()">{{ 'palette.open' | transloco }}</button>
+      <a routerLink="/tokens">{{ 'tokens.nav' | transloco }}</a>
+      <a routerLink="/trash">{{ 'trash.title' | transloco }}</a>
+      @if (user.role === 'admin') {
+      <a routerLink="/vocabulary">{{ 'vocabulary.nav' | transloco }}</a>
+      <a routerLink="/analysis">{{ 'analysis.nav' | transloco }}</a>
       }
-    </select>
-  </label>
-  <button type="button" (click)="logout()">
-    {{ 'auth.logout' | transloco }}
-  </button>
+      <hr />
+      <button type="button" (click)="logout()">{{ 'auth.logout' | transloco }}</button>
+    </div>
+    }
+  </div>
   }
 </header>
 

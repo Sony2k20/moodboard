@@ -75,6 +75,18 @@
   opacity: 0.6;
 }
 
+/* "More filters" (0020): a way to more pills, not a filter itself. */
+.pill.more {
+  border-style: dashed;
+  color: var(--ink-soft);
+}
+
+.pill.more:hover,
+.pill.more[aria-expanded='true'] {
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+
 .pill.author {
   padding: 0;
 }

@@ -27,7 +27,8 @@
       </span>
       } @else if (item.status !== 'failed' && !item.classified) {
       <span class="badge">{{ 'asset.unclassified' | transloco }}</span>
-      } @else if (item.status !== 'failed' && item.unconfirmedFacets > 0) {
+      } @else if (view() === 'facets' && item.status !== 'failed' && item.unconfirmedFacets > 0) {
+      <!-- The guess counter belongs to the curating view (0020); browsing shows only blockers. -->
       <span
         class="badge guesses"
         [title]="'overview.guesses' | transloco: { count: item.unconfirmedFacets }"

@@ -22,6 +22,7 @@ import {
 } from '@moodboard/shared';
 import { AssetsApi } from '../assets/assets-api.service';
 import { Vocabulary } from '../assets/vocabulary';
+import { AddToBoard } from '../boards/add-to-board';
 
 interface FacetRow {
   readonly facet: VocabularyFacet;
@@ -34,14 +35,16 @@ interface FacetRow {
 const PENDING_POLL_MS = 4000;
 
 /**
- * The docked panel beside the grid (0012): look at an asset, correct it, confirm the model's
- * guesses, copy its prompt — without leaving the overview. Every write is the detail page's
- * (0006): a facet is saved as a whole through `PUT …/facets/:facet`, which makes its values
- * `human` and records the decision, so a confirmation survives every re-analysis.
+ * The docked panel beside the grid (0012): look at an asset, copy its prompt or put it on a
+ * board, correct it, confirm the model's guesses — without leaving the overview. The two actions
+ * stay in the footer, and only facets with a value show until "All facets" (0020). Every write is
+ * the detail page's (0006): a facet is saved as a whole through `PUT …/facets/:facet`, which
+ * makes its values `human` and records the decision, so a confirmation survives every
+ * re-analysis.
  */
 @Component({
   selector: 'mb-inspector',
-  imports: [RouterLink, TranslocoPipe, DatePipe],
+  imports: [AddToBoard, RouterLink, TranslocoPipe, DatePipe],
   templateUrl: './inspector.html',
   styleUrl: './inspector.css',
   host: { '[attr.aria-busy]': 'saving()' },
@@ -67,6 +70,8 @@ export class Inspector {
   protected readonly saveError = signal(false);
   protected readonly copied = signal(false);
   protected readonly retrying = signal(false);
+  /** Also the empty facets, the legend and the run; kept from one asset to the next. */
+  protected readonly allFacets = signal(false);
 
   protected readonly notFound = computed(() => {
     const error = this.asset.error();
@@ -97,6 +102,13 @@ export class Inspector {
         unconfirmed: unconfirmed.has(facet.key),
       }));
   });
+
+  /** A facet being edited stays, even once its last value is taken off. */
+  protected readonly visibleRows = computed(() =>
+    this.allFacets()
+      ? this.rows()
+      : this.rows().filter((row) => row.values.length > 0 || this.editing() === row.facet.key),
+  );
 
   protected readonly guesses = computed(() => this.rows().filter((row) => row.unconfirmed));
 

@@ -1,6 +1,7 @@
 import { PercentPipe } from '@angular/common';
 import {
   Component,
+  computed,
   DestroyRef,
   effect,
   HostListener,
@@ -22,9 +23,10 @@ import { UploadsService } from '../uploads/uploads.service';
 const ASSET_ID = /^[0-9a-f-]{36}$/i;
 
 /**
- * The start page is the overview (0005): filters and grid, with the upload as a bar on top.
- * Dropping works anywhere on the page, pasting too. A selected tile opens the inspector beside
- * the grid (0012); the selection is in the URL, so a reload or a shared link reopens it.
+ * The start page is the overview (0005): filters and grid, with the add panel on top while it is
+ * open (0020). Dropping works anywhere on the page, pasting too, whether the panel is open or
+ * not. A selected tile opens the inspector beside the grid (0012); the selection is in the URL,
+ * so a reload or a shared link reopens it.
  */
 @Component({
   selector: 'mb-home',
@@ -40,7 +42,19 @@ export class Home {
   protected readonly inspected = signal<string | null>(null);
   private readonly router = inject(Router);
 
+  /** Opened from the header (0020), and always open while there is nothing to browse yet. */
+  protected readonly showPanel = computed(
+    () =>
+      this.uploads.panelOpen() ||
+      (!this.store.loading() &&
+        !this.store.error() &&
+        this.store.total() === 0 &&
+        !this.store.hasFilters()),
+  );
+
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.uploads.panelOpen.set(false));
+
     // Opening or closing the inspector changes only `asset`; the search stays as it is.
     let followed: string | null = null;
     const subscription = inject(ActivatedRoute).queryParamMap.subscribe(
@@ -118,6 +132,11 @@ export class Home {
       this.uploads.capture(url);
       input.value = '';
     }
+  }
+
+  /** The panel closes by itself once something is added (UploadsService); this is ×/Escape. */
+  protected closePanel(): void {
+    this.uploads.panelOpen.set(false);
   }
 
   @HostListener('document:dragover', ['$event'])

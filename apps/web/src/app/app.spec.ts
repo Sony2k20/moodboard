@@ -92,7 +92,7 @@ describe('SessionService', () => {
 });
 
 describe('App', () => {
-  it('shows the signed-in user with a logout button', async () => {
+  it('shows the signed-in user, with language and logout in the account menu', async () => {
     TestBed.configureTestingModule({
       imports: [App],
       providers: [
@@ -116,9 +116,16 @@ describe('App', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.user')?.textContent).toContain('Ada');
-    expect(el.querySelector('button')).not.toBeNull();
+    const toggle = el.querySelector<HTMLButtonElement>('.account-toggle');
+    expect(toggle?.textContent).toContain('Ada');
+    expect(el.querySelector('#account-menu')).toBeNull();
+
+    toggle?.click();
+    fixture.detectChanges();
+    const menu = el.querySelector('#account-menu');
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(menu?.querySelectorAll('button').length).toBeGreaterThan(0);
     // ada.locale is 'de'; the select must show it, not the first option.
-    expect(el.querySelector('select')?.value).toBe('de');
+    expect(menu?.querySelector('select')?.value).toBe('de');
   });
 });

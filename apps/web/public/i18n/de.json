@@ -5,7 +5,12 @@
     "locale": {
       "en": "English",
       "de": "Deutsch"
-    }
+    },
+    "nav": {
+      "library": "Bibliothek"
+    },
+    "add": "+ Hinzufügen",
+    "account": "Kontomenü für {{ name }}"
   },
   "auth": {
     "logout": "Abmelden",
@@ -51,7 +56,10 @@
       "invalidUrl": "Keine Webadresse. Bitte eine http- oder https-URL angeben.",
       "failed": "Upload fehlgeschlagen. Bitte gleich noch einmal versuchen."
     },
-    "component": "Oder eine Komponente als Code schreiben"
+    "component": "Oder eine Komponente als Code schreiben",
+    "title": "Referenzen hinzufügen",
+    "close": "Schließen",
+    "overlay": "Loslassen, um sie der Bibliothek hinzuzufügen"
   },
   "asset": {
     "untitled": "Ohne Titel",
@@ -98,7 +106,9 @@
       "facets": "Facetten"
     },
     "review": "Prüfen {{ count }}",
-    "spotCheck": "Vermutungen stichprobenartig prüfen"
+    "spotCheck": "Vermutungen stichprobenartig prüfen",
+    "moreFilters": "Weitere Filter",
+    "fewerFilters": "Weniger Filter"
   },
   "inspector": {
     "label": "Asset-Inspektor",
@@ -111,8 +121,10 @@
     "run": "Prompt v{{ version }} · {{ model }}",
     "guessesLeft": "Offene KI-Vermutungen: {{ count }}",
     "confirmAll": "Alle bestätigen",
-    "confirmN": "Vermutungen bestätigen ({{ count }})",
-    "copyPrompt": "Prompt für Claude kopieren"
+    "copyPrompt": "Prompt kopieren",
+    "allFacets": "Alle Facetten ({{ count }})",
+    "fewerFacets": "Nur belegte Facetten",
+    "noFacets": "Noch keine Facetten."
   },
   "review": {
     "title": "Prüfen",
@@ -456,14 +468,15 @@
     "add": {
       "title": "Boards",
       "board": "Board",
-      "choose": "Zu Board hinzufügen…",
       "new": "Neues Board…",
       "newTitle": "Titel des neuen Boards",
-      "submit": "Hinzufügen",
       "done": "Zu „{{ title }}“ hinzugefügt.",
       "already": "Schon in dieser Rolle auf „{{ title }}“.",
       "full": "Das Board ist voll (höchstens 100 Referenzen).",
-      "failed": "Konnte nicht zum Board hinzugefügt werden. Versuch es gleich noch einmal."
+      "failed": "Konnte nicht zum Board hinzugefügt werden. Versuch es gleich noch einmal.",
+      "button": "Zu Board hinzufügen",
+      "added": "✓ Hinzugefügt",
+      "alreadyShort": "✓ Schon drauf"
     },
     "role": {
       "label": "Rolle",

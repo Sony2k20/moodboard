@@ -87,7 +87,15 @@
   }
 
   <section class="facets" [attr.aria-label]="'detail.facets' | transloco">
-    @for (row of rows(); track row.facet.key) {
+    @if (guesses().length > 0) {
+    <p class="guesses">
+      <span>{{ 'inspector.guessesLeft' | transloco: { count: guesses().length } }}</span>
+      <button type="button" class="link" [disabled]="saving()" (click)="confirmAll()">
+        {{ 'inspector.confirmAll' | transloco }}
+      </button>
+    </p>
+    }
+    @for (row of visibleRows(); track row.facet.key) {
     <div class="facet" [class.open]="editing() === row.facet.key" [class.unconfirmed]="row.unconfirmed">
       <button
         type="button"
@@ -131,13 +139,23 @@
       </form>
       }
     </div>
+    } @empty {
+    <p class="none empty">{{ 'inspector.noFacets' | transloco }}</p>
     }
+    @if (allFacets() || visibleRows().length < rows().length) {
+    <button type="button" class="more" [attr.aria-expanded]="allFacets()" (click)="allFacets.set(!allFacets())">
+      {{ (allFacets() ? 'inspector.fewerFacets' : 'inspector.allFacets') | transloco: { count: rows().length } }}
+    </button>
+    }
+    @if (allFacets()) {
     <p class="legend">
       <span class="origin-chip" data-origin="human">{{ 'detail.origin.human' | transloco }}</span>
       <span class="origin-chip" data-origin="ai">{{ 'inspector.guess' | transloco }}</span>
     </p>
+    }
   </section>
 
+  @if (allFacets()) {
   <p class="run">
     @if (asset.classification; as run) {
     {{ 'inspector.run' | transloco: { version: run.promptVersion, model: run.model } }}
@@ -146,21 +164,15 @@
     {{ 'detail.notClassified' | transloco }}
     }
   </p>
+  }
 </div>
 
+<!-- The two things a visit is usually for (0020), always in view. -->
 <footer class="actions-bar">
-  @if (guesses().length > 0) {
-  <p class="guesses">
-    <span>{{ 'inspector.guessesLeft' | transloco: { count: guesses().length } }}</span>
-    <button type="button" class="link" [disabled]="saving()" (click)="confirmAll()">
-      <span class="wide">{{ 'inspector.confirmAll' | transloco }}</span>
-      <span class="narrow">{{ 'inspector.confirmN' | transloco: { count: guesses().length } }}</span>
-    </button>
-  </p>
-  }
   <button type="button" class="primary copy" [disabled]="!prompt()" (click)="copyPrompt()">
     {{ (copied() ? 'detail.prompt.copied' : 'inspector.copyPrompt') | transloco }}
   </button>
+  <mb-add-to-board [assetIds]="[asset.id]" [up]="true" />
 </footer>
 } @else {
 <p class="note">…</p>

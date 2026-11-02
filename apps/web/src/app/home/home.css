@@ -1,10 +1,12 @@
 .upload {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1rem;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 2.5rem;
   border: 1.5px dashed var(--line);
   border-radius: 12px;
   color: var(--ink-soft);
@@ -15,6 +17,37 @@
 .upload.dragging {
   border-color: var(--ink);
   background: var(--wash);
+}
+
+.upload .close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Files dragged over the page while the panel is closed (0020). It only shows where they go;
+   the document handles the drop, so the overlay must not catch the pointer. */
+.drop-overlay {
+  position: fixed;
+  inset: 0.75rem;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--ink);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.85);
+  color: var(--ink);
+  font-size: 1.1rem;
+  pointer-events: none;
 }
 
 .pick input {
@@ -65,10 +98,6 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
-  margin-top: 1rem;
-}
-
-mb-filter-bar {
   margin-top: 1rem;
 }
 
@@ -143,20 +172,19 @@ mb-filter-bar {
   font-size: 0.9rem;
 }
 
-/* "Review N" (0012): the way into the review queue for the current filter. */
+/* "Review N" (0012): the way into the review queue for the current filter. Quiet (0020): it is
+   there for curating, not for browsing. */
 .review {
   padding: 0.2rem 0.75rem;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  color: var(--ink);
-  font-weight: 600;
+  color: var(--ink-soft);
   text-decoration: none;
 }
 
-.review.quiet {
-  border-color: var(--line);
-  color: var(--ink-soft);
-  font-weight: 400;
+.review:hover {
+  border-color: var(--ink-soft);
+  color: var(--ink);
 }
 
 .view {

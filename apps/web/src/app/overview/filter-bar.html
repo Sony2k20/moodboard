@@ -14,7 +14,7 @@
   </form>
 
   <div class="pills" role="toolbar" [attr.aria-label]="'overview.filters' | transloco">
-    @for (facet of facets(); track facet.key) {
+    @for (facet of visibleFacets(); track facet.key) {
     @let selected = selectedIn(facet.key);
     <button
       type="button"
@@ -33,7 +33,7 @@
     </button>
     }
 
-    @if (store.counts().authors.length > 1 || store.query().author) {
+    @if ((more() && store.counts().authors.length > 1) || store.query().author) {
     <label class="pill author" [class.active]="!!store.query().author">
       <span class="visually-hidden">{{ 'overview.author' | transloco }}</span>
       <select (change)="onAuthor($event)">
@@ -47,6 +47,12 @@
         }
       </select>
     </label>
+    }
+
+    @if (more() || hasHidden()) {
+    <button type="button" class="pill more" [attr.aria-expanded]="more()" (click)="toggleMore()">
+      {{ (more() ? 'overview.fewerFilters' : 'overview.moreFilters') | transloco }}
+    </button>
     }
   </div>
 </div>

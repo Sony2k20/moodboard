@@ -5,7 +5,12 @@
     "locale": {
       "en": "English",
       "de": "Deutsch"
-    }
+    },
+    "nav": {
+      "library": "Library"
+    },
+    "add": "+ Add",
+    "account": "Account menu for {{ name }}"
   },
   "auth": {
     "logout": "Sign out",
@@ -51,7 +56,10 @@
       "invalidUrl": "Not a web address. Use an http or https URL.",
       "failed": "Upload failed. Try again in a moment."
     },
-    "component": "Or write a component in code"
+    "component": "Or write a component in code",
+    "title": "Add references",
+    "close": "Close",
+    "overlay": "Drop to add to the library"
   },
   "asset": {
     "untitled": "Untitled",
@@ -98,7 +106,9 @@
       "facets": "Facets"
     },
     "review": "Review {{ count }}",
-    "spotCheck": "Spot-check guesses"
+    "spotCheck": "Spot-check guesses",
+    "moreFilters": "More filters",
+    "fewerFilters": "Fewer filters"
   },
   "inspector": {
     "label": "Asset inspector",
@@ -111,8 +121,10 @@
     "run": "Prompt v{{ version }} · {{ model }}",
     "guessesLeft": "AI guesses left: {{ count }}",
     "confirmAll": "Confirm all",
-    "confirmN": "Confirm guesses ({{ count }})",
-    "copyPrompt": "Copy prompt for Claude"
+    "copyPrompt": "Copy prompt",
+    "allFacets": "All facets ({{ count }})",
+    "fewerFacets": "Only filled facets",
+    "noFacets": "No facets yet."
   },
   "review": {
     "title": "Review",
@@ -456,14 +468,15 @@
     "add": {
       "title": "Boards",
       "board": "Board",
-      "choose": "Add to board…",
       "new": "New board…",
       "newTitle": "Title of the new board",
-      "submit": "Add",
       "done": "Added to “{{ title }}”.",
       "already": "Already on “{{ title }}” in this role.",
       "full": "That board is full (at most 100 references).",
-      "failed": "Could not add to the board. Try again in a moment."
+      "failed": "Could not add to the board. Try again in a moment.",
+      "button": "Add to board",
+      "added": "✓ Added",
+      "alreadyShort": "✓ Already on it"
     },
     "role": {
       "label": "Role",

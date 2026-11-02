@@ -16,11 +16,17 @@ import { OverviewStore } from './overview.store';
 const SEARCH_DEBOUNCE_MS = 300;
 
 /**
+ * The facets people browse by (0020), shown without asking. The rest wait behind "More filters";
+ * a facet added to the vocabulary later joins them there.
+ */
+const PRIMARY_FACETS: readonly string[] = ['type', 'ui_pattern', 'style', 'mood', 'theme'];
+
+/**
  * Search, one pill per facet, author and the active filters (0012, replacing the 0005 sidebar).
  * A pill opens its facet's values under the row rather than as a popover, so the row can scroll
  * sideways on a phone without clipping what it opens. The semantics are 0005's: values within a
  * facet are OR, facets with each other AND, and a value that would empty the result is disabled,
- * not hidden.
+ * not hidden. Only the primary facets show at first (0020); a facet in use always does.
  */
 @Component({
   selector: 'mb-filter-bar',
@@ -40,12 +46,26 @@ export class FilterBar {
 
   /** The facet whose values are open, at most one. */
   protected readonly open = signal<string | null>(null);
+  /** "More filters" is open: every facet and the author. */
+  protected readonly more = signal(false);
 
   protected readonly facets = computed(() =>
     this.vocabulary.facets().filter((facet) => facet.values.length > 0),
   );
+  protected readonly visibleFacets = computed(() =>
+    this.more()
+      ? this.facets()
+      : this.facets().filter(
+          (facet) => PRIMARY_FACETS.includes(facet.key) || this.selectedIn(facet.key) > 0,
+        ),
+  );
+  protected readonly hasHidden = computed(
+    () =>
+      this.visibleFacets().length < this.facets().length ||
+      (this.store.counts().authors.length > 1 && !this.store.query().author),
+  );
   protected readonly openFacet = computed(
-    () => this.facets().find((facet) => facet.key === this.open()) ?? null,
+    () => this.visibleFacets().find((facet) => facet.key === this.open()) ?? null,
   );
 
   constructor() {
@@ -69,6 +89,10 @@ export class FilterBar {
 
   protected toggle(facet: string): void {
     this.open.update((open) => (open === facet ? null : facet));
+  }
+
+  protected toggleMore(): void {
+    this.more.update((more) => !more);
   }
 
   protected selectedIn(facet: string): number {
