@@ -1,6 +1,6 @@
 # 0018 — Components with real code and live preview
 
-> Status: accepted — implemented
+> Status: accepted — implemented, deployed in v0.18.0 (2026-11-02)
 > Phase: 2
 > Created: 2026-11-02
 
@@ -158,3 +158,12 @@ None.
 
 Not verified before release: a render and classification through the real worker in the
 cluster.
+
+## Rollout
+
+v0.18.0 deployed 2026-11-02 (gitops `5ce9f27`): ArgoCD synced and healthy, api, web and worker
+on the `0.18.0` images, so migration `0015_component_code` ran. Without a session `POST
+/api/assets/components` answers `401`, and `/components/new` is served.
+
+**Not verified:** 1–6 in a signed-in session — a real render through the worker's Chromium in
+the cluster and the model's classification of a component.

@@ -34,7 +34,7 @@ command palette — and by Claude Code through the MCP server. Phase 3 (boards) 
 | [`0015`](./docs/features/0015-batch-reanalysis.md) Batch re-analysis *(phase 2)* | done — live in `v0.15.0` |
 | [`0016`](./docs/features/0016-command-palette.md) Command palette *(phase 2)* | done — live in `v0.16.0` |
 | [`0017`](./docs/features/0017-fonts.md) Fonts: upload and live rendering *(phase 2)* | done — live in `v0.17.1` |
-| [`0018`](./docs/features/0018-components.md) Components as code, sandboxed preview *(phase 2)* | done — `v0.18.0` |
+| [`0018`](./docs/features/0018-components.md) Components as code, sandboxed preview *(phase 2)* | done — live in `v0.18.0` |
 
 **Authentication is on**: every data endpoint requires a session, and every row written from here
 on can name the human who acted — which is what `origin = 'human'` (concept §5.6) rests on.
