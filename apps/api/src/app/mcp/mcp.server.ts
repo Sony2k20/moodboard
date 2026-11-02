@@ -2,17 +2,21 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import {
+  AssetDetail,
   AssetQuerySchema,
+  BoardDetail,
   buildPrompt,
   MAX_UPLOAD_BYTES,
   parseCaptureUrl,
   sniffUploadFormat,
   STORAGE_SERVICE,
   StorageService,
+  TOKEN_FORMATS,
 } from '@moodboard/shared';
 import { z } from 'zod';
 import { AssetSearchService } from '../assets/asset-search.service';
 import { AssetsService } from '../assets/assets.service';
+import { BoardsService } from '../boards/boards.service';
 import type { CurrentUser } from '../auth/users.service';
 
 /** Read by the client once per connection; everything an agent must know before the first call. */
@@ -23,7 +27,11 @@ Values with origin "human" were set or confirmed by a person and outweigh the mo
 get_asset returns the reference image itself and a ready build prompt — look at the image before building from it.
 For a captured website (type "website"), get_asset also returns captureTech: fonts, design tokens, element styles, transitions and hover rules measured on the live page. Those values are exact — prefer them over what the image suggests.
 For a font (type "font"), the image is a specimen drawn from the uploaded file, and get_asset returns font: family, style, weight, variable axes, OpenType features, designer and licence as the file states them. The original file is the font itself — use its family name in font-family, and respect its licence.
-For a component (type "component"), get_asset returns component: the HTML, CSS and JavaScript it is made of. The code is the reference — the image is only its rendering, and hover states, transitions and animations exist only in the code. Build from the code.`;
+For a component (type "component"), get_asset returns component: the HTML, CSS and JavaScript it is made of. The code is the reference — the image is only its rendering, and hover states, transitions and animations exist only in the code. Build from the code.
+A board (list_boards, get_board) is a briefing package a person curated for one purpose — when asked to work from a board, work from get_board rather than searching. Each item has a role, the aspect of the reference that is meant (color, layout, typography, motion, imagery, copy or overall), and a weight: primary and secondary items are wanted, avoid items are counter-examples. Take from a reference only what its role names. derived is computed on the server: palette, type pairings, motion, the facets every primary item shares, and conflicts within the board. Do not average a conflict — ask the person which way to go.`;
+
+/** Pictures `get_board` sends at most; the rest are listed with their URLs. */
+const MAX_BOARD_IMAGES = 12;
 
 const text = (value: unknown): CallToolResult => ({
   content: [
@@ -46,6 +54,7 @@ export class McpServerFactory {
   constructor(
     private readonly search: AssetSearchService,
     private readonly assets: AssetsService,
+    private readonly boards: BoardsService,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
   ) {}
 
@@ -233,6 +242,105 @@ export class McpServerFactory {
       },
     );
 
+    server.registerTool(
+      'list_boards',
+      {
+        title: 'List the boards',
+        description:
+          'Every board: a curated set of references for one purpose, with a written briefing. Manual boards are curated item by item; smart boards are a saved filter whose items are always its current result. Open one with get_board.',
+        annotations: { readOnlyHint: true },
+      },
+      async () =>
+        text(
+          (await this.boards.list()).map((b) => ({
+            id: b.id,
+            title: b.title,
+            kind: b.kind,
+            items: b.itemCount,
+            briefing: b.briefing.length > 200 ? `${b.briefing.slice(0, 200)}…` : b.briefing,
+            author: b.author.displayName,
+            updatedAt: b.updatedAt,
+          })),
+        ),
+    );
+
+    server.registerTool(
+      'get_board',
+      {
+        title: 'Get a board as a briefing',
+        description:
+          "A board as a finished briefing: title, briefing, the items with role, weight, note and the asset's metadata, derived values computed on the server (palette, typePairings, motionSummary, commonFacets, conflicts), design tokens in four formats, a briefing prompt, and the pictures of up to twelve items — primary first, then avoid, then secondary. Call get_asset for an item's full detail, measured technique or code.",
+        inputSchema: { id: z.uuid().describe('The board id from list_boards') },
+        annotations: { readOnlyHint: true },
+      },
+      async ({ id }) => {
+        const board = await this.boards.detail(id);
+        if (!board) {
+          return failure(`No board ${id}`);
+        }
+        const result: CallToolResult = {
+          content: [
+            { type: 'text', text: JSON.stringify(briefing(board), null, 2) },
+            { type: 'text', text: `Briefing prompt:\n\n${board.prompt}` },
+          ],
+        };
+        const order = { primary: 0, avoid: 1, secondary: 2 } as const;
+        const shown = board.items
+          .map((item, i) => ({ item, position: i + 1 }))
+          .sort((a, b) => order[a.item.weight] - order[b.item.weight] || a.position - b.position)
+          .slice(0, MAX_BOARD_IMAGES);
+        for (const { item, position } of shown) {
+          // thumb-md, not thumb-lg: up to twelve pictures in one answer.
+          const image = item.asset.files.find((f) => f.kind === 'thumb_md');
+          if (!image) {
+            continue;
+          }
+          result.content.push(
+            {
+              type: 'text',
+              text: `Item ${position}: ${item.role}, ${item.weight} — ${item.asset.title ?? 'untitled'} (${item.asset.id})`,
+            },
+            {
+              type: 'image',
+              data: Buffer.from(await this.read(image.url.replace(/^\/files\//, ''))).toString('base64'),
+              mimeType: image.mime,
+            },
+          );
+        }
+        return result;
+      },
+    );
+
+    server.registerTool(
+      'get_design_tokens',
+      {
+        title: 'Get design tokens',
+        description:
+          'Palette, fonts, radii, shadows, font sizes and motion of a board — or of a single asset — as design tokens: plain JSON (json), W3C design tokens (w3c), CSS custom properties (css) or a Tailwind v4 @theme fragment (tailwind). Values come from the stored palette and the measured technique; one that no item has is left out, never invented.',
+        inputSchema: {
+          board_id: z.uuid().optional().describe('A board id from list_boards'),
+          asset_id: z.uuid().optional().describe('An asset id, instead of a board'),
+          format: z.enum([...TOKEN_FORMATS, 'all']).optional().describe('Default: all'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      async ({ board_id, asset_id, format }) => {
+        if (Boolean(board_id) === Boolean(asset_id)) {
+          return failure('Pass exactly one of board_id and asset_id');
+        }
+        const tokens = board_id
+          ? (await this.boards.detail(board_id))?.tokens
+          : await this.boards.assetTokens(asset_id as string);
+        if (!tokens) {
+          return failure(
+            board_id ? `No board ${board_id}` : `No asset ${asset_id} — it does not exist or is in the trash`,
+          );
+        }
+        const chosen = format ?? 'all';
+        return text(chosen === 'all' ? tokens : tokens[chosen]);
+      },
+    );
+
     return server;
   }
 
@@ -243,4 +351,38 @@ export class McpServerFactory {
     }
     return Buffer.concat(chunks);
   }
+}
+
+/** A board in the shape of concept §10.1: the briefing first, each asset reduced to what briefs. */
+function briefing(board: BoardDetail) {
+  const file = (asset: AssetDetail, kind: string) =>
+    asset.files.find((f) => f.kind === kind)?.url ?? null;
+  return {
+    id: board.id,
+    title: board.title,
+    kind: board.kind,
+    briefing: board.briefing,
+    filter: board.filter,
+    items: board.items.map((item, i) => ({
+      position: i + 1,
+      role: item.role,
+      weight: item.weight,
+      note: item.note,
+      asset: {
+        id: item.asset.id,
+        title: item.asset.title,
+        type: item.asset.type,
+        facets: item.asset.facets,
+        colors: item.asset.colors,
+        description: item.asset.description,
+        image_url: file(item.asset, 'thumb_lg') ?? file(item.asset, 'thumb_md'),
+        capture_url: file(item.asset, 'capture'),
+        capture_tech: item.asset.captureTech,
+        font: item.asset.font,
+        component: item.asset.component,
+      },
+    })),
+    derived: board.derived,
+    tokens: board.tokens,
+  };
 }

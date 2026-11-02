@@ -34,6 +34,7 @@ import { join } from 'node:path';
 import { AssetSearchService } from '../assets/asset-search.service';
 import { AssetsService } from '../assets/assets.service';
 import { ApiTokensService } from '../auth/api-tokens.service';
+import { BoardsService } from '../boards/boards.service';
 import { CurrentUser, UsersService } from '../auth/users.service';
 import { configureBodyParsers } from '../body-parsers';
 import { McpController } from './mcp.controller';
@@ -68,6 +69,7 @@ async function connect(user: CurrentUser): Promise<Client> {
   const factory = new McpServerFactory(
     new AssetSearchService(db, storage),
     { ingestUpload, ingestUrl } as unknown as AssetsService,
+    new BoardsService(db, storage, new AssetSearchService(db, storage)),
     storage,
   );
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
@@ -179,6 +181,7 @@ describe('MCP over HTTP', () => {
           useValue: new McpServerFactory(
             new AssetSearchService(db, storage),
             { ingestUpload, ingestUrl } as unknown as AssetsService,
+            new BoardsService(db, storage, new AssetSearchService(db, storage)),
             storage,
           ),
         },
@@ -294,12 +297,15 @@ class EchoController {
 }
 
 describe('MCP tools', () => {
-  it('offers the four tools of phase 1', async () => {
+  it('offers the tools of phases 1 and 3', async () => {
     const mcp = await connect(ada);
     const { tools } = await mcp.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
       'add_asset',
       'get_asset',
+      'get_board',
+      'get_design_tokens',
+      'list_boards',
       'list_vocabulary',
       'search_assets',
     ]);
@@ -403,5 +409,43 @@ describe('MCP tools', () => {
       const result = await mcp.callTool({ name: 'add_asset', arguments: args });
       expect(result.isError).toBe(true);
     }
+  });
+});
+
+describe('MCP boards (0019)', () => {
+  it('lists a board and returns it as a briefing with derived values, tokens, prompt and pictures', async () => {
+    const boards = new BoardsService(db, storage, new AssetSearchService(db, storage));
+    const { id } = await boards.create({ title: 'Leafy', briefing: 'A greener landing page.' }, ada);
+    await boards.addItems(id, { assetIds: [leaf], role: 'imagery', weight: 'primary' }, ada);
+    await db.insert(assetFiles).values({
+      assetId: leaf,
+      kind: 'thumb_md',
+      path: `${leaf}/thumb-md.webp`,
+      mime: 'image/webp',
+      bytes: THUMB.length,
+    });
+    const mcp = await connect(bob);
+
+    const list = JSON.parse(textOf(await mcp.callTool({ name: 'list_boards', arguments: {} })));
+    expect(list).toEqual([expect.objectContaining({ id, title: 'Leafy', kind: 'manual', items: 1 })]);
+
+    const result = (await mcp.callTool({ name: 'get_board', arguments: { id } })) as {
+      content: Array<{ type: string; text?: string; data?: string }>;
+    };
+    const board = JSON.parse(result.content[0].text as string);
+    expect(board).toMatchObject({
+      title: 'Leafy',
+      briefing: 'A greener landing page.',
+      items: [{ position: 1, role: 'imagery', weight: 'primary', asset: { id: leaf, image_url: `/files/${leaf}/thumb-lg.webp` } }],
+      derived: { commonFacets: expect.arrayContaining([{ facet: 'imagery', value: 'photography' }]), conflicts: [] },
+    });
+    expect(result.content[1].text).toContain('take the imagery only');
+    expect(result.content[2].text).toContain('Item 1: imagery, primary');
+    expect(result.content[3]).toMatchObject({ type: 'image', data: THUMB.toString('base64') });
+
+    const css = textOf(await mcp.callTool({ name: 'get_design_tokens', arguments: { board_id: id, format: 'css' } }));
+    expect(css).toMatch(/^:root {/);
+    const missing = await mcp.callTool({ name: 'get_design_tokens', arguments: {} });
+    expect(missing.isError).toBe(true);
   });
 });

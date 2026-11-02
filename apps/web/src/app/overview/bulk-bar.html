@@ -43,6 +43,8 @@
     </button>
   </div>
 
+  <mb-add-to-board [assetIds]="selectedIds()" />
+
   <button
     type="button"
     [disabled]="busy() || store.selected().size === 0"

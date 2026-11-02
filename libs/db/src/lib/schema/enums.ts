@@ -1,6 +1,9 @@
 import {
   ASSET_FILE_KINDS,
   ASSET_STATUSES,
+  BOARD_KINDS,
+  BOARD_ROLES,
+  BOARD_WEIGHTS,
   LOCALES,
   ORIGINS,
   USER_ROLES,
@@ -23,3 +26,8 @@ export const analysisRunStatus = pgEnum('analysis_run_status', [
   'succeeded',
   'failed',
 ]);
+
+/** Boards (0019, §5.4). */
+export const boardKind = pgEnum('board_kind', BOARD_KINDS);
+export const boardRole = pgEnum('board_role', BOARD_ROLES);
+export const boardWeight = pgEnum('board_weight', BOARD_WEIGHTS);

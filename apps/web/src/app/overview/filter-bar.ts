@@ -7,8 +7,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { Router } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Vocabulary } from '../assets/vocabulary';
+import { BoardsApi } from '../boards/boards-api.service';
 import { OverviewStore } from './overview.store';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -30,6 +32,10 @@ export class FilterBar {
   protected readonly store = inject(OverviewStore);
   protected readonly vocabulary = inject(Vocabulary);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly boards = inject(BoardsApi);
+  private readonly router = inject(Router);
+  private readonly transloco = inject(TranslocoService);
+  protected readonly smartFailed = signal(false);
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** The facet whose values are open, at most one. */
@@ -44,6 +50,21 @@ export class FilterBar {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.cancelSearch());
+  }
+
+  /** The current filter as a smart board (0019): its items are always this filter's result. */
+  protected async saveSmartBoard(): Promise<void> {
+    const title = prompt(this.transloco.translate('boards.smart.title'))?.trim();
+    if (!title) {
+      return;
+    }
+    this.smartFailed.set(false);
+    try {
+      const { id } = await this.boards.create({ title, filter: this.store.filterParams() });
+      await this.router.navigate(['/boards', id]);
+    } catch {
+      this.smartFailed.set(true);
+    }
   }
 
   protected toggle(facet: string): void {

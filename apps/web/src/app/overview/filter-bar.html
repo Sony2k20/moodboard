@@ -126,5 +126,11 @@
   <button type="button" class="link" (click)="store.clear(); search.value = ''">
     {{ 'overview.clear' | transloco }}
   </button>
+  <button type="button" class="link" (click)="saveSmartBoard()">
+    {{ 'boards.smart.save' | transloco }}
+  </button>
+  @if (smartFailed()) {
+  <small role="alert" class="error">{{ 'boards.smart.failed' | transloco }}</small>
+  }
 </div>
 }

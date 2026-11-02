@@ -434,5 +434,117 @@
       "invalid": "The code could not be saved: HTML is required, and each field holds at most 100,000 characters.",
       "failed": "The component could not be saved. Try again in a moment."
     }
+  },
+  "boards": {
+    "nav": "Boards",
+    "title": "Boards",
+    "intro": "A board is a curated set of references for one purpose — the briefing an agent works from. Give each reference a role, so it is clear which aspect of it is meant.",
+    "empty": "No boards yet.",
+    "failed": "The boards could not be loaded. Try again in a moment.",
+    "items": "{{ count }} references",
+    "itemsOne": "1 reference",
+    "kind": {
+      "smart": "Smart board"
+    },
+    "create": {
+      "label": "Title of the new board",
+      "placeholder": "New board, e.g. “Pricing relaunch”",
+      "submit": "Create board",
+      "smartHint": "A smart board is saved from a filter in the overview.",
+      "failed": "The board could not be created. Try again in a moment."
+    },
+    "add": {
+      "title": "Boards",
+      "board": "Board",
+      "choose": "Add to board…",
+      "new": "New board…",
+      "newTitle": "Title of the new board",
+      "submit": "Add",
+      "done": "Added to “{{ title }}”.",
+      "already": "Already on “{{ title }}” in this role.",
+      "full": "That board is full (at most 100 references).",
+      "failed": "Could not add to the board. Try again in a moment."
+    },
+    "role": {
+      "label": "Role",
+      "overall": "Overall",
+      "color": "Colour",
+      "layout": "Layout",
+      "typography": "Typography",
+      "motion": "Motion",
+      "imagery": "Imagery",
+      "copy": "Copy"
+    },
+    "weight": {
+      "label": "Weight",
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "avoid": "Avoid"
+    },
+    "smart": {
+      "save": "Save as smart board",
+      "title": "Title of the smart board",
+      "failed": "The smart board could not be saved."
+    }
+  },
+  "board": {
+    "back": "All boards",
+    "failed": "The board could not be loaded. It may have been deleted.",
+    "loading": "Loading board…",
+    "titleLabel": "Title",
+    "byline": "Created by {{ name }}",
+    "updated": "changed",
+    "delete": "Delete board",
+    "confirmDelete": "Delete the board “{{ title }}”? The references stay; only the board goes.",
+    "error": {
+      "deleteFailed": "The board could not be deleted.",
+      "saveFailed": "The change could not be saved. The board shows what is stored.",
+      "conflict": "That reference already has this role on the board."
+    },
+    "briefing": "Briefing",
+    "briefingPlaceholder": "What should come out of this? Goal, audience, constraints…",
+    "save": "Save",
+    "filter": "Filter",
+    "openFilter": "Open in overview",
+    "smartHint": "The references are the newest 60 results of this filter, always current.",
+    "items": "References ({{ count }})",
+    "emptyManual": "No references yet. Add them from the overview (select) or from a reference’s page.",
+    "emptySmart": "Nothing matches this filter at the moment.",
+    "note": "Note",
+    "notePlaceholder": "Note, e.g. “only the animation, not the colours”",
+    "moveUp": "Move “{{ title }}” up",
+    "moveDown": "Move “{{ title }}” down",
+    "remove": "Remove “{{ title }}” from the board",
+    "addHint": "Drag to reorder. Add references from the overview’s selection or a reference’s page.",
+    "derived": {
+      "title": "What the board says",
+      "palette": "Palette",
+      "none": "Nothing to show yet.",
+      "fromOverall": "No colour references — taken from the overall ones.",
+      "avoidColors": "Colours to avoid",
+      "type": "Typography",
+      "heading": "Headings",
+      "body": "Body",
+      "font": "Font",
+      "motion": "Motion",
+      "library": "Library",
+      "direction": "Direction — shared by every primary reference",
+      "noDirection": "The primary references share no look yet.",
+      "conflicts": "Conflicts",
+      "noConflicts": "No contradictions.",
+      "split": "Primary references disagree on {{ facet }}:",
+      "avoided": "“{{ value }}” is wanted, but also carried by a counter-example ({{ avoid }})."
+    },
+    "tokens": {
+      "title": "Design tokens",
+      "json": "JSON",
+      "w3c": "W3C",
+      "css": "CSS",
+      "tailwind": "Tailwind"
+    },
+    "prompt": {
+      "title": "Briefing prompt",
+      "hint": "For Claude Code or Claude Design. Over MCP, get_board returns the same with the pictures."
+    }
   }
 }

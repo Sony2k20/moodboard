@@ -16,3 +16,6 @@ export * from './lib/vocabulary-admin';
 export * from './lib/analysis';
 export * from './lib/font';
 export * from './lib/component';
+export * from './lib/color';
+export * from './lib/board';
+export * from './lib/board-derive';

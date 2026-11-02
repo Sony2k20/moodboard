@@ -1,0 +1,327 @@
+<a class="back" routerLink="/boards">← {{ 'board.back' | transloco }}</a>
+
+@if (board.error() && !board.value()) {
+<p role="alert">{{ 'board.failed' | transloco }}</p>
+} @else if (board.value(); as board) {
+<header [attr.aria-busy]="saving()">
+  @if (editingTitle()) {
+  <input
+    #titleInput
+    class="title-input"
+    maxlength="200"
+    [value]="board.title"
+    [attr.aria-label]="'board.titleLabel' | transloco"
+    (keydown.enter)="saveTitle(titleInput.value)"
+    (keydown.escape)="editingTitle.set(false)"
+    (blur)="saveTitle(titleInput.value)"
+  />
+  } @else {
+  <h1>
+    {{ board.title }}
+    <button type="button" class="link" (click)="editingTitle.set(true)">
+      {{ 'detail.edit' | transloco }}
+    </button>
+  </h1>
+  }
+  <p class="byline">
+    @if (board.kind === 'smart') {
+    <span class="kind">{{ 'boards.kind.smart' | transloco }}</span> ·
+    }
+    {{ 'board.byline' | transloco: { name: board.author.displayName } }}
+    · {{ 'board.updated' | transloco }} {{ board.updatedAt | date: 'medium' }}
+    @if (canDelete()) {
+    · <button type="button" class="link danger" [disabled]="saving()" (click)="deleteBoard()">
+      {{ 'board.delete' | transloco }}
+    </button>
+    }
+  </p>
+</header>
+
+@if (saveError(); as error) {
+<p role="alert" class="error">{{ error | transloco }}</p>
+}
+
+<div class="layout">
+  <div class="main">
+    <section class="briefing">
+      <label for="briefing"><h2>{{ 'board.briefing' | transloco }}</h2></label>
+      <textarea
+        #briefing
+        id="briefing"
+        rows="4"
+        maxlength="8000"
+        [placeholder]="'board.briefingPlaceholder' | transloco"
+        [value]="board.briefing"
+        (input)="briefingDirty.set(true)"
+        (blur)="saveBriefing(briefing.value)"
+      ></textarea>
+      @if (briefingDirty()) {
+      <button type="button" (click)="saveBriefing(briefing.value)">{{ 'board.save' | transloco }}</button>
+      }
+    </section>
+
+    @if (filter(); as q) {
+    <section class="filter">
+      <h2>{{ 'board.filter' | transloco }}</h2>
+      <p class="chips">
+        @for (f of q.facet; track f.facet + ':' + f.value) {
+        <span class="chip"><small>{{ vocabulary.facetLabel(f.facet) }}</small> {{ vocabulary.valueLabel(f.facet, f.value) }}</span>
+        }
+        @for (tag of q.tag; track tag) {
+        <span class="chip"><small>{{ 'overview.tags' | transloco }}</small> {{ tag }}</span>
+        }
+        @if (q.q) {
+        <span class="chip"><small>{{ 'overview.search' | transloco }}</small> “{{ q.q }}”</span>
+        }
+        @if (q.author) {
+        <span class="chip"><small>{{ 'overview.author' | transloco }}</small> {{ q.author }}</span>
+        }
+        <a routerLink="/" [queryParams]="board.filter">{{ 'board.openFilter' | transloco }}</a>
+      </p>
+      <small class="hint">{{ 'board.smartHint' | transloco }}</small>
+    </section>
+    }
+
+    <section>
+      <h2>{{ 'board.items' | transloco: { count: board.items.length } }}</h2>
+      @if (board.items.length === 0) {
+      <p class="empty">{{ (manual() ? 'board.emptyManual' : 'board.emptySmart') | transloco }}</p>
+      }
+      <ol class="items">
+        @for (item of board.items; track (item.id ?? item.asset.id); let i = $index) {
+        <li
+          [class.avoid]="item.weight === 'avoid'"
+          [class.dragging]="dragging() === i"
+          [class.drop-target]="dropTarget() === i && dragging() !== i"
+          [attr.draggable]="manual()"
+          (dragstart)="onDragStart($event, i)"
+          (dragover)="onDragOver($event, i)"
+          (drop)="onDrop($event, i)"
+          (dragend)="onDragEnd()"
+        >
+          <a class="thumb" [routerLink]="['/assets', item.asset.id]" draggable="false">
+            @if (thumbnail(item.asset); as url) {
+            <img [src]="url" [alt]="title(item.asset)" loading="lazy" draggable="false" />
+            }
+          </a>
+          <div class="body">
+            <a class="name" [routerLink]="['/assets', item.asset.id]" draggable="false">{{ title(item.asset) }}</a>
+            @if (manual()) {
+            <div class="controls">
+              <label>
+                <span class="visually-hidden">{{ 'boards.role.label' | transloco }}</span>
+                <select [disabled]="saving()" (change)="setRole(item, $any($event.target).value)">
+                  @for (role of roles; track role) {
+                  <option [value]="role" [selected]="role === item.role">{{ 'boards.role.' + role | transloco }}</option>
+                  }
+                </select>
+              </label>
+              <div class="weights" role="radiogroup" [attr.aria-label]="'boards.weight.label' | transloco">
+                @for (weight of weights; track weight) {
+                <label class="weight" [attr.data-weight]="weight">
+                  <input
+                    type="radio"
+                    [name]="'weight-' + item.id"
+                    [checked]="weight === item.weight"
+                    [disabled]="saving()"
+                    (change)="setWeight(item, weight)"
+                  />
+                  {{ 'boards.weight.' + weight | transloco }}
+                </label>
+                }
+              </div>
+            </div>
+            <input
+              #note
+              class="note"
+              maxlength="1000"
+              [placeholder]="'board.notePlaceholder' | transloco"
+              [attr.aria-label]="'board.note' | transloco"
+              [value]="item.note ?? ''"
+              (keydown.enter)="note.blur()"
+              (blur)="setNote(item, note.value)"
+            />
+            } @else {
+            <small class="hint">{{ 'boards.role.' + item.role | transloco }} · {{ 'boards.weight.' + item.weight | transloco }}</small>
+            }
+          </div>
+          @if (manual()) {
+          <div class="order">
+            <button
+              type="button"
+              class="move"
+              [disabled]="saving() || i === 0"
+              [attr.aria-label]="'board.moveUp' | transloco: { title: title(item.asset) }"
+              (click)="move(i, -1, $event)"
+            >↑</button>
+            <button
+              type="button"
+              class="move"
+              [disabled]="saving() || i === board.items.length - 1"
+              [attr.aria-label]="'board.moveDown' | transloco: { title: title(item.asset) }"
+              (click)="move(i, 1, $event)"
+            >↓</button>
+            <button
+              type="button"
+              class="remove"
+              [disabled]="saving()"
+              [attr.aria-label]="'board.remove' | transloco: { title: title(item.asset) }"
+              (click)="remove(item)"
+            >×</button>
+          </div>
+          }
+        </li>
+        }
+      </ol>
+      @if (manual()) {
+      <small class="hint">{{ 'board.addHint' | transloco }}</small>
+      }
+    </section>
+  </div>
+
+  <aside class="derived">
+    <h2>{{ 'board.derived.title' | transloco }}</h2>
+
+    <section>
+      <h3>{{ 'board.derived.palette' | transloco }}</h3>
+      @if (board.derived.palette.colors.length === 0) {
+      <p class="empty">{{ 'board.derived.none' | transloco }}</p>
+      } @else {
+      @if (board.derived.palette.source === 'overall') {
+      <small class="hint">{{ 'board.derived.fromOverall' | transloco }}</small>
+      }
+      <ul class="swatches">
+        @for (color of board.derived.palette.colors; track color.hex) {
+        <li [title]="titlesOf(color.assetIds)">
+          <span class="swatch" [style.background]="color.hex"></span>
+          <code>{{ color.hex }}</code>
+          <small>{{ color.share | percent }}</small>
+        </li>
+        }
+      </ul>
+      }
+      @if (board.derived.palette.avoid.length > 0) {
+      <h4>{{ 'board.derived.avoidColors' | transloco }}</h4>
+      <ul class="swatches avoid">
+        @for (color of board.derived.palette.avoid; track color.hex) {
+        <li [title]="titlesOf(color.assetIds)">
+          <span class="swatch" [style.background]="color.hex"></span>
+          <code>{{ color.hex }}</code>
+        </li>
+        }
+      </ul>
+      }
+    </section>
+
+    <section>
+      <h3>{{ 'board.derived.type' | transloco }}</h3>
+      @for (pairing of board.derived.typePairings.pairings; track pairing.assetId) {
+      <p class="pairing">
+        @if (pairing.heading) {
+        <span>{{ 'board.derived.heading' | transloco }} <strong>{{ pairing.heading }}</strong></span>
+        }
+        @if (pairing.body) {
+        <span>{{ 'board.derived.body' | transloco }} <strong>{{ pairing.body }}</strong></span>
+        }
+        @if (pairing.family) {
+        <span>{{ 'board.derived.font' | transloco }} <strong>{{ pairing.family }}</strong></span>
+        }
+        @for (style of pairing.styles; track style) {
+        <span class="chip">{{ vocabulary.valueLabel('typography', style) }}</span>
+        }
+        <small class="hint">{{ titlesOf([pairing.assetId]) }}</small>
+      </p>
+      } @empty {
+      <p class="empty">{{ 'board.derived.none' | transloco }}</p>
+      }
+    </section>
+
+    <section>
+      <h3>{{ 'board.derived.motion' | transloco }}</h3>
+      @let motion = board.derived.motionSummary;
+      @if (motion.values.length === 0 && motion.libraries.length === 0 && motion.transitions.length === 0) {
+      <p class="empty">{{ 'board.derived.none' | transloco }}</p>
+      } @else {
+      <p class="chips">
+        @for (v of motion.values; track v.value) {
+        <span class="chip">{{ vocabulary.valueLabel('motion', v.value) }} <small>{{ v.count }}</small></span>
+        }
+        @for (library of motion.libraries; track library) {
+        <span class="chip"><small>{{ 'board.derived.library' | transloco }}</small> {{ library }}</span>
+        }
+      </p>
+      @for (t of motion.transitions; track t) {
+      <code class="block">{{ t }}</code>
+      }
+      }
+    </section>
+
+    <section>
+      <h3>{{ 'board.derived.direction' | transloco }}</h3>
+      @if (board.derived.commonFacets.length === 0) {
+      <p class="empty">{{ 'board.derived.noDirection' | transloco }}</p>
+      } @else {
+      <p class="chips">
+        @for (f of board.derived.commonFacets; track f.facet + ':' + f.value) {
+        <span class="chip"><small>{{ vocabulary.facetLabel(f.facet) }}</small> {{ vocabulary.valueLabel(f.facet, f.value) }}</span>
+        }
+      </p>
+      }
+    </section>
+
+    <section>
+      <h3>{{ 'board.derived.conflicts' | transloco }}</h3>
+      @if (board.derived.conflicts.length === 0) {
+      <p class="empty">{{ 'board.derived.noConflicts' | transloco }}</p>
+      } @else {
+      <ul class="conflicts">
+        @for (c of board.derived.conflicts; track $index) {
+        <li>
+          @if (c.kind === 'split') {
+          {{ 'board.derived.split' | transloco: { facet: vocabulary.facetLabel(c.facet) } }}
+          @for (v of c.values; track v.value) {
+          <span class="chip" [title]="titlesOf(v.assetIds)">{{ vocabulary.valueLabel(c.facet, v.value) }}</span>
+          }
+          } @else {
+          {{ 'board.derived.avoided' | transloco: { value: vocabulary.valueLabel(c.facet, c.value), avoid: titlesOf(c.avoid) } }}
+          }
+        </li>
+        }
+      </ul>
+      }
+    </section>
+
+    <section>
+      <h3>{{ 'board.tokens.title' | transloco }}</h3>
+      @if (!hasTokens()) {
+      <p class="empty">{{ 'board.derived.none' | transloco }}</p>
+      } @else {
+      <div class="tabs" role="tablist">
+        @for (f of formats; track f) {
+        <button type="button" role="tab" [attr.aria-selected]="format() === f" (click)="format.set(f)">
+          {{ 'board.tokens.' + f | transloco }}
+        </button>
+        }
+        <button type="button" class="copy" (click)="copy(tokens(), 'tokens')">
+          {{ (copied() === 'tokens' ? 'detail.prompt.copied' : 'detail.prompt.copy') | transloco }}
+        </button>
+      </div>
+      <pre role="tabpanel">{{ tokens() }}</pre>
+      }
+    </section>
+
+    <details class="prompt">
+      <summary>
+        {{ 'board.prompt.title' | transloco }}
+        <button type="button" class="copy" (click)="$event.preventDefault(); copy(board.prompt, 'prompt')">
+          {{ (copied() === 'prompt' ? 'detail.prompt.copied' : 'detail.prompt.copy') | transloco }}
+        </button>
+      </summary>
+      <pre>{{ board.prompt }}</pre>
+      <small class="hint">{{ 'board.prompt.hint' | transloco }}</small>
+    </details>
+  </aside>
+</div>
+} @else {
+<p role="status">{{ 'board.loading' | transloco }}</p>
+}

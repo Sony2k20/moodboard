@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { MAX_BULK_ASSETS } from '@moodboard/shared';
 import { AssetsApi } from '../assets/assets-api.service';
+import { AddToBoard } from '../boards/add-to-board';
 import { Vocabulary } from '../assets/vocabulary';
 import { OverviewStore } from './overview.store';
 
@@ -13,7 +14,7 @@ import { OverviewStore } from './overview.store';
  */
 @Component({
   selector: 'mb-bulk-bar',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, AddToBoard],
   templateUrl: './bulk-bar.html',
   styleUrl: './bulk-bar.css',
 })
@@ -28,6 +29,7 @@ export class BulkBar {
   /** The outcome of the last re-analysis request, which leaves the selection as it is. */
   protected readonly reanalysis = signal<{ key: string; count?: number } | null>(null);
   protected readonly facetKey = signal('');
+  protected readonly selectedIds = computed(() => [...this.store.selected()]);
   protected readonly facets = computed(() =>
     this.vocabulary.facets().filter((f) => f.values.length > 0),
   );

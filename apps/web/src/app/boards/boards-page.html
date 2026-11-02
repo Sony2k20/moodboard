@@ -1,0 +1,50 @@
+<h1>{{ 'boards.title' | transloco }}</h1>
+<p class="intro">{{ 'boards.intro' | transloco }}</p>
+
+<form class="create" (submit)="$event.preventDefault(); create(title.value)">
+  <label class="visually-hidden" for="new-board">{{ 'boards.create.label' | transloco }}</label>
+  <input
+    #title
+    id="new-board"
+    maxlength="200"
+    [placeholder]="'boards.create.placeholder' | transloco"
+  />
+  <button type="submit" [disabled]="creating()">{{ 'boards.create.submit' | transloco }}</button>
+  <small class="hint">{{ 'boards.create.smartHint' | transloco }}</small>
+</form>
+@if (createFailed()) {
+<p role="alert" class="error">{{ 'boards.create.failed' | transloco }}</p>
+}
+
+@if (boards.error()) {
+<p role="alert">{{ 'boards.failed' | transloco }}</p>
+} @else if (boards.value(); as boards) {
+@if (boards.length === 0) {
+<p class="empty">{{ 'boards.empty' | transloco }}</p>
+} @else {
+<ul class="cards">
+  @for (board of boards; track board.id) {
+  <li>
+    <a [routerLink]="['/boards', board.id]">
+      <div class="mosaic" [attr.data-count]="board.thumbnails.length">
+        @for (url of board.thumbnails; track url) {
+        <img [src]="url" alt="" loading="lazy" />
+        }
+      </div>
+      <strong>{{ board.title }}</strong>
+    </a>
+    <small>
+      @if (board.kind === 'smart') {
+      <span class="kind">{{ 'boards.kind.smart' | transloco }}</span> ·
+      }
+      {{ (board.itemCount === 1 ? 'boards.itemsOne' : 'boards.items') | transloco: { count: board.itemCount } }}
+      · {{ board.author.displayName }} · {{ board.updatedAt | date: 'mediumDate' }}
+    </small>
+    @if (board.briefing) {
+    <p class="briefing">{{ board.briefing }}</p>
+    }
+  </li>
+  }
+</ul>
+}
+}

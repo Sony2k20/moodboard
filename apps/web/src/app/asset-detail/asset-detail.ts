@@ -21,6 +21,7 @@ import {
   VocabularyFacet,
 } from '@moodboard/shared';
 import { FontSpecimen } from './font-specimen';
+import { AddToBoard } from '../boards/add-to-board';
 import { ComponentCodeView } from '../components/component-code';
 import { ComponentPreview } from '../components/component-preview';
 import { AssetsApi } from '../assets/assets-api.service';
@@ -46,6 +47,7 @@ type Editing = 'title' | 'description' | `facet:${string}` | null;
 @Component({
   selector: 'mb-asset-detail',
   imports: [
+    AddToBoard,
     RouterLink,
     TranslocoPipe,
     DatePipe,

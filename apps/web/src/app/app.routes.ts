@@ -8,6 +8,14 @@ export const appRoutes: Route[] = [
       import('./components/new-component').then((m) => m.NewComponentPage),
   },
   {
+    path: 'boards',
+    loadComponent: () => import('./boards/boards-page').then((m) => m.BoardsPage),
+  },
+  {
+    path: 'boards/:id',
+    loadComponent: () => import('./boards/board-page').then((m) => m.BoardPage),
+  },
+  {
     path: 'assets/:id',
     loadComponent: () =>
       import('./asset-detail/asset-detail').then((m) => m.AssetDetailPage),

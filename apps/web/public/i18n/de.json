@@ -434,5 +434,117 @@
       "invalid": "Der Code konnte nicht gespeichert werden: HTML ist nötig, und jedes Feld fasst höchstens 100.000 Zeichen.",
       "failed": "Die Komponente konnte nicht gespeichert werden. Bitte gleich noch einmal versuchen."
     }
+  },
+  "boards": {
+    "nav": "Boards",
+    "title": "Boards",
+    "intro": "Ein Board ist eine kuratierte Auswahl von Referenzen für einen Zweck — das Briefing, mit dem ein Agent arbeitet. Gib jeder Referenz eine Rolle, damit klar ist, welcher Aspekt gemeint ist.",
+    "empty": "Noch keine Boards.",
+    "failed": "Die Boards konnten nicht geladen werden. Versuch es gleich noch einmal.",
+    "items": "{{ count }} Referenzen",
+    "itemsOne": "1 Referenz",
+    "kind": {
+      "smart": "Smart Board"
+    },
+    "create": {
+      "label": "Titel des neuen Boards",
+      "placeholder": "Neues Board, z. B. „Pricing-Relaunch“",
+      "submit": "Board anlegen",
+      "smartHint": "Ein Smart Board speicherst du aus einem Filter in der Übersicht.",
+      "failed": "Das Board konnte nicht angelegt werden. Versuch es gleich noch einmal."
+    },
+    "add": {
+      "title": "Boards",
+      "board": "Board",
+      "choose": "Zu Board hinzufügen…",
+      "new": "Neues Board…",
+      "newTitle": "Titel des neuen Boards",
+      "submit": "Hinzufügen",
+      "done": "Zu „{{ title }}“ hinzugefügt.",
+      "already": "Schon in dieser Rolle auf „{{ title }}“.",
+      "full": "Das Board ist voll (höchstens 100 Referenzen).",
+      "failed": "Konnte nicht zum Board hinzugefügt werden. Versuch es gleich noch einmal."
+    },
+    "role": {
+      "label": "Rolle",
+      "overall": "Gesamt",
+      "color": "Farbe",
+      "layout": "Layout",
+      "typography": "Typografie",
+      "motion": "Bewegung",
+      "imagery": "Bildsprache",
+      "copy": "Text"
+    },
+    "weight": {
+      "label": "Gewicht",
+      "primary": "Primär",
+      "secondary": "Sekundär",
+      "avoid": "Vermeiden"
+    },
+    "smart": {
+      "save": "Als Smart Board speichern",
+      "title": "Titel des Smart Boards",
+      "failed": "Das Smart Board konnte nicht gespeichert werden."
+    }
+  },
+  "board": {
+    "back": "Alle Boards",
+    "failed": "Das Board konnte nicht geladen werden. Vielleicht wurde es gelöscht.",
+    "loading": "Board wird geladen…",
+    "titleLabel": "Titel",
+    "byline": "Angelegt von {{ name }}",
+    "updated": "geändert",
+    "delete": "Board löschen",
+    "confirmDelete": "Das Board „{{ title }}“ löschen? Die Referenzen bleiben, nur das Board geht.",
+    "error": {
+      "deleteFailed": "Das Board konnte nicht gelöscht werden.",
+      "saveFailed": "Die Änderung konnte nicht gespeichert werden. Das Board zeigt den gespeicherten Stand.",
+      "conflict": "Diese Referenz hat diese Rolle auf dem Board schon."
+    },
+    "briefing": "Briefing",
+    "briefingPlaceholder": "Was soll dabei herauskommen? Ziel, Zielgruppe, Rahmen…",
+    "save": "Speichern",
+    "filter": "Filter",
+    "openFilter": "In der Übersicht öffnen",
+    "smartHint": "Die Referenzen sind die neuesten 60 Treffer dieses Filters, immer aktuell.",
+    "items": "Referenzen ({{ count }})",
+    "emptyManual": "Noch keine Referenzen. Füge sie aus der Übersicht (Auswahl) oder auf der Seite einer Referenz hinzu.",
+    "emptySmart": "Zu diesem Filter passt gerade nichts.",
+    "note": "Notiz",
+    "notePlaceholder": "Notiz, z. B. „nur die Animation, nicht die Farben“",
+    "moveUp": "„{{ title }}“ nach oben",
+    "moveDown": "„{{ title }}“ nach unten",
+    "remove": "„{{ title }}“ vom Board entfernen",
+    "addHint": "Ziehen zum Umsortieren. Referenzen fügst du über die Auswahl in der Übersicht oder auf der Seite einer Referenz hinzu.",
+    "derived": {
+      "title": "Was das Board sagt",
+      "palette": "Palette",
+      "none": "Noch nichts zu zeigen.",
+      "fromOverall": "Keine Farb-Referenzen — aus den Gesamt-Referenzen genommen.",
+      "avoidColors": "Zu vermeidende Farben",
+      "type": "Typografie",
+      "heading": "Überschriften",
+      "body": "Fließtext",
+      "font": "Schrift",
+      "motion": "Bewegung",
+      "library": "Bibliothek",
+      "direction": "Richtung — allen primären Referenzen gemeinsam",
+      "noDirection": "Die primären Referenzen teilen noch keinen Look.",
+      "conflicts": "Widersprüche",
+      "noConflicts": "Keine Widersprüche.",
+      "split": "Primäre Referenzen sind uneins bei {{ facet }}:",
+      "avoided": "„{{ value }}“ ist gewollt, steckt aber auch in einem Gegenbeispiel ({{ avoid }})."
+    },
+    "tokens": {
+      "title": "Design-Tokens",
+      "json": "JSON",
+      "w3c": "W3C",
+      "css": "CSS",
+      "tailwind": "Tailwind"
+    },
+    "prompt": {
+      "title": "Briefing-Prompt",
+      "hint": "Für Claude Code oder Claude Design. Über MCP liefert get_board dasselbe mit den Bildern."
+    }
   }
 }

@@ -101,6 +101,11 @@
       · {{ asset.createdAt | date: 'medium' }}
     </p>
 
+    <section class="boards">
+      <h2>{{ 'boards.add.title' | transloco }}</h2>
+      <mb-add-to-board [assetIds]="[asset.id]" [withRole]="true" />
+    </section>
+
     <details class="prompt">
       <summary>
         {{ 'detail.prompt.title' | transloco }}
