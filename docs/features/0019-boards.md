@@ -1,6 +1,6 @@
 # 0019 — Boards: the briefing package
 
-> Status: accepted — implemented
+> Status: accepted — implemented, deployed in v0.19.0 (2026-11-02)
 > Phase: 3
 > Created: 2026-11-02
 
@@ -221,3 +221,12 @@ None.
 
 Not verified before release: the migration against the production Postgres, and boards with
 real classified assets and pictures in a signed-in session.
+
+## Rollout
+
+v0.19.0 deployed 2026-11-02 (gitops `c358af4`): ArgoCD synced and healthy, api, web and worker
+on the `0.19.0` images; the migration step reported `Migrations applied.`, so `0016_board` ran.
+Without a session `GET /api/boards` answers `401`, and `/boards` is served.
+
+**Not verified:** 1–8 in a signed-in session — boards with real classified assets, and the MCP
+tools against production with a personal token.
