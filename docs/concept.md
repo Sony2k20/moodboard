@@ -937,7 +937,7 @@ readable by Claude Code.
 
 - [ ] Components with real code + live preview
 - [ ] Fonts with file upload and live rendering
-- [ ] Command palette (Cmd+K)
+- [x] Command palette (Cmd+K) — 0016
 - [x] Batch re-analysis UI — 0015: the `/analysis` page for admins, re-analysing a selection for
   everyone; the Batch API is left out until a full re-run costs real money
 

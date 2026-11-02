@@ -1,6 +1,6 @@
 # 0016 — Command palette
 
-> Status: accepted
+> Status: accepted — implemented
 > Phase: 2
 > Created: 2026-11-02
 
@@ -87,3 +87,29 @@ None.
 4. Type `trash` and choose it: the trash opens. As a member, `analysis` is not offered.
 5. Type a phrase and choose the first entry: the overview searches for it.
 6. In review mode, Cmd+K opens the palette and Enter in it does not confirm a facet.
+
+## Decided during implementation
+
+1. **A header button opens the palette too.** A shortcut nobody knows is no way in, and a phone
+   has no Ctrl key.
+2. **The vocabulary and the overview's state are resolved on first use**, not with the shell:
+   the vocabulary loads when it is constructed, and a palette nobody opened should not cost a
+   request on every page.
+3. **Choosing a facet value toggles it** — an already selected value says so and is removed.
+   Opening the palette twice therefore combines filters instead of replacing them.
+4. **Focus never leaves the input.** Entries take the mouse but not focus, and the active entry
+   is announced through `aria-activedescendant`.
+
+### Verified (before release)
+
+- **Web** (`palette-match.spec.ts`): ranking of a text start before word starts before inner
+  matches, every word required, hyphens and colons as word boundaries, case and accents folded.
+- **Against a stub api in Chromium:** Ctrl+K in review mode opens the palette with the cursor in
+  it; `dark` lists the search entry and `Theme: Dark`; ↓ and Enter go to `/?facet=theme:dark`
+  without confirming anything in review. Ctrl+K, `edit`, ↓, Enter adds `style:editorial` to the
+  same filter. `asset 2` finds the asset after the debounce. Esc closes it.
+- `nx run-many -t lint,test,build`: green for all projects.
+
+Not verified before release: a German interface finding `dunkel` in a browser — the stub cannot
+store a language change; the match runs on the label of the active language, the same code
+path as `dark`.
