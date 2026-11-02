@@ -20,6 +20,7 @@ export const CAPTURE_QUEUE = 'capture';
 export const PIPELINE_STEPS = [
   'normalize',
   'capture',
+  'specimen',
   'thumbnails',
   'colors',
   'classify',
@@ -29,13 +30,15 @@ export type PipelineStep = (typeof PIPELINE_STEPS)[number];
 
 /**
  * Which way an asset goes through the steps. An upload starts with `normalize`; a website has no
- * upload to check — its images come out of `capture`, made by the worker itself (0011).
+ * upload to check — its images come out of `capture`, made by the worker itself (0011). A font
+ * (0017) is checked by the api when it parses it; `specimen` draws its picture.
  */
-export type PipelineKind = 'image' | 'website';
+export type PipelineKind = 'image' | 'website' | 'font';
 
 const PIPELINES: Record<PipelineKind, readonly PipelineStep[]> = {
   image: ['normalize', 'thumbnails', 'colors', 'classify'],
   website: ['capture', 'thumbnails', 'colors', 'classify'],
+  font: ['specimen', 'thumbnails', 'colors', 'classify'],
 };
 
 export interface PipelineJobData {
@@ -46,7 +49,7 @@ export interface PipelineJobData {
 
 /** The pipeline an asset of this `asset.type` goes through. */
 export function pipelineKindOf(type: string): PipelineKind {
-  return type === 'website' ? 'website' : 'image';
+  return type === 'website' || type === 'font' ? type : 'image';
 }
 
 export function firstPipelineStep(kind: PipelineKind): PipelineStep {

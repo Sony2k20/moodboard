@@ -38,7 +38,7 @@
   "upload": {
     "drop": "Bilder irgendwo auf diese Seite ziehen oder einen Screenshot oder Link einfügen.",
     "pick": "Dateien auswählen",
-    "formats": "PNG, JPEG, WebP oder GIF, jeweils bis 25 MB.",
+    "formats": "PNG, JPEG, WebP oder GIF bis 25 MB; Schriften als WOFF2, WOFF, TTF oder OTF bis 10 MB.",
     "dismiss": "Schließen",
     "capture": {
       "label": "Oder eine Website erfassen:",
@@ -46,8 +46,8 @@
       "submit": "Erfassen"
     },
     "error": {
-      "tooLarge": "Zu groß — höchstens 25 MB.",
-      "unsupported": "Kein unterstütztes Bild. Nur PNG, JPEG, WebP oder GIF.",
+      "tooLarge": "Zu groß — höchstens 25 MB für Bilder, 10 MB für Schriften.",
+      "unsupported": "Kein unterstütztes Format. Bilder: PNG, JPEG, WebP, GIF. Schriften: WOFF2, WOFF, TTF, OTF.",
       "invalidUrl": "Keine Webadresse. Bitte eine http- oder https-URL angeben.",
       "failed": "Upload fehlgeschlagen. Bitte gleich noch einmal versuchen."
     }
@@ -240,7 +240,8 @@
     "reanalyse": "Neu analysieren",
     "reanalyseHint": "Klassifiziert das Asset erneut mit dem aktuellen Prompt. Was ein Mensch gesetzt hat, bleibt.",
     "reanalysed": "Eingereiht. Das neue Ergebnis erscheint hier in etwa einer Minute.",
-    "reanalyseFailed": "Konnte nicht eingereiht werden. Bitte gleich noch einmal versuchen."
+    "reanalyseFailed": "Konnte nicht eingereiht werden. Bitte gleich noch einmal versuchen.",
+    "downloadFont": "Schrift herunterladen"
   },
   "bulk": {
     "start": "Auswählen",
@@ -389,5 +390,23 @@
       "en": "Auf Englisch umstellen",
       "de": "Auf Deutsch umstellen"
     }
+  },
+  "font": {
+    "text": "Beispieltext",
+    "size": "Größe {{ size }} px",
+    "axes": "Variable Achsen",
+    "reset": "Zurücksetzen",
+    "features": "OpenType-Features",
+    "loadFailed": "Der Browser konnte diese Schrift nicht laden.",
+    "family": "Familie",
+    "weight": "Gewicht",
+    "italic": "kursiv",
+    "glyphs": "Glyphen",
+    "monospace": "dicktengleich",
+    "variable": "Variabel",
+    "designer": "Gestaltung",
+    "manufacturer": "Schriftenhaus",
+    "version": "Version",
+    "license": "Lizenz"
   }
 }

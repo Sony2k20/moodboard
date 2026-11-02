@@ -20,6 +20,7 @@ import {
   hasTechnique,
   VocabularyFacet,
 } from '@moodboard/shared';
+import { FontSpecimen } from './font-specimen';
 import { AssetsApi } from '../assets/assets-api.service';
 import { Vocabulary } from '../assets/vocabulary';
 import { SessionService } from '../auth/session.service';
@@ -42,7 +43,7 @@ type Editing = 'title' | 'description' | `facet:${string}` | null;
  */
 @Component({
   selector: 'mb-asset-detail',
-  imports: [RouterLink, TranslocoPipe, DatePipe, PercentPipe],
+  imports: [RouterLink, TranslocoPipe, DatePipe, FontSpecimen, PercentPipe],
   templateUrl: './asset-detail.html',
   styleUrl: './asset-detail.css',
 })
@@ -94,9 +95,13 @@ export class AssetDetailPage {
 
   protected readonly image = computed(() => {
     const files = this.asset.value()?.files ?? [];
+    const large = files.find((f) => f.kind === 'thumb_lg') ?? files.find((f) => f.kind === 'thumb_md');
+    const original = files.find((f) => f.kind === 'original');
     return {
-      large: files.find((f) => f.kind === 'thumb_lg') ?? files.find((f) => f.kind === 'thumb_md'),
-      original: files.find((f) => f.kind === 'original'),
+      large,
+      original,
+      /** The image to copy for a prompt: a font's original is the font file, not a picture (0017). */
+      picture: original?.mime.startsWith('image/') ? original : large,
       video: files.find((f) => f.kind === 'capture'),
     };
   });

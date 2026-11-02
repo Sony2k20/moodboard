@@ -1,5 +1,6 @@
 import {
   CURATED_FACET_KEYS,
+  FontMeta,
   hasTechnique,
   techniqueForModel,
   VOCABULARY,
@@ -61,6 +62,22 @@ Guidelines:
  * The per-asset text after the image (prompt v4). The capture context goes here, not into the
  * system prompt, which stays stable and cacheable (§7.3).
  */
+/** The font file's facts for the model (0017); the licence text is left out, it is long and says nothing about form. */
+export function fontForModel(font: FontMeta): string {
+  return JSON.stringify({
+    family: font.family,
+    style: font.subfamily,
+    weight: font.weight,
+    italic: font.italic,
+    monospace: font.monospace,
+    designer: font.designer,
+    foundry: font.manufacturer,
+    glyphs: font.glyphCount,
+    variableAxes: font.axes.map((a) => `${a.tag} ${a.min}–${a.max}`),
+    features: font.features,
+  });
+}
+
 export function userText(input: ClassifyInput): string {
   const context = input.context;
   const lines = [
@@ -73,6 +90,13 @@ export function userText(input: ClassifyInput): string {
       '',
       'The image is a screenshot of this website, captured at 1440x900. Measured technique from the live page (JSON; "×n" counts visible elements or rules):',
       techniqueForModel(context.captureTech),
+    );
+  }
+  if (context?.font) {
+    lines.push(
+      '',
+      'The image is a specimen of an uploaded font file, drawn from its own outlines: the name, a pangram, the alphabet and figures. Describe the typeface itself. What the file states (JSON):',
+      fontForModel(context.font),
     );
   }
   return `${lines.length > 0 ? `${lines.join('\n')}\n\n` : ''}Classify this design reference.`;

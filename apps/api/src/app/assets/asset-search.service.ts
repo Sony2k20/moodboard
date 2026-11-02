@@ -5,6 +5,7 @@ import {
   assetFacetDecisions,
   assetFacetValues,
   assetFiles,
+  assetFonts,
   assets,
   assetSearch,
   assetTags,
@@ -24,6 +25,7 @@ import {
   EMPTY_CSS_TECHNIQUE,
   FacetFilter,
   FacetValueCount,
+  FontMeta,
   STORAGE_SERVICE,
   REVIEW_CONFIDENCE_THRESHOLD,
   StorageService,
@@ -48,6 +50,13 @@ import {
 } from 'drizzle-orm';
 import { alias, PgTable } from 'drizzle-orm/pg-core';
 import { DATABASE } from '../database.module';
+
+/** An `asset_font` row as the api answers it (0017): the file's facts, without the key. */
+function fontMeta(row: typeof assetFonts.$inferSelect): FontMeta {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { assetId, ...meta } = row;
+  return meta;
+}
 
 /** A condition that one facet's selection contributes; dropped when counting that facet. */
 interface FacetGroup {
@@ -199,7 +208,7 @@ export class AssetSearchService {
       return null;
     }
 
-    const [files, facetRows, tagRows, colors, [run], decisions, [tech]] = await Promise.all([
+    const [files, facetRows, tagRows, colors, [run], decisions, [tech], [font]] = await Promise.all([
       this.db
         .select({
           kind: assetFiles.kind,
@@ -252,6 +261,7 @@ export class AssetSearchService {
         .where(eq(assetFacetDecisions.assetId, id))
         .orderBy(asc(facets.sortOrder)),
       this.db.select().from(captureTech).where(eq(captureTech.assetId, id)).limit(1),
+      this.db.select().from(assetFonts).where(eq(assetFonts.assetId, id)).limit(1),
     ]);
 
     return {
@@ -289,6 +299,7 @@ export class AssetSearchService {
             capturedAt: tech.capturedAt.toISOString(),
           }
         : null,
+      font: font ? fontMeta(font) : null,
     };
   }
 

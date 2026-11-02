@@ -1,0 +1,148 @@
+:host {
+  display: block;
+  /* A 72 px line or a long sample must not push the page's metadata column aside. */
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.specimen {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Grid items default to their min-content width, which a nowrap line makes the whole sample. */
+.specimen > * {
+  min-width: 0;
+}
+
+.specimen[aria-busy='true'] .sample,
+.specimen[aria-busy='true'] .waterfall,
+.specimen[aria-busy='true'] .glyphs {
+  opacity: 0.3;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, 14rem);
+  gap: 0.5rem 1rem;
+  align-items: end;
+}
+
+label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+label span,
+legend {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.text input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sample {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.axes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.reset {
+  margin-left: 0.5rem;
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+}
+
+.features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+}
+
+.features label {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.waterfall p,
+.glyphs p {
+  margin: 0.2rem 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.waterfall small {
+  display: inline-block;
+  width: 2.5rem;
+  color: var(--ink-faint);
+  font-family: system-ui, sans-serif;
+  font-size: 0.7rem;
+}
+
+.glyphs {
+  font-size: 1.6rem;
+  overflow-wrap: anywhere;
+}
+
+.glyphs p {
+  white-space: normal;
+}
+
+.failed {
+  color: var(--danger);
+}
+
+@media (max-width: 40rem) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.3rem 1rem;
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+}
+
+.facts dt {
+  color: var(--ink-soft);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.facts code + code {
+  margin-left: 0.5rem;
+}
+
+.license {
+  display: grid;
+  gap: 0.2rem;
+  max-height: 8rem;
+  overflow-y: auto;
+  font-size: 0.8rem;
+}

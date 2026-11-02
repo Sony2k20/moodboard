@@ -15,7 +15,7 @@ import { pipeline } from 'node:stream/promises';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 /** The file names the storage layout produces (§4.2) — nothing else is ever served. */
 const FILE =
-  /^(original\.(png|jpg|webp|gif)|thumb-(sm|md|lg)\.webp|poster\.webp|capture\.mp4)$/;
+  /^(original\.(png|jpg|webp|gif|woff2|woff|ttf|otf)|thumb-(sm|md|lg)\.webp|poster\.webp|capture\.mp4)$/;
 const FRAME = /^\d{2}\.webp$/;
 
 const MIME: Record<string, string> = {
@@ -24,6 +24,11 @@ const MIME: Record<string, string> = {
   webp: 'image/webp',
   gif: 'image/gif',
   mp4: 'video/mp4',
+  // Fonts (0017): the detail page loads the original with `FontFace`.
+  woff2: 'font/woff2',
+  woff: 'font/woff',
+  ttf: 'font/ttf',
+  otf: 'font/otf',
 };
 
 /** One `bytes=` range; multipart ranges are answered with the whole file, which is allowed. */

@@ -38,7 +38,7 @@
   "upload": {
     "drop": "Drop images anywhere on this page, or paste a screenshot or a link.",
     "pick": "Choose files",
-    "formats": "PNG, JPEG, WebP or GIF, up to 25 MB each.",
+    "formats": "PNG, JPEG, WebP or GIF up to 25 MB; fonts as WOFF2, WOFF, TTF or OTF up to 10 MB.",
     "dismiss": "Dismiss",
     "capture": {
       "label": "Or capture a website:",
@@ -46,8 +46,8 @@
       "submit": "Capture"
     },
     "error": {
-      "tooLarge": "Too large — 25 MB at most.",
-      "unsupported": "Not a supported image. PNG, JPEG, WebP or GIF only.",
+      "tooLarge": "Too large — 25 MB for images, 10 MB for fonts.",
+      "unsupported": "Not a supported file. Images: PNG, JPEG, WebP, GIF. Fonts: WOFF2, WOFF, TTF, OTF.",
       "invalidUrl": "Not a web address. Use an http or https URL.",
       "failed": "Upload failed. Try again in a moment."
     }
@@ -240,7 +240,8 @@
     "reanalyse": "Re-analyse",
     "reanalyseHint": "Classifies the asset again with the current prompt. What a person set stays.",
     "reanalysed": "Queued. The new result appears here in about a minute.",
-    "reanalyseFailed": "Could not be queued. Try again in a moment."
+    "reanalyseFailed": "Could not be queued. Try again in a moment.",
+    "downloadFont": "Download font"
   },
   "bulk": {
     "start": "Select",
@@ -389,5 +390,23 @@
       "en": "Switch to English",
       "de": "Switch to German"
     }
+  },
+  "font": {
+    "text": "Sample text",
+    "size": "Size {{ size }} px",
+    "axes": "Variable axes",
+    "reset": "Reset",
+    "features": "OpenType features",
+    "loadFailed": "The browser could not load this font.",
+    "family": "Family",
+    "weight": "Weight",
+    "italic": "italic",
+    "glyphs": "Glyphs",
+    "monospace": "monospaced",
+    "variable": "Variable",
+    "designer": "Designer",
+    "manufacturer": "Foundry",
+    "version": "Version",
+    "license": "Licence"
   }
 }

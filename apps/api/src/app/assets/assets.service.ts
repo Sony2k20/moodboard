@@ -3,6 +3,7 @@ import {
   assetFacetDecisions,
   assetFacetValues,
   assetFiles,
+  assetFonts,
   assets,
   auditLog,
   Database,
@@ -12,6 +13,8 @@ import {
 import { and, eq, isNull } from 'drizzle-orm';
 import {
   assetFilePath,
+  FONT_FORMATS,
+  FontFormat,
   STORAGE_SERVICE,
   StorageService,
   UPLOAD_FORMATS,
@@ -19,6 +22,7 @@ import {
 } from '@moodboard/shared';
 import { randomUUID } from 'node:crypto';
 import { DATABASE } from '../database.module';
+import { readFont } from './font-reader';
 import { PipelineQueue } from './pipeline.queue';
 
 /**
@@ -57,6 +61,31 @@ export function titleFromFileName(name: string | undefined): string | null {
     return null;
   }
   return stem.slice(0, 200);
+}
+
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+/**
+ * Records `type` as the person's decision: they handed in a URL or a font file, so what the
+ * asset is is not the model's to guess, and the facet guard keeps it through every re-analysis
+ * (0006, 0011, 0017).
+ */
+async function decideType(tx: Tx, assetId: string, value: string, userId: string): Promise<void> {
+  const [type] = await tx
+    .select({ facetId: facets.id, valueId: facetValues.id })
+    .from(facetValues)
+    .innerJoin(facets, eq(facets.id, facetValues.facetId))
+    .where(and(eq(facets.key, 'type'), eq(facetValues.value, value)))
+    .limit(1);
+  if (type) {
+    await tx.insert(assetFacetValues).values({
+      assetId,
+      facetValueId: type.valueId,
+      origin: 'human',
+      setBy: userId,
+    });
+    await tx.insert(assetFacetDecisions).values({ assetId, facetId: type.facetId, decidedBy: userId });
+  }
 }
 
 /**
@@ -135,12 +164,66 @@ export class AssetsService {
   }
 
   /**
+   * A font file (0017). Parsed here, before anything is stored: a file the font library cannot
+   * read is refused at once (`UnreadableFontError`). What the file says goes to `asset_font`; its
+   * full name is the title, as a fact the model never renames. The worker draws the specimen.
+   */
+  async ingestFont(input: {
+    bytes: Uint8Array;
+    format: FontFormat;
+    source?: 'upload' | 'mcp';
+    userId: string;
+  }): Promise<{ id: string; enqueued: boolean }> {
+    const meta = readFont(Buffer.from(input.bytes));
+    const id = randomUUID();
+    const { mime, extension } = FONT_FORMATS[input.format];
+    const path = assetFilePath(id, 'original', { extension });
+    const stored = await this.storage.put(path, input.bytes, { mime });
+
+    try {
+      await this.db.transaction(async (tx) => {
+        await tx.insert(assets).values({
+          id,
+          type: 'font',
+          title: (meta.fullName ?? meta.family).slice(0, 200),
+          titleOrigin: 'human',
+          createdBy: input.userId,
+          status: 'pending',
+        });
+        await tx.insert(assetFiles).values({ assetId: id, kind: 'original', path, mime, bytes: stored.bytes });
+        await tx.insert(assetFonts).values({
+          assetId: id,
+          ...meta,
+          axes: [...meta.axes],
+          features: [...meta.features],
+        });
+        await decideType(tx, id, 'font', input.userId);
+        await tx.insert(auditLog).values({
+          userId: input.userId,
+          action: 'asset.created',
+          entity: 'asset',
+          entityId: id,
+          diff: { source: input.source ?? 'upload', format: input.format, bytes: stored.bytes, family: meta.family },
+        });
+      });
+    } catch (error) {
+      await this.storage.delete(path).catch(() => undefined);
+      throw error;
+    }
+
+    const enqueued = await this.queue.startPipeline(id, 'font');
+    if (!enqueued) {
+      this.logger.warn(`Font ${id} stored, but the queue is unreachable; the reconciler will pick it up`);
+    }
+    return { id, enqueued };
+  }
+
+  /**
    * A website to capture (0011). Nothing is fetched here — the worker does that, behind its
    * egress guard — so this only records the asset and starts the pipeline at `capture`.
    *
-   * `type: website` goes in as the person's decision: they handed in a URL, so what the asset is
-   * is not the model's to guess. A screenshot of a website would otherwise easily come back as
-   * `image`, and the facet guard keeps a decided facet through every re-analysis (0006).
+   * `type: website` goes in as the person's decision (`decideType`): a screenshot of a website
+   * would otherwise easily come back as `image`.
    */
   async ingestUrl(input: {
     url: string;
@@ -160,23 +243,7 @@ export class AssetsService {
         createdBy: input.userId,
         status: 'pending',
       });
-      const [type] = await tx
-        .select({ facetId: facets.id, valueId: facetValues.id })
-        .from(facetValues)
-        .innerJoin(facets, eq(facets.id, facetValues.facetId))
-        .where(and(eq(facets.key, 'type'), eq(facetValues.value, 'website')))
-        .limit(1);
-      if (type) {
-        await tx.insert(assetFacetValues).values({
-          assetId: id,
-          facetValueId: type.valueId,
-          origin: 'human',
-          setBy: input.userId,
-        });
-        await tx
-          .insert(assetFacetDecisions)
-          .values({ assetId: id, facetId: type.facetId, decidedBy: input.userId });
-      }
+      await decideType(tx, id, 'website', input.userId);
       await tx.insert(auditLog).values({
         userId: input.userId,
         action: 'asset.created',

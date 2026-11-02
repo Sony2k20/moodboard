@@ -1,8 +1,10 @@
-import { CssTechnique, DesignTokens, ElementStyles } from '@moodboard/shared';
+import { CssTechnique, DesignTokens, ElementStyles, FontAxis } from '@moodboard/shared';
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   customType,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -79,3 +81,30 @@ export const captureTech = pgTable('capture_tech', {
 // `asset_embedding` (§5.3) belongs to phase 4 and is deliberately absent. It is computed from
 // the stored description and can be backfilled across the whole corpus at any time (§7.6) — one
 // of the few things here that genuinely can wait.
+
+/**
+ * What an uploaded font file says about itself (0017), read from its name, OS/2, fvar and layout
+ * tables at upload. A fact about the file, so no `origin`: nobody corrects a family name, and a
+ * re-analysis never writes here.
+ */
+export const assetFonts = pgTable('asset_font', {
+  assetId: uuid('asset_id')
+    .primaryKey()
+    .references(() => assets.id, { onDelete: 'cascade' }),
+  family: text('family').notNull(),
+  subfamily: text('subfamily'),
+  fullName: text('full_name'),
+  postscriptName: text('postscript_name'),
+  version: text('version'),
+  designer: text('designer'),
+  manufacturer: text('manufacturer'),
+  license: text('license'),
+  licenseUrl: text('license_url'),
+  /** OS/2 `usWeightClass`, 100–900. */
+  weight: integer('weight'),
+  italic: boolean('italic').notNull().default(false),
+  monospace: boolean('monospace').notNull().default(false),
+  glyphCount: integer('glyph_count').notNull(),
+  axes: jsonb('axes').$type<FontAxis[]>().notNull().default(sql`'[]'::jsonb`),
+  features: jsonb('features').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+});

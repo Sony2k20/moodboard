@@ -1,0 +1,117 @@
+@if (state() === 'failed') {
+<p role="alert" class="failed">{{ 'font.loadFailed' | transloco }}</p>
+} @else {
+<div class="specimen" [attr.aria-busy]="state() === 'loading'">
+  <div class="controls">
+    <label class="text">
+      <span>{{ 'font.text' | transloco }}</span>
+      <input
+        [value]="sample()"
+        maxlength="200"
+        (input)="text.set($any($event.target).value)"
+      />
+    </label>
+    <label class="size">
+      <span>{{ 'font.size' | transloco: { size: size() } }}</span>
+      <input
+        type="range"
+        min="12"
+        max="160"
+        [value]="size()"
+        (input)="size.set(+$any($event.target).value)"
+      />
+    </label>
+  </div>
+
+  <p class="sample" [style]="style()" [style.font-size.px]="size()">{{ sample() }}</p>
+
+  @if (font().axes.length > 0) {
+  <fieldset class="axes">
+    <legend>
+      {{ 'font.axes' | transloco }}
+      <button type="button" class="reset" (click)="resetAxes()">{{ 'font.reset' | transloco }}</button>
+    </legend>
+    @for (axis of font().axes; track axis.tag) {
+    <label>
+      <span>{{ axis.name }} <code>{{ axis.tag }}</code> {{ axes()[axis.tag] }}</span>
+      <input
+        type="range"
+        [min]="axis.min"
+        [max]="axis.max"
+        [step]="axis.max - axis.min > 20 ? 1 : 0.1"
+        [value]="axes()[axis.tag]"
+        (input)="setAxis(axis.tag, $any($event.target).value)"
+      />
+    </label>
+    }
+  </fieldset>
+  }
+
+  @if (font().features.length > 0) {
+  <fieldset class="features">
+    <legend>{{ 'font.features' | transloco }}</legend>
+    @for (tag of font().features; track tag) {
+    <label>
+      <input
+        type="checkbox"
+        [checked]="features().has(tag)"
+        (change)="toggleFeature(tag, $any($event.target).checked)"
+      />
+      <code>{{ tag }}</code>
+    </label>
+    }
+  </fieldset>
+  }
+
+  <div class="waterfall" [style]="style()">
+    @for (px of waterfall; track px) {
+    <p [style.font-size.px]="px"><small>{{ px }}</small>{{ sample() }}</p>
+    }
+  </div>
+
+  <div class="glyphs" [style]="style()">
+    @for (line of lines; track line) {
+    <p>{{ line }}</p>
+    }
+  </div>
+</div>
+}
+
+<dl class="facts">
+  @let f = font();
+  <dt>{{ 'font.family' | transloco }}</dt>
+  <dd>{{ f.family }}@if (f.subfamily) { · {{ f.subfamily }} }</dd>
+  @if (f.weight) {
+  <dt>{{ 'font.weight' | transloco }}</dt>
+  <dd>{{ f.weight }}@if (f.italic) { · {{ 'font.italic' | transloco }} }</dd>
+  }
+  <dt>{{ 'font.glyphs' | transloco }}</dt>
+  <dd>{{ f.glyphCount }}@if (f.monospace) { · {{ 'font.monospace' | transloco }} }</dd>
+  @if (f.axes.length > 0) {
+  <dt>{{ 'font.variable' | transloco }}</dt>
+  <dd>
+    @for (axis of f.axes; track axis.tag) {
+    <code>{{ axis.tag }} {{ axis.min }}–{{ axis.max }}</code>
+    }
+  </dd>
+  }
+  @if (f.designer) {
+  <dt>{{ 'font.designer' | transloco }}</dt>
+  <dd>{{ f.designer }}</dd>
+  }
+  @if (f.manufacturer) {
+  <dt>{{ 'font.manufacturer' | transloco }}</dt>
+  <dd>{{ f.manufacturer }}</dd>
+  }
+  @if (f.version) {
+  <dt>{{ 'font.version' | transloco }}</dt>
+  <dd>{{ f.version }}</dd>
+  }
+  @if (f.license || f.licenseUrl) {
+  <dt>{{ 'font.license' | transloco }}</dt>
+  <dd class="license">
+    @if (f.license) { <span>{{ f.license }}</span> }
+    @if (f.licenseUrl) { <a [href]="f.licenseUrl" target="_blank" rel="noopener noreferrer">{{ f.licenseUrl }}</a> }
+  </dd>
+  }
+</dl>

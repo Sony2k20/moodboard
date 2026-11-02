@@ -10,6 +10,7 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  PayloadTooLargeException,
   Post,
   Query,
   UnsupportedMediaTypeException,
@@ -21,8 +22,10 @@ import {
   AssetDetail,
   AssetQuerySchema,
   AssetSearchResult,
+  MAX_FONT_BYTES,
   MAX_UPLOAD_BYTES,
   parseCaptureUrl,
+  sniffFontFormat,
   sniffUploadFormat,
   VocabularyFacet,
   VocabularyValueCreateSchema,
@@ -38,6 +41,7 @@ import { User } from '../auth/auth.guard';
 import type { CurrentUser } from '../auth/users.service';
 import { AssetSearchService } from './asset-search.service';
 import { AssetsService } from './assets.service';
+import { UnreadableFontError } from './font-reader';
 import { VocabularyAdminService } from './vocabulary-admin.service';
 
 /**
@@ -70,9 +74,24 @@ export class AssetsController {
     }
     const format = sniffUploadFormat(file.buffer);
     if (!format) {
-      throw new UnsupportedMediaTypeException(
-        'Only PNG, JPEG, WebP and GIF images are accepted',
-      );
+      // A font is its own asset type (0017): parsed here, its facts stored, its specimen drawn.
+      const fontFormat = sniffFontFormat(file.buffer);
+      if (!fontFormat) {
+        throw new UnsupportedMediaTypeException(
+          'Only PNG, JPEG, WebP and GIF images and WOFF2, WOFF, TTF and OTF fonts are accepted',
+        );
+      }
+      if (file.size > MAX_FONT_BYTES) {
+        throw new PayloadTooLargeException(`A font may be at most ${MAX_FONT_BYTES} bytes`);
+      }
+      try {
+        return { id: (await this.assets.ingestFont({ bytes: file.buffer, format: fontFormat, userId: user.id })).id };
+      } catch (error) {
+        if (error instanceof UnreadableFontError) {
+          throw new UnsupportedMediaTypeException(error.message);
+        }
+        throw error;
+      }
     }
     const { id } = await this.assets.ingestUpload({
       bytes: file.buffer,

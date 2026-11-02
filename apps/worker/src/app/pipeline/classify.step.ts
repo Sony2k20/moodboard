@@ -9,6 +9,7 @@ import {
 import {
   analysisRuns,
   assetFacetValues,
+  assetFonts,
   assets,
   assetTags,
   captureTech,
@@ -94,6 +95,13 @@ export class ClassifyStep {
       .where(eq(captureTech.assetId, assetId))
       .limit(1);
 
+    // A font's facts from its file (0017): the model reads them next to the specimen.
+    const [font] = await this.db
+      .select()
+      .from(assetFonts)
+      .where(eq(assetFonts.assetId, assetId))
+      .limit(1);
+
     const image = await this.images.modelImage(assetId);
     let output;
     try {
@@ -112,6 +120,7 @@ export class ClassifyStep {
                 elements: tech.elements,
               }
             : undefined,
+          font: font ?? undefined,
         },
       });
     } catch (error) {

@@ -12,6 +12,7 @@ import { ClassifyStep, LLM_COST_LIMIT } from './pipeline/classify.step';
 import { ImageSteps } from './pipeline/image.steps';
 import { PipelineRunner } from './pipeline/pipeline.runner';
 import { Reconciler } from './pipeline/reconciler';
+import { SpecimenStep } from './pipeline/specimen.step';
 import { StorageModule } from './storage.module';
 import { Purger, TRASH_RETENTION_DAYS } from './trash/purger';
 
@@ -54,6 +55,7 @@ function classifierFromEnv(): AssetClassifier | null {
     ImageSteps,
     { provide: WEBSITE_CAPTURER, useFactory: () => new WebsiteCapturer() },
     CaptureStep,
+    SpecimenStep,
     ClassifyStep,
     PipelineRunner,
     Reconciler,

@@ -4,6 +4,7 @@ import { AssetStatus, Origin } from './asset-file';
 import { DesignNotes } from './analysis-result.schema';
 import { CaptureFailure } from './capture';
 import { CaptureTechRecord } from './capture-technique';
+import { FontMeta } from './font';
 
 /**
  * The one search query (0005). The web overview parses its URL into this schema, `GET
@@ -274,6 +275,8 @@ export interface AssetDetail {
   readonly decidedFacets: readonly string[];
   /** What the capture measured on a website's live page (0011); `null` for uploads. */
   readonly captureTech: CaptureTechRecord | null;
+  /** What a font file says about itself (0017); `null` for every other asset. */
+  readonly font: FontMeta | null;
 }
 
 /** `GET /api/vocabulary`, and later `list_vocabulary`. Ordered by `sort_order`. */

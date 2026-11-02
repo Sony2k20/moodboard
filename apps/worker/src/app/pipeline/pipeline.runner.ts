@@ -26,6 +26,7 @@ import { CaptureError } from '../capture/website-capturer';
 import { CaptureStep, FinalCaptureError } from './capture.step';
 import { ClassifyStep } from './classify.step';
 import { ImageSteps } from './image.steps';
+import { SpecimenStep } from './specimen.step';
 
 /** Below the pod's default 30 s termination grace period. */
 const SHUTDOWN_GRACE_MS = 20_000;
@@ -79,6 +80,7 @@ export class PipelineRunner
     private readonly images: ImageSteps,
     private readonly capture: CaptureStep,
     private readonly classify: ClassifyStep,
+    private readonly specimen: SpecimenStep,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -127,6 +129,9 @@ export class PipelineRunner
       case 'capture':
         await this.capture.run(assetId);
         break;
+      case 'specimen':
+        await this.specimen.run(assetId);
+        break;
       case 'thumbnails':
         await this.images.thumbnails(assetId);
         break;
@@ -147,9 +152,9 @@ export class PipelineRunner
   }
 
   /**
-   * Only the first step fails the asset: a broken upload, or a website that could not be
-   * captured — with the reason, so the person sees why (0011). A failed late step leaves it
-   * usable (§7.1).
+   * Only the first step fails the asset: a broken upload, a font without a specimen (0017), or a
+   * website that could not be captured — with the reason, so the person sees why (0011). A failed
+   * late step leaves it usable (§7.1).
    */
   private async onFailed(
     job: Job<PipelineJobData> | undefined,
@@ -164,7 +169,7 @@ export class PipelineRunner
     this.logger.warn(
       `${job.name} for ${job.data.assetId} failed${final ? '' : ', will retry'}: ${error.message}`,
     );
-    if (final && job.name === 'normalize') {
+    if (final && (job.name === 'normalize' || job.name === 'specimen')) {
       await this.images.markFailed(job.data.assetId);
     }
     if (final && job.name === 'capture') {
