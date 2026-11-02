@@ -8,6 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AssetCard } from '@moodboard/shared';
@@ -67,6 +68,13 @@ export class CommandPalette {
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly input = viewChild.required<ElementRef<HTMLInputElement>>('input');
 
+  /**
+   * The active language's translations, once loaded. Read by `entries`, so labels follow a
+   * language change and never stay the keys they were before the file arrived.
+   */
+  private readonly translations = toSignal(this.transloco.selectTranslation());
+  /** Nothing is computed while the palette is closed. */
+  private readonly isOpen = signal(false);
   protected readonly query = signal('');
   protected readonly active = signal(0);
   private readonly assets = signal<readonly AssetCard[]>([]);
@@ -77,6 +85,9 @@ export class CommandPalette {
   protected readonly groups: readonly Group[] = ['search', 'facets', 'assets', 'pages'];
 
   protected readonly entries = computed<readonly Entry[]>(() => {
+    if (!this.isOpen() || !this.translations()) {
+      return [];
+    }
     const q = this.query().trim();
     const t = (key: string, params?: Record<string, unknown>) =>
       this.transloco.translate(key, params);
@@ -225,6 +236,7 @@ export class CommandPalette {
     this.assets.set([]);
     this.active.set(0);
     this.input().nativeElement.value = '';
+    this.isOpen.set(true);
     dialog.showModal();
     this.input().nativeElement.focus();
   }
@@ -238,6 +250,7 @@ export class CommandPalette {
 
   /** The dialog closed — by Esc, a choice or a click outside: focus goes back where it was. */
   protected onClose(): void {
+    this.isOpen.set(false);
     clearTimeout(this.assetTimer);
     this.assetRequest++;
     this.returnFocus?.focus();
