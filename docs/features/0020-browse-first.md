@@ -1,6 +1,6 @@
 # 0020 — Browse first: a calmer overview
 
-> Status: accepted
+> Status: accepted — implemented
 > Phase: 3
 > Created: 2026-11-02
 
@@ -118,3 +118,43 @@ In the running app, as a member:
 6. The guess counter shows on tiles in the Facets view only.
 7. At phone width the header fits, the inspector is a bottom sheet with both actions, and the
    add-to-board list opens upward inside it.
+
+## Decided during implementation
+
+1. **The panel's state lives in `UploadsService`** (`panelOpen`): "+ Add" is in the shell, the
+   panel in the library. It closes as soon as something is added, and when the library is left.
+2. **On a phone (≤ 480 px) the app's name gives way and the account button shows the initial.**
+   "Library" already leads home; this keeps the header on one line at 360 px, in German too.
+3. **"Add to board" says what happened in its own label** — "✓ Added", "✓ Already on it" — for
+   2.5 seconds, as "Copy prompt" does. The full sentence with the board's title goes to a status
+   region for screen readers; an error stays visible as text.
+4. **It is a disclosure, not an ARIA menu:** a button and a list of buttons, so Tab moves through
+   the boards. Escape closes the list before it reaches the inspector, and focus returns to the
+   button after a choice. The list opens upwards in the inspector and in the selection bar, which
+   both sit at the bottom.
+5. **"Copy prompt for Claude" became "Copy prompt"**, so both actions fit side by side at 360 px.
+6. **A facet being edited stays in the short list** even once its last value is taken off; it
+   leaves after saving.
+
+### Verified (before release)
+
+Against the stub api in Chromium:
+
+- The header shows the name, Library (underlined on the library only), Boards, "+ Add" and the
+  account menu. The menu lists language, command palette, API tokens, Trash and sign out, and
+  closes on an outside click.
+- "+ Add" opens the panel and marks itself pressed; × closes it. With the panel closed, a file
+  dragged over the page shows the overlay, and leaving the window removes it.
+- Five facet pills and "More filters"; expanded, all twelve and "Fewer filters". With
+  `?facet=motion:fade` the Motion pill shows, active, with the rest collapsed.
+- Inspector: three filled facets of twelve, "All facets (12)" shows all of them with the legend
+  and the run. The board list opens upwards; choosing a board says "✓ Added", a second time
+  "✓ Already on it"; Escape closes the list and leaves the inspector open.
+- Detail page: role "Colour", then the board list, opening downwards. Selection bar: two assets
+  added to a board, the list opening upwards.
+- 360 px: no horizontal scroll, header on one line with the German labels, both inspector actions
+  side by side without truncation.
+- `nx run-many -t lint,test,build -p web` and `check-translations`: green.
+
+Not verified before release: real assets with guesses on tiles in the Facets view, and a
+signed-in session against production.
