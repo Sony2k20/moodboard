@@ -34,8 +34,8 @@ not fall back to the global config.
 
 ## Scope discipline
 
-Phases 1 and 2 are implemented (§11). Implement a later phase only when the user asks for it —
-phases 3 and 4 are described in detail, but that detail is a plan, not an invitation.
+Phases 1 to 3 are implemented (§11). Implement a later phase only when the user asks for it —
+phase 4 is described in detail, but that detail is a plan, not an invitation.
 
 For a new feature: write a document from [`docs/features/template.md`](./docs/features/template.md)
 **first**, then implement. The template asks the two questions that are expensive to answer

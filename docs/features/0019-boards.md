@@ -1,6 +1,6 @@
 # 0019 — Boards: the briefing package
 
-> Status: accepted
+> Status: accepted — implemented
 > Phase: 3
 > Created: 2026-11-02
 
@@ -41,7 +41,7 @@ All of phase 3 (§11) in one release:
 - **MCP**: `list_boards`, `get_board`, `get_design_tokens` (§10).
 - **Deleting a board**: its creator or an admin; hard delete, the content goes to the audit log.
   The assets stay.
-- Command palette: "Boards" as a page, and each board by title.
+- Command palette: "Boards" as a page.
 
 ### Derivation rules
 
@@ -50,7 +50,7 @@ Deterministic, no model involved. "Active" items are those with weight `primary`
 
 - **`palette`**: colours of active items with role `color` — or, when the board has none, of
   active `overall` items (`palette.source` says which). Each asset's colours count by their share
-  of the picture, times 1 for `primary` and 0.5 for `secondary`; colours closer than ΔE 10 (CIE76,
+  of the picture, times 1 for `primary` and 0.5 for `secondary`; colours closer than ΔE 12 (CIE76,
   Lab) are merged into the heavier one. At most eight, by weight. `palette.avoid` holds the
   colours of `avoid` items with role `color` or `overall`, merged the same way.
 - **`typePairings`**: one per active item with role `typography` (or `overall`, when there is no
@@ -139,7 +139,7 @@ in either UI language — they are input for a model and for code.
 - **Typography comes from captures and font assets only.** An uploaded screenshot contributes its
   `typography` facet values, not a family name.
 - **Colour merging is perceptual but naive** (CIE76 ΔE, fixed threshold). Two close blues stay
-  two colours if they are ΔE 11 apart.
+  two colours if they are ΔE 13 apart.
 - **A smart board shows at most 60 items** — the newest of the filter. A filter wider than that
   is a search, not a briefing.
 - **A board holds at most 100 items.** Beyond that it no longer briefs anyone.
@@ -172,3 +172,52 @@ None.
    same properties as the page.
 8. A member cannot delete another person's board; its creator can, and the audit log holds its
    items.
+
+## Decided during implementation
+
+1. **The command palette lists the boards page, not each board.** Boards by title would need the
+   list loaded with every palette opening; the boards page is one keystroke further. Revisit when
+   there are more boards than fit on that page.
+2. **"New board…" in the add-to-board select** creates a board and adds to it in one step, so
+   curating does not start with a detour to `/boards`.
+3. **Reordering keeps hidden items' positions.** The page sends the items it shows; they take the
+   positions they held between them. An item of a trashed asset keeps its own, so restoring the
+   asset brings it back where it was — even after the board was reordered meanwhile.
+4. **A smart board's filter drops paging and the review queue**, and an empty filter is refused:
+   without a filter a smart board is the overview.
+5. **`get_design_tokens` takes an asset as well as a board**, treating it as the board's only
+   primary item — an agent building from one reference gets the same token shape.
+6. **Shadows keep the measured CSS string** in the W3C format, without `$type`: the format's
+   shadow value is structured, and parsing every measured shadow into it is guesswork.
+7. **The Lab conversions moved from the worker to `@moodboard/shared`** (`color.ts`), since a
+   board's palette merges colours by the same distance and threshold as `asset_color` (ΔE 12).
+8. **A board's items are read through `AssetSearchService.detail`**, one call per asset, so an
+   item shows exactly what the asset's page and `get_asset` show. At 100 items that is 100
+   detail reads per board view — fine at the sizes a briefing has.
+
+### Verified (before release)
+
+- **Shared** (`board-derive.spec.ts`): palette merging by weight and ΔE with the overall fallback
+  and the avoid list; type pairings from a capture and a font; the motion summary; common facets
+  without `type`/`project`/`industry`; both conflict kinds; all four token formats from measured
+  values, nothing invented for an empty board; the briefing prompt's roles, counter-examples and
+  notes.
+- **Api** (`boards.integration.spec.ts`, PGlite): items with roles, weights, notes and order, the
+  same asset in two roles but not twice in one, a role change refused when taken; a trashed asset
+  hidden and restored at its place across a reorder; a trashed asset refused; delete only by the
+  creator or an admin, with the content in the audit log and the assets kept; a smart board's
+  stored filter, its live result, and refused curation.
+- **MCP** (`mcp.integration.spec.ts`, real client): the seven tools; `list_boards`, `get_board`
+  with the §10.1 shape, the prompt and a picture per item, `get_design_tokens` in `css`, and an
+  error without an id.
+- **Against a stub api in Chromium**: creating a board, "New board…" from a detail page, adding
+  with a role (and "already on the board" for a repeat), adding the overview's selection; on the
+  board page weight `avoid`, a note, the briefing, move buttons (focus follows the item and
+  switches to the other button at the top), drag and drop, the derived panel (palette, avoid
+  colours, Fraunces/Inter from a capture, a `theme` split and an `avoided` conflict), the token
+  tabs and the prompt; a smart board saved from `style:editorial` with its chips and overview
+  link and no curation controls; deleting a board. No horizontal scroll at 375 px.
+- `nx run-many -t lint,test,build`: green.
+
+Not verified before release: the migration against the production Postgres, and boards with
+real classified assets and pictures in a signed-in session.

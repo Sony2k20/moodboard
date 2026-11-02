@@ -436,7 +436,7 @@ in the ArgoCD Application, not from this chart.
 
 ## 5. Data Model
 
-Phase 1 covers §5.1 to §5.3 and §5.5. Boards (§5.4) arrive in phase 3.
+Phase 1 covers §5.1 to §5.3 and §5.5. Boards (§5.4) arrived in phase 3 (0019).
 
 ### 5.1 Core
 
@@ -509,19 +509,23 @@ That makes the board the most important data structure for the primary consumer,
 more than a list of assets:
 
 ```
-board            id, title, briefing, kind (manual|smart), created_by, created_at
+board            id, title, briefing, kind (manual|smart), created_by, created_at,
+                 updated_by, updated_at
                  -- briefing: free text. What should come out of this?
-board_item       board_id, asset_id, position,
+board_item       id, board_id, asset_id, position,
                  role,     -- color | layout | typography | motion | imagery | copy | overall
                  weight,   -- primary | secondary | avoid
-                 note      -- "the animation only, not the colours"
-board_filter     board_id, filter_json        -- kind=smart only
+                 note,     -- "the animation only, not the colours"
+                 added_by, added_at
+                 -- unique (board_id, asset_id, role): one asset may hold several roles
+board_filter     board_id, filter jsonb       -- kind=smart only; the overview's URL query
 ```
 
 **Why `role` is the decisive field:** hand a model seven images without roles and it has to
 guess which aspect of each one is meant — producing a mash-up of seven directions. With `role`
 the statement is unambiguous: *this* asset supplies the palette, *that* one the layout, *this*
-one only the motion. The same asset can hold different roles in two different boards.
+one only the motion. The same asset can hold different roles in two different boards — and
+several roles in one (0019).
 
 **Why `weight: avoid` exists:** in design briefs, counter-examples are often more precise than
 positive ones. "Explicitly *not* like this" rules out an entire region of the solution space
@@ -836,8 +840,9 @@ mounted as a route in `apps/api`, authenticated by a personal API token per user
 | `get_asset` | 1 | One asset with all metadata, colours, files, capture technique |
 | `list_vocabulary` | 1 | The controlled vocabulary — **so valid filter values are known rather than guessed** |
 | `add_asset` | 1 | Create an asset, including from a URL — dropping something in mid-session |
+| `list_boards` | 3 | Every board with its briefing — how an agent finds a board id (0019) |
 | `get_board` | 3 | **The briefing package** (§10.1) |
-| `get_design_tokens` | 3 | Palette and typography as design tokens |
+| `get_design_tokens` | 3 | Palette and typography as design tokens, of a board or one asset |
 
 **Images and captures are retrievable as vision input**, not only as descriptions — with design
 references, looking at the reference is half the value.
@@ -951,10 +956,11 @@ readable by Claude Code.
 
 ### Phase 3 — Boards
 
-- [ ] Board tables (§5.4) as a migration
-- [ ] Board UI: create, combine assets, assign roles and weights, reorder, add notes
-- [ ] The `briefing` field, smart boards
-- [ ] `get_board` including `derived` and token export, `get_design_tokens`
+- [x] Board tables (§5.4) as a migration — 0019, `0016_board`
+- [x] Board UI: create, combine assets, assign roles and weights, reorder, add notes — 0019
+- [x] The `briefing` field, smart boards — 0019: a smart board is a filter saved from the overview
+- [x] `get_board` including `derived` and token export, `get_design_tokens` — 0019, plus
+  `list_boards` and a briefing prompt
 
 ### Phase 4 — Expansion
 
