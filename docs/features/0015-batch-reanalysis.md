@@ -1,6 +1,6 @@
 # 0015 — Batch re-analysis
 
-> Status: accepted — implemented
+> Status: accepted — implemented, deployed in v0.15.0 (2026-11-02)
 > Phase: 2
 > Created: 2026-11-02
 
@@ -153,3 +153,14 @@ None that block.
 Not verified before release: the detail page's button in a browser (the stub serves no asset
 detail; build and lint cover the template), and a real run through the worker — that needs the
 cluster.
+
+## Rollout
+
+v0.15.0 deployed 2026-11-02 (gitops `3548d6b`): ArgoCD synced and healthy, api, web and worker
+on the `0.15.0` images.
+
+- Without a session, `GET /api/analysis` and `POST /api/analysis/requests` answer `401`, and
+  `/analysis` is served.
+- **Not verified:** 1–6 in a signed-in session, and the api's view of `llm.enabled` — reading
+  the pod's environment and logs was refused to this session. Opening `/analysis` as an admin
+  shows both at once: the counts, the month's spend and whether classification is on.
