@@ -1,6 +1,6 @@
 # 0016 — Command palette
 
-> Status: accepted — implemented
+> Status: accepted — implemented, deployed in v0.16.0 (2026-11-02)
 > Phase: 2
 > Created: 2026-11-02
 
@@ -113,3 +113,10 @@ None.
 Not verified before release: a German interface finding `dunkel` in a browser — the stub cannot
 store a language change; the match runs on the label of the active language, the same code
 path as `dark`.
+
+## Rollout
+
+v0.16.0 deployed 2026-11-02 (gitops `e8cd440`): ArgoCD synced and healthy, api, web and worker
+on the `0.16.0` images. The served bundle contains the palette.
+
+**Not verified:** 1–6 in a signed-in session; the palette needs a session to open.
