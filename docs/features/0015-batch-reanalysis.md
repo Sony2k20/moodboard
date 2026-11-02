@@ -1,6 +1,6 @@
 # 0015 — Batch re-analysis
 
-> Status: accepted
+> Status: accepted — implemented
 > Phase: 2
 > Created: 2026-11-02
 
@@ -117,3 +117,39 @@ None that block.
 5. As a member, `/analysis` says it is for admins, `GET /api/analysis` and a scope request answer
    `403`; re-analysing a selection works.
 6. `audit_log` holds one `analysis.requested` entry per queued asset.
+
+## Decided during implementation
+
+1. **Stuck wins over outdated.** An asset with an old result and three failures at the current
+   version is stuck: the reconciler has given up on it either way. `analysisState` in
+   `@moodboard/shared` decides this once, for the api and its tests.
+2. **The version breakdown counts the run the metadata came from** — each asset's newest
+   succeeded run — not every run. An asset classified at versions 4 and 5 counts once, under 5.
+3. **The api reads `LLM_ENABLED` and `LLM_MONTHLY_COST_LIMIT_USD`** from the chart, as the worker
+   does. It never sees the API key.
+4. **The detail page's button only queues.** It says the result appears in about a minute
+   instead of polling the asset: a classify run does not change `status`, which is what the page
+   follows for a capture.
+5. **The month's spend counts failed runs too**, as the worker's guard does: a refused request
+   with a fallback is still billed.
+
+### Verified (before release)
+
+- **Api** (`analysis.integration.spec.ts`, PGlite): the four states over a corpus with a current,
+  an outdated (with one failure at the current version), an unclassified and a stuck asset, a
+  trashed and a pending one left out; the version breakdown by latest run; month spend, average
+  run and the latest failures; scope requests queue with the asset's pipeline (`website` for a
+  website) and are audited; a member re-runs a selection, current asset included, trashed and
+  pending skipped; summary and scopes refuse a member; disabled classification refuses with
+  `409`.
+- **Shared** (`analysis.spec.ts`): the state precedence and the request schema.
+- **Against a stub api in Chromium** (1280 × 900, 390 × 844): `/analysis` shows the four counts,
+  actions, cost with meter, version table and failures; *Retry stuck* asks with the estimated
+  cost (3 × $0.046 = $0.138), reports "3 queued", and the queue count falls to 0 through polling.
+  In the overview, two selected tiles and *Re-analyse* ask once and report "2 queued". No
+  horizontal scroll on a phone.
+- `nx run-many -t lint,test,build`: green for all projects.
+
+Not verified before release: the detail page's button in a browser (the stub serves no asset
+detail; build and lint cover the template), and a real run through the worker — that needs the
+cluster.

@@ -1,6 +1,6 @@
 # Mood Board App — Concept
 
-> Last updated: 2026-10-30 · Status: phase 1 in progress
+> Last updated: 2026-11-02 · Status: phase 2 in progress
 
 ## 1. Core Idea
 
@@ -686,6 +686,10 @@ When the vocabulary grows, everything with `prompt_version < N` can be reclassif
 **Batch API** (50% discount, up to 24 hours runtime). The real advantage here is not the price
 but that rate limits stop being a concern. `origin = 'human'` remains untouched per §5.6.
 
+As built (0015), a re-analysis goes through the ordinary queue instead: at a few hundred assets a
+full re-run costs a few dollars, and the Batch API would add a second result path for half of
+that. The `/analysis` page shows how current the corpus is and queues the outdated or stuck part.
+
 ### 7.6 Why No Embeddings in Phase 1
 
 Embeddings deliver two things: semantic search ("everything that feels warm and earthy", even
@@ -934,7 +938,8 @@ readable by Claude Code.
 - [ ] Components with real code + live preview
 - [ ] Fonts with file upload and live rendering
 - [ ] Command palette (Cmd+K)
-- [ ] Batch re-analysis UI
+- [x] Batch re-analysis UI — 0015: the `/analysis` page for admins, re-analysing a selection for
+  everyone; the Batch API is left out until a full re-run costs real money
 
 ### Phase 3 — Boards
 
