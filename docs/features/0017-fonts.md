@@ -1,6 +1,6 @@
 # 0017 — Fonts: upload and live rendering
 
-> Status: accepted — implemented
+> Status: accepted — implemented, deployed in v0.17.1 (2026-11-02)
 > Phase: 2
 > Created: 2026-11-02
 
@@ -157,3 +157,17 @@ None.
 
 Not verified before release: a real upload through the worker and the model's classification of
 a specimen — that needs the cluster.
+
+## Rollout
+
+**v0.17.0 was never deployed.** The CI image check started the pruned api bundle and it failed
+with `Cannot find module 'fontkit'`: the image's dependencies come from `apps/api/package.json`
+and `apps/worker/package.json`, not from the imports, and the font library was only declared at
+the root. Declared in both (`e15381b`) and released as v0.17.1.
+
+v0.17.1 deployed 2026-11-02 (gitops `91a450a`): ArgoCD synced and healthy, api, web and worker
+on the `0.17.1` images without restarts, so migration `0014_asset_font` ran. An upload without a
+session answers `401`.
+
+**Not verified:** 1–6 with a real font in a signed-in session, and the model's classification
+of a specimen.

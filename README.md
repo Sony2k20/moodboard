@@ -10,9 +10,9 @@ design references straight into development — instead of "looks good", an answ
 
 ## Status
 
-**Phase 1 in progress.** Deployed and usable: sign in through Authentik, upload images, and find
-them again by facet, full-text search or author once the worker has classified them. Editing
-metadata, website capture and the MCP server are still to come.
+**Phases 1 and 2 done.** Deployed and in use: images, websites, fonts and components go in, are
+captured, rendered and classified, and are found again by facet, full-text search, author or the
+command palette — and by Claude Code through the MCP server. Phase 3 (boards) has not started.
 
 | Step | State |
 |---|---|
@@ -20,7 +20,6 @@ metadata, website capture and the MCP server are still to come.
 | [`0002`](./docs/features/0002-deployment-foundation.md) Images, CI, Helm chart | done — three images on GHCR, synced by ArgoCD |
 | [`0003`](./docs/features/0003-oidc-login.md) OIDC login, BFF session, emergency admin | done — login through Authentik is live; emergency admin implemented, not enabled |
 | [`0004`](./docs/features/0004-upload-job-pipeline.md) Upload and the job pipeline | done — upload, thumbnails and classification verified end to end on `v0.2.2` |
-| Website capture | not started |
 | i18n | done — Transloco with English and German, language switcher, `user.locale` persisted |
 | [`0005`](./docs/features/0005-overview-search.md) Overview: grid, facet filters, search | done — live in `v0.3.0` |
 | [`0006`](./docs/features/0006-editing-trash.md) Editing, bulk tagging, trash | done — live in `v0.4.0` |
@@ -28,6 +27,14 @@ metadata, website capture and the MCP server are still to come.
 | [`0008`](./docs/features/0008-build-prompt.md) Build prompt per asset | done — live in `v0.5.0` |
 | [`0009`](./docs/features/0009-visual-details.md) Visual details for the build prompt | done — live in `v0.6.0` |
 | [`0010`](./docs/features/0010-mcp-server.md) MCP server: search, get, vocabulary, add | done — live in `v0.7.2` |
+| [`0011`](./docs/features/0011-website-capture.md) Website capture, technique, scroll video | done — live in `v0.14.0` |
+| [`0012`](./docs/features/0012-browse-and-review.md) Inspector, filter pills, review mode | done — live in `v0.11.0` |
+| [`0013`](./docs/features/0013-confidence-review.md) Review what the model is unsure about | done — live in `v0.12.0` |
+| [`0014`](./docs/features/0014-vocabulary-maintenance.md) Vocabulary maintenance: project values | done — live in `v0.13.0` |
+| [`0015`](./docs/features/0015-batch-reanalysis.md) Batch re-analysis *(phase 2)* | done — live in `v0.15.0` |
+| [`0016`](./docs/features/0016-command-palette.md) Command palette *(phase 2)* | done — live in `v0.16.0` |
+| [`0017`](./docs/features/0017-fonts.md) Fonts: upload and live rendering *(phase 2)* | done — live in `v0.17.1` |
+| [`0018`](./docs/features/0018-components.md) Components as code, sandboxed preview *(phase 2)* | done — `v0.18.0` |
 
 **Authentication is on**: every data endpoint requires a session, and every row written from here
 on can name the human who acted — which is what `origin = 'human'` (concept §5.6) rests on.

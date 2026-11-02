@@ -1,6 +1,6 @@
 # 0018 — Components with real code and live preview
 
-> Status: accepted
+> Status: accepted — implemented
 > Phase: 2
 > Created: 2026-11-02
 
@@ -117,3 +117,44 @@ None.
    preview's policy; `document.cookie` is empty and `parent.document` throws.
 5. After classification, `motion` reflects the transition in the CSS.
 6. MCP: `get_asset` returns the code in `component`.
+
+## Decided during implementation
+
+1. **One document for both sides.** `componentDocument` in `@moodboard/shared` builds what the
+   preview runs and the worker renders; only the preview adds a script that reports the height,
+   because an opaque-origin frame cannot be measured from outside.
+2. **The preview bypasses Angular's HTML sanitiser** for `srcdoc`. Sanitising would remove the
+   scripts and styles the preview exists to run; the sandbox and the document's policy are the
+   isolation instead.
+3. **The frame is laid out at the component's width and scaled down** to the space it has, with
+   a note saying so — a 1280 px component in a narrow column is shown as it is, not reflowed.
+4. **The rendering is the content, not the viewport:** the body's height at the chosen width,
+   between 120 and 4,000 px.
+5. **No Tab trap in the code fields.** Tab leaves the field, as everywhere else; indentation is
+   typed with spaces.
+6. **A palette fix came out of testing this** (`e9e7e6e`, 0016): its entries were computed before
+   the translations loaded and kept the keys as labels.
+
+### Verified (before release)
+
+- **Api** (`component.integration.spec.ts`, PGlite): a component is stored with its code, a
+  decided `type: component` and a person's title (or none, for the model); a save replaces the
+  code, records the previous one in `component.updated` and starts the pipeline again; a trashed
+  asset and a website refuse the save.
+- **Worker** (`component-renderer.integration.spec.ts`, real Chromium): a 200 × 300 red box at
+  390 px renders as 780 × 728 (DPR 2, with the body's padding) and is red where it should be. A
+  component whose script calls `fetch`, `sendBeacon` and adds a script by URL, with an `<img>`
+  and a CSS `@import` towards a local server, made **zero** requests to it.
+- **Shared** (`component.spec.ts`): the policy precedes all code and allows no request out, the
+  schema's limits and widths, the model's budget, the pipeline and its queue.
+- **Against a stub api in Chromium** (1280 × 900, 390 × 844): `/components/new` runs the example
+  at 390 px with the reported height; a component probing its isolation reported origin `null`,
+  `SecurityError` for `document.cookie`, `localStorage` and `parent.document`, and both a
+  same-host and an external `fetch` blocked. Saving goes to the detail page, which runs the code
+  and shows HTML and CSS panes; editing the CSS updates the editor's preview while typing, and
+  after saving the page's preview shows the new colour. The palette lists *New component* with
+  its label. No horizontal scroll on a phone.
+- `nx run-many -t lint,test,build`: green; the pruned manifests need nothing new.
+
+Not verified before release: a render and classification through the real worker in the
+cluster.

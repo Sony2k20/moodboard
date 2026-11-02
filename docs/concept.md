@@ -490,6 +490,8 @@ asset_font           asset_id, family, subfamily, full_name, postscript_name, ve
                      designer, manufacturer, license, license_url, weight, italic,
                      monospace, glyph_count, axes jsonb, features jsonb
                      -- what an uploaded font file states about itself (0017)
+component_code       asset_id, html, css, js, width, updated_by, updated_at
+                     -- a component's code, the asset itself (0018)
 asset_embedding      asset_id, model, dim, embedding vector(N), created_at
                      -- phase 4 only (§7.6), listed here for completeness
 ```
@@ -939,7 +941,8 @@ readable by Claude Code.
 
 ### Phase 2 — Sharpening
 
-- [ ] Components with real code + live preview
+- [x] Components with real code + live preview — 0018: HTML, CSS and JS as the asset, a sandboxed
+  preview, a rendering by the worker as the picture
 - [x] Fonts with file upload and live rendering — 0017: facts from the file in `asset_font`, a
   specimen drawn from the outlines, live rendering with axes and features
 - [x] Command palette (Cmd+K) — 0016
