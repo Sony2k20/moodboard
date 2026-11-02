@@ -1,0 +1,112 @@
+:host {
+  display: block;
+  max-width: 48rem;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.4rem;
+}
+
+h2 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.intro,
+.hint,
+.note,
+.version {
+  color: var(--ink-soft);
+}
+
+.hint {
+  font-size: 0.9rem;
+}
+
+.error {
+  color: var(--danger);
+}
+
+.states {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.states li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.states strong {
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.states small {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.states .stuck strong {
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+meter {
+  width: 100%;
+  max-width: 24rem;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.3rem 1rem 0.3rem 0;
+  text-align: left;
+  font-weight: normal;
+}
+
+.count {
+  font-variant-numeric: tabular-nums;
+}
+
+tr.old {
+  color: var(--ink-soft);
+}
+
+.failures {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.failures li {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.failures small {
+  color: var(--ink-soft);
+}
+
+.failures code {
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}

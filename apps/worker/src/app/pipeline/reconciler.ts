@@ -5,9 +5,13 @@ import {
   OnApplicationBootstrap,
   OnApplicationShutdown,
 } from '@nestjs/common';
-import { PROMPT_VERSION } from '@moodboard/classify';
 import { analysisRuns, assets, Database } from '@moodboard/db';
-import { firstPipelineStep, pipelineKindOf } from '@moodboard/shared';
+import {
+  firstPipelineStep,
+  MAX_FAILED_RUNS,
+  pipelineKindOf,
+  PROMPT_VERSION,
+} from '@moodboard/shared';
 import { and, eq, isNull, lt, sql } from 'drizzle-orm';
 import { DATABASE } from '../database.module';
 import { ClassifyStep } from './classify.step';
@@ -16,8 +20,6 @@ import { PipelineRunner } from './pipeline.runner';
 const INTERVAL_MS = 10 * 60 * 1000;
 /** A pending asset younger than this is most likely still moving through the queue. */
 const PENDING_GRACE = '10 minutes';
-/** Stop retrying an asset after this many failed runs at the current prompt version. */
-const MAX_FAILED_RUNS = 3;
 const BATCH = 50;
 
 /**

@@ -236,7 +236,11 @@
         "card": "Karte"
       }
     },
-    "video": "Scroll-Video der Seite"
+    "video": "Scroll-Video der Seite",
+    "reanalyse": "Neu analysieren",
+    "reanalyseHint": "Klassifiziert das Asset erneut mit dem aktuellen Prompt. Was ein Mensch gesetzt hat, bleibt.",
+    "reanalysed": "Eingereiht. Das neue Ergebnis erscheint hier in etwa einer Minute.",
+    "reanalyseFailed": "Konnte nicht eingereiht werden. Bitte gleich noch einmal versuchen."
   },
   "bulk": {
     "start": "Auswählen",
@@ -251,8 +255,12 @@
     "confirmTrash": "{{ count }} Assets in den Papierkorb verschieben?",
     "error": {
       "forbidden": "Nur eigene Assets können in den Papierkorb verschoben werden.",
-      "failed": "Die Aktion ist fehlgeschlagen. Bitte gleich noch einmal versuchen."
-    }
+      "failed": "Die Aktion ist fehlgeschlagen. Bitte gleich noch einmal versuchen.",
+      "disabled": "Die Klassifizierung ist auf diesem Server ausgeschaltet."
+    },
+    "reanalyse": "Neu analysieren",
+    "confirmReanalyse": "{{ count }} Assets erneut klassifizieren? Korrekturen von Menschen bleiben, wie sie sind.",
+    "reanalysed": "{{ count }} zur Neuanalyse eingereiht."
   },
   "trash": {
     "title": "Papierkorb",
@@ -313,6 +321,49 @@
       "inUse": "Dieser Wert wird noch verwendet, eventuell von einem Asset im Papierkorb.",
       "invalid": "Beide Bezeichnungen sind nötig, und der Schlüssel darf nur Kleinbuchstaben, Ziffern und Bindestriche enthalten. Eine Beschreibung braucht ebenfalls beide Sprachen.",
       "failed": "Das hat nicht geklappt. Versuch es gleich noch einmal."
+    }
+  },
+  "analysis": {
+    "nav": "Analyse",
+    "title": "Analyse",
+    "intro": "Wie aktuell die Beschreibungen des Modells sind. Eine Neuanalyse ändert nie, was ein Mensch gesetzt hat.",
+    "adminsOnly": "Nur Admins sehen die Analyse der ganzen Sammlung.",
+    "promptVersion": "Aktuelle Prompt-Version: {{ version }}",
+    "disabled": "Die Klassifizierung ist auf diesem Server ausgeschaltet. Nichts wird analysiert, nichts kann eingereiht werden.",
+    "states": {
+      "current": "Aktuell",
+      "outdated": "Veraltet",
+      "unclassified": "Noch nicht klassifiziert",
+      "stuck": "Hängt fest"
+    },
+    "stateHints": {
+      "current": "Mit dem aktuellen Prompt klassifiziert.",
+      "outdated": "Mit einem älteren Prompt klassifiziert. Wird automatisch nachgeholt, 50 alle zehn Minuten.",
+      "unclassified": "Nie erfolgreich klassifiziert; wird weiter versucht.",
+      "stuck": "{{ max }}-mal mit dem aktuellen Prompt gescheitert. Wird nicht mehr von selbst versucht."
+    },
+    "versions": "Nach Prompt-Version",
+    "version": "Version {{ version }}",
+    "assets": "{{ count }} Assets",
+    "cost": "Kosten",
+    "month": "Dieser Monat: {{ spent }} von {{ limit }}",
+    "average": "Durchschnittlicher Lauf (30 Tage): {{ cost }}",
+    "noAverage": "Kein Lauf in den letzten 30 Tagen.",
+    "queue": "Wartende oder laufende Pipeline-Jobs: {{ count }}",
+    "queueUnknown": "Die Warteschlange ist nicht erreichbar.",
+    "actions": "Aktionen",
+    "reanalyseOutdated": "Veraltete neu analysieren ({{ count }})",
+    "retryStuck": "Festhängende erneut versuchen ({{ count }})",
+    "confirm": "{{ count }} Assets zur Analyse einreihen? Geschätzte Kosten: {{ cost }}.",
+    "confirmUnknownCost": "{{ count }} Assets zur Analyse einreihen?",
+    "queued": "{{ count }} eingereiht.",
+    "failures": "Letzte gescheiterte Läufe",
+    "noFailures": "Keine gescheiterten Läufe.",
+    "untitled": "Ohne Titel",
+    "error": {
+      "failed": "Die Analyse konnte nicht geladen werden. Bitte gleich noch einmal versuchen.",
+      "disabled": "Die Klassifizierung ist auf diesem Server ausgeschaltet.",
+      "request": "Konnte nicht eingereiht werden. Bitte gleich noch einmal versuchen."
     }
   }
 }

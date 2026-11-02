@@ -1,0 +1,109 @@
+<h1>{{ 'analysis.title' | transloco }}</h1>
+<p class="intro">{{ 'analysis.intro' | transloco }}</p>
+
+@if (!admin()) {
+<p class="note" role="status">{{ 'analysis.adminsOnly' | transloco }}</p>
+} @else if (summary.error()) {
+<p role="alert" class="error">{{ 'analysis.error.failed' | transloco }}</p>
+} @else if (summary.value(); as s) {
+<p class="version">{{ 'analysis.promptVersion' | transloco: { version: s.promptVersion } }}</p>
+@if (!s.enabled) {
+<p class="note" role="status">{{ 'analysis.disabled' | transloco }}</p>
+}
+
+<ul class="states">
+  @for (state of states; track state) {
+  <li [class]="state">
+    <strong>{{ s.states[state] }}</strong>
+    <span>{{ 'analysis.states.' + state | transloco }}</span>
+    <small>{{ 'analysis.stateHints.' + state | transloco: { max: maxFailed } }}</small>
+  </li>
+  }
+</ul>
+
+<section>
+  <h2>{{ 'analysis.actions' | transloco }}</h2>
+  <div class="actions">
+    <button
+      type="button"
+      [disabled]="busy() || !s.enabled || s.states.outdated === 0"
+      (click)="run('outdated')"
+    >
+      {{ 'analysis.reanalyseOutdated' | transloco: { count: s.states.outdated } }}
+    </button>
+    <button
+      type="button"
+      [disabled]="busy() || !s.enabled || s.states.stuck === 0"
+      (click)="run('stuck')"
+    >
+      {{ 'analysis.retryStuck' | transloco: { count: s.states.stuck } }}
+    </button>
+  </div>
+  @if (message(); as m) {
+  <p role="status">{{ m.key | transloco: { count: m.count } }}</p>
+  }
+  <p class="hint" aria-live="polite">
+    @if (s.queued === null) {
+    {{ 'analysis.queueUnknown' | transloco }}
+    } @else {
+    {{ 'analysis.queue' | transloco: { count: s.queued } }}
+    }
+  </p>
+</section>
+
+<section>
+  <h2>{{ 'analysis.cost' | transloco }}</h2>
+  <p>
+    {{ 'analysis.month' | transloco: { spent: usd(s.cost.monthUsd), limit: usd(s.cost.monthlyLimitUsd) } }}
+  </p>
+  <meter
+    min="0"
+    [max]="s.cost.monthlyLimitUsd"
+    [high]="s.cost.monthlyLimitUsd * 0.8"
+    [value]="s.cost.monthUsd"
+  ></meter>
+  <p class="hint">
+    @if (s.cost.averageRunUsd !== null) {
+    {{ 'analysis.average' | transloco: { cost: usd(s.cost.averageRunUsd) } }}
+    } @else {
+    {{ 'analysis.noAverage' | transloco }}
+    }
+  </p>
+</section>
+
+@if (s.versions.length > 0) {
+<section>
+  <h2>{{ 'analysis.versions' | transloco }}</h2>
+  <table>
+    <tbody>
+      @for (v of s.versions; track v.promptVersion + v.model) {
+      <tr [class.old]="v.promptVersion < s.promptVersion">
+        <th scope="row">{{ 'analysis.version' | transloco: { version: v.promptVersion } }}</th>
+        <td><code>{{ v.model }}</code></td>
+        <td class="count">{{ 'analysis.assets' | transloco: { count: v.assets } }}</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</section>
+}
+
+<section>
+  <h2>{{ 'analysis.failures' | transloco }}</h2>
+  @if (s.recentFailures.length === 0) {
+  <p class="hint">{{ 'analysis.noFailures' | transloco }}</p>
+  } @else {
+  <ul class="failures">
+    @for (f of s.recentFailures; track $index) {
+    <li>
+      <a [routerLink]="['/assets', f.assetId]">{{ f.title || ('analysis.untitled' | transloco) }}</a>
+      <small>v{{ f.promptVersion }} · {{ f.createdAt | date: 'short' }}</small>
+      @if (f.error) {
+      <code>{{ f.error }}</code>
+      }
+    </li>
+    }
+  </ul>
+  }
+</section>
+}

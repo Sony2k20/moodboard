@@ -1,6 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
+  AnalysisRequest,
+  AnalysisRequestResult,
+  AnalysisSummary,
   AssetDetail,
   AssetQuery,
   assetQueryParams,
@@ -103,6 +106,18 @@ export class AssetsApi {
 
   retryCapture(id: string): Promise<{ id: string }> {
     return firstValueFrom(this.http.post<{ id: string }>(`${this.url(id)}/capture`, {}));
+  }
+
+  // Re-analysis (0015). The summary is for admins; a selection anyone may re-run.
+
+  analysis(): Promise<AnalysisSummary> {
+    return firstValueFrom(this.http.get<AnalysisSummary>('/api/analysis'));
+  }
+
+  requestAnalysis(request: AnalysisRequest): Promise<AnalysisRequestResult> {
+    return firstValueFrom(
+      this.http.post<AnalysisRequestResult>('/api/analysis/requests', request),
+    );
   }
 
   trashList(): Promise<TrashItem[]> {

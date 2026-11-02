@@ -17,6 +17,10 @@ export const appRoutes: Route[] = [
       import('./vocabulary/vocabulary-page').then((m) => m.VocabularyPage),
   },
   {
+    path: 'analysis',
+    loadComponent: () => import('./analysis/analysis-page').then((m) => m.AnalysisPage),
+  },
+  {
     path: 'trash',
     loadComponent: () => import('./trash/trash').then((m) => m.TrashPage),
   },

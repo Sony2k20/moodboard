@@ -68,6 +68,7 @@ export class AssetDetailPage {
   });
 
   protected readonly retrying = signal(false);
+  protected readonly reanalysis = signal<'idle' | 'working' | 'queued' | 'failed'>('idle');
 
   constructor() {
     // A capture takes a minute (0011); follow it until it is ready or failed, as the overview does.
@@ -287,6 +288,17 @@ export class AssetDetailPage {
       this.saveError.set(true);
     } finally {
       this.retrying.set(false);
+    }
+  }
+
+  /** Classify again with the current prompt (0015); a person's values stay (§5.6). */
+  protected async reanalyse(): Promise<void> {
+    this.reanalysis.set('working');
+    try {
+      await this.api.requestAnalysis({ ids: [this.id()] });
+      this.reanalysis.set('queued');
+    } catch {
+      this.reanalysis.set('failed');
     }
   }
 

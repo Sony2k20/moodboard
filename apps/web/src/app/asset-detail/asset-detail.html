@@ -347,6 +347,22 @@
       } @else {
       <p>{{ 'detail.notClassified' | transloco }}</p>
       }
+      @if (asset.status === 'ready') {
+      <button
+        type="button"
+        class="reanalyse"
+        [disabled]="reanalysis() === 'working' || reanalysis() === 'queued'"
+        [title]="'detail.reanalyseHint' | transloco"
+        (click)="reanalyse()"
+      >
+        {{ 'detail.reanalyse' | transloco }}
+      </button>
+      @if (reanalysis() === 'queued') {
+      <p role="status">{{ 'detail.reanalysed' | transloco }}</p>
+      } @else if (reanalysis() === 'failed') {
+      <p role="alert">{{ 'detail.reanalyseFailed' | transloco }}</p>
+      }
+      }
     </section>
 
     @if (mayDelete()) {

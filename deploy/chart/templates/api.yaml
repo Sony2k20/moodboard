@@ -91,6 +91,12 @@ spec:
             # The api shows when an asset leaves the trash; the worker purges it then (0006).
             - name: TRASH_RETENTION_DAYS
               value: {{ .Values.trash.retentionDays | quote }}
+            # The analysis page shows both and refuses re-analysis while classification is off
+            # (0015). The api never sees the key.
+            - name: LLM_ENABLED
+              value: {{ .Values.llm.enabled | quote }}
+            - name: LLM_MONTHLY_COST_LIMIT_USD
+              value: {{ .Values.llm.monthlyCostLimitUsd | quote }}
             - name: DEFAULT_LOCALE
               value: {{ .Values.i18n.defaultLocale | quote }}
             - name: AVAILABLE_LOCALES

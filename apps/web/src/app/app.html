@@ -5,6 +5,7 @@
   <a routerLink="/tokens">{{ 'tokens.nav' | transloco }}</a>
   @if (user.role === 'admin') {
   <a routerLink="/vocabulary">{{ 'vocabulary.nav' | transloco }}</a>
+  <a routerLink="/analysis">{{ 'analysis.nav' | transloco }}</a>
   }
   <span class="user">
     {{ user.displayName }} @if (user.role === 'admin') {

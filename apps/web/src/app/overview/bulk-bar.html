@@ -45,6 +45,13 @@
 
   <button
     type="button"
+    [disabled]="busy() || store.selected().size === 0"
+    (click)="reanalyse()"
+  >
+    {{ 'bulk.reanalyse' | transloco }}
+  </button>
+  <button
+    type="button"
     class="trash"
     [disabled]="busy() || store.selected().size === 0"
     (click)="trash()"
@@ -53,6 +60,9 @@
   </button>
   <button type="button" (click)="store.setSelecting(false)">{{ 'bulk.done' | transloco }}</button>
 
+  @if (reanalysis(); as r) {
+  <p role="status">{{ r.key | transloco: { count: r.count } }}</p>
+  }
   @if (store.bulkError(); as error) {
   <p role="alert" class="error">{{ 'bulk.error.' + error | transloco }}</p>
   }

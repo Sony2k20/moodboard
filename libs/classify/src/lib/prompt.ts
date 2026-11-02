@@ -6,11 +6,8 @@ import {
 } from '@moodboard/shared';
 import { ClassifyInput } from './classifier.port';
 
-/**
- * Bumped whenever this prompt or the vocabulary it renders changes. Every `analysis_run` records
- * it, which is what makes "re-classify everything below version N" possible (§5.5, §7.5).
- */
-export const PROMPT_VERSION = 5;
+/** Lives in `@moodboard/shared`, so the api can name it without the provider SDK (0015). */
+export { PROMPT_VERSION } from '@moodboard/shared';
 
 /** Curated facets (`project`) are maintained by admins and never guessed by a model (0014). */
 const CLASSIFIED_FACETS = VOCABULARY.filter((facet) => !CURATED_FACET_KEYS.includes(facet.key));

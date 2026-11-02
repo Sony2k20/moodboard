@@ -236,7 +236,11 @@
         "card": "Card"
       }
     },
-    "video": "Scroll video of the page"
+    "video": "Scroll video of the page",
+    "reanalyse": "Re-analyse",
+    "reanalyseHint": "Classifies the asset again with the current prompt. What a person set stays.",
+    "reanalysed": "Queued. The new result appears here in about a minute.",
+    "reanalyseFailed": "Could not be queued. Try again in a moment."
   },
   "bulk": {
     "start": "Select",
@@ -251,8 +255,12 @@
     "confirmTrash": "Move {{ count }} assets to the trash?",
     "error": {
       "forbidden": "Only your own assets can be moved to the trash.",
-      "failed": "The action failed. Try again in a moment."
-    }
+      "failed": "The action failed. Try again in a moment.",
+      "disabled": "Classification is switched off on this server."
+    },
+    "reanalyse": "Re-analyse",
+    "confirmReanalyse": "Classify {{ count }} assets again? Corrections made by people stay as they are.",
+    "reanalysed": "{{ count }} queued for re-analysis."
   },
   "trash": {
     "title": "Trash",
@@ -313,6 +321,49 @@
       "inUse": "This value is still used, possibly by an asset in the trash.",
       "invalid": "Both labels are needed, and the key may only hold lowercase letters, digits and hyphens. A description needs both languages too.",
       "failed": "That did not work. Try again in a moment."
+    }
+  },
+  "analysis": {
+    "nav": "Analysis",
+    "title": "Analysis",
+    "intro": "How current the model's descriptions are. A re-analysis never changes what a person set.",
+    "adminsOnly": "Only admins see the analysis of the whole collection.",
+    "promptVersion": "Current prompt version: {{ version }}",
+    "disabled": "Classification is switched off on this server. Nothing is analysed and nothing can be queued.",
+    "states": {
+      "current": "Current",
+      "outdated": "Outdated",
+      "unclassified": "Not classified yet",
+      "stuck": "Stuck"
+    },
+    "stateHints": {
+      "current": "Classified with the current prompt.",
+      "outdated": "Classified with an older prompt. Picked up automatically, 50 every ten minutes.",
+      "unclassified": "Never classified successfully; still being retried.",
+      "stuck": "Failed {{ max }} times with the current prompt. No longer retried on its own."
+    },
+    "versions": "By prompt version",
+    "version": "Version {{ version }}",
+    "assets": "{{ count }} assets",
+    "cost": "Cost",
+    "month": "This month: {{ spent }} of {{ limit }}",
+    "average": "Average run (30 days): {{ cost }}",
+    "noAverage": "No run in the last 30 days.",
+    "queue": "Pipeline jobs waiting or running: {{ count }}",
+    "queueUnknown": "The queue cannot be reached.",
+    "actions": "Actions",
+    "reanalyseOutdated": "Re-analyse outdated ({{ count }})",
+    "retryStuck": "Retry stuck ({{ count }})",
+    "confirm": "Queue {{ count }} assets for analysis? Estimated cost: {{ cost }}.",
+    "confirmUnknownCost": "Queue {{ count }} assets for analysis?",
+    "queued": "{{ count }} queued.",
+    "failures": "Latest failed runs",
+    "noFailures": "No failed runs.",
+    "untitled": "Untitled",
+    "error": {
+      "failed": "The analysis could not be loaded. Try again in a moment.",
+      "disabled": "Classification is switched off on this server.",
+      "request": "Could not be queued. Try again in a moment."
     }
   }
 }

@@ -6,6 +6,8 @@ import {
   TrashController,
 } from './asset-edit.controller';
 import { AssetEditService } from './asset-edit.service';
+import { AnalysisController } from './analysis.controller';
+import { AnalysisService, LLM_SETTINGS } from './analysis.service';
 import { AssetSearchService } from './asset-search.service';
 import { AssetsController, VocabularyController } from './assets.controller';
 import { VocabularyAdminService } from './vocabulary-admin.service';
@@ -20,6 +22,7 @@ import { PipelineQueue } from './pipeline.queue';
     VocabularyController,
     TrashController,
     FilesController,
+    AnalysisController,
   ],
   providers: [
     AssetsService,
@@ -27,6 +30,14 @@ import { PipelineQueue } from './pipeline.queue';
     AssetEditService,
     VocabularyAdminService,
     PipelineQueue,
+    AnalysisService,
+    {
+      provide: LLM_SETTINGS,
+      useFactory: () => ({
+        enabled: process.env['LLM_ENABLED'] === 'true',
+        monthlyLimitUsd: Number(process.env['LLM_MONTHLY_COST_LIMIT_USD'] ?? 25),
+      }),
+    },
     {
       provide: TRASH_RETENTION_DAYS,
       useFactory: () =>
