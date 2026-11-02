@@ -1,6 +1,6 @@
 # 0017 — Fonts: upload and live rendering
 
-> Status: accepted
+> Status: accepted — implemented
 > Phase: 2
 > Created: 2026-11-02
 
@@ -115,3 +115,45 @@ None.
 5. A `.txt` renamed to `.ttf` is refused with `415`; a 12 MB font with `413`.
 6. MCP: `get_asset` on the font returns the `font` block; `search_assets` with `type:font` lists
    it.
+
+## Decided during implementation
+
+1. **The specimen is drawn from glyph outlines, not in Chromium.** fontkit lays out each line
+   (kerning, ligatures) and the outlines become SVG paths, which sharp rasterises. No browser, no
+   installed font, no capture queue: the step runs next to the image steps. Only path commands
+   and numbers from the file reach the SVG.
+2. **The api parses the font at upload**, with the same library. It is the check that the file
+   is a font, and it fills `asset_font` in the same transaction as the asset, so the detail page
+   has the facts before the worker has run.
+3. **The title is the file's full name, as `human`.** It is a fact the file states, and the
+   title guard keeps the model from renaming it — the model's own title would describe the look,
+   which `description` already does.
+4. **`colors` stays in the font pipeline.** It marks the asset `ready`; the palette of a specimen
+   is ink and paper, harmless, and not worth a second way to finish a pipeline.
+5. **The specimen's family name on the detail page is private** (`mb-specimen-N`): two uploads of
+   the same family never share a `FontFace`, and the application's own type is never touched. A
+   variable font is declared over its whole `wght` range, so the slider is not clamped.
+6. **Copying the image for a prompt copies the specimen**, never the font file.
+
+### Verified (before release)
+
+- **Api** (`font-reader.spec.ts`, `font-ingest.integration.spec.ts`, PGlite): Inter's variable
+  WOFF2 yields family, full name, weight 400, the `wght` axis 100–900 and sorted features; a file
+  with a font signature that is not a font, and a truncated font, are refused before anything is
+  stored. An ingest stores the original as `font/woff2`, the facts, `type: font` as `human` and
+  decided, the full name as a `human` title, and starts the `font` pipeline.
+- **Worker** (`specimen.spec.ts`): the specimen is paths only, shrinks a line that does not fit,
+  and renders to 1600 × 1000 with near-black ink on white. Rendered once by hand and looked at:
+  name, pangram, both alphabets and figures, correctly kerned.
+- **Shared** (`font.spec.ts`): the four signatures, collections refused, the font pipeline's
+  order.
+- **Against a stub api in Chromium** (1280 × 900, 390 × 844): the detail page loads the file
+  through `FontFace` (`loaded`, weight range `100 900`); the weight slider sets
+  `font-variation-settings: "wght" 850`, the `frac` switch `font-feature-settings: "frac"`, own
+  text replaces the pangram; the facts and *Download font* are shown. The 72 px waterfall line
+  first pushed into the metadata column — fixed with `min-width: 0` on the specimen's grid items.
+  No horizontal scroll on a phone.
+- `nx run-many -t lint,test,build`: green; `fontkit` is in both generated runtime manifests.
+
+Not verified before release: a real upload through the worker and the model's classification of
+a specimen — that needs the cluster.

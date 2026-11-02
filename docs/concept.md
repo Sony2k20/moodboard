@@ -486,6 +486,10 @@ capture_tech         asset_id, fonts jsonb, css_properties jsonb,
                      viewport, captured_at
                      -- result of the technique extraction from §8; tokens and
                      -- element styles since 0011 release 2
+asset_font           asset_id, family, subfamily, full_name, postscript_name, version,
+                     designer, manufacturer, license, license_url, weight, italic,
+                     monospace, glyph_count, axes jsonb, features jsonb
+                     -- what an uploaded font file states about itself (0017)
 asset_embedding      asset_id, model, dim, embedding vector(N), created_at
                      -- phase 4 only (§7.6), listed here for completeness
 ```
@@ -936,7 +940,8 @@ readable by Claude Code.
 ### Phase 2 — Sharpening
 
 - [ ] Components with real code + live preview
-- [ ] Fonts with file upload and live rendering
+- [x] Fonts with file upload and live rendering — 0017: facts from the file in `asset_font`, a
+  specimen drawn from the outlines, live rendering with axes and features
 - [x] Command palette (Cmd+K) — 0016
 - [x] Batch re-analysis UI — 0015: the `/analysis` page for admins, re-analysing a selection for
   everyone; the Batch API is left out until a full re-run costs real money
