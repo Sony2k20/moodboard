@@ -2,9 +2,10 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Locale, SessionService } from './auth/session.service';
+import { CommandPalette } from './command-palette/command-palette';
 
 @Component({
-  imports: [RouterLink, RouterOutlet, TranslocoPipe],
+  imports: [CommandPalette, RouterLink, RouterOutlet, TranslocoPipe],
   selector: 'mb-root',
   templateUrl: './app.html',
   styleUrl: './app.css',

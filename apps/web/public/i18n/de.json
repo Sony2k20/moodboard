@@ -365,5 +365,29 @@
       "disabled": "Die Klassifizierung ist auf diesem Server ausgeschaltet.",
       "request": "Konnte nicht eingereiht werden. Bitte gleich noch einmal versuchen."
     }
+  },
+  "palette": {
+    "title": "Befehlspalette",
+    "placeholder": "Filtern, Asset finden, gehe zu…",
+    "searchFor": "Nach „{{ q }}“ suchen",
+    "selected": "ausgewählt — wählen zum Entfernen",
+    "untitled": "Ohne Titel",
+    "empty": "Nichts gefunden.",
+    "keys": "↑ ↓ bewegen · Enter wählen · Esc schließen",
+    "open": "Befehlspalette (Strg+K)",
+    "groups": {
+      "search": "Suche",
+      "facets": "Filter",
+      "assets": "Assets",
+      "pages": "Gehe zu"
+    },
+    "pages": {
+      "overview": "Übersicht",
+      "review": "Prüfen"
+    },
+    "language": {
+      "en": "Auf Englisch umstellen",
+      "de": "Auf Deutsch umstellen"
+    }
   }
 }

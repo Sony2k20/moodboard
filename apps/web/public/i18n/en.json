@@ -365,5 +365,29 @@
       "disabled": "Classification is switched off on this server.",
       "request": "Could not be queued. Try again in a moment."
     }
+  },
+  "palette": {
+    "title": "Command palette",
+    "placeholder": "Filter, find an asset, go to…",
+    "searchFor": "Search for “{{ q }}”",
+    "selected": "selected — choose to remove",
+    "untitled": "Untitled",
+    "empty": "Nothing matches.",
+    "keys": "↑ ↓ to move · Enter to choose · Esc to close",
+    "open": "Command palette (Ctrl+K)",
+    "groups": {
+      "search": "Search",
+      "facets": "Filter",
+      "assets": "Assets",
+      "pages": "Go to"
+    },
+    "pages": {
+      "overview": "Overview",
+      "review": "Review"
+    },
+    "language": {
+      "en": "Switch to English",
+      "de": "Switch to German"
+    }
   }
 }

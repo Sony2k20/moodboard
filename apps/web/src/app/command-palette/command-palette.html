@@ -1,0 +1,54 @@
+<dialog
+  #dialog
+  class="palette"
+  [attr.aria-label]="'palette.title' | transloco"
+  (keydown)="onKey($event)"
+  (close)="onClose()"
+  (click)="onDialogClick($event)"
+>
+  <input
+    #input
+    type="text"
+    role="combobox"
+    aria-autocomplete="list"
+    aria-controls="palette-results"
+    aria-expanded="true"
+    [attr.aria-activedescendant]="entries()[active()] ? 'palette-' + active() : null"
+    [placeholder]="'palette.placeholder' | transloco"
+    autocomplete="off"
+    spellcheck="false"
+    (input)="onInput($any($event.target).value)"
+  />
+  <div id="palette-results" role="listbox" class="results">
+    @for (group of groups; track group) { @let items = entriesOf(group); @if (items.length > 0) {
+    <div role="group" [attr.aria-labelledby]="'palette-group-' + group">
+      <h3 [id]="'palette-group-' + group">{{ 'palette.groups.' + group | transloco }}</h3>
+      @for (entry of items; track entry.id) { @let i = indexOf(entry);
+      <div
+        role="option"
+        class="entry"
+        [id]="'palette-' + i"
+        [class.active]="i === active()"
+        [attr.aria-selected]="i === active()"
+        (mousedown)="$event.preventDefault()"
+        (mousemove)="active.set(i)"
+        (click)="choose(entry)"
+      >
+        @if (group === 'assets') { @if (entry.thumbnail) {
+        <img [src]="entry.thumbnail" alt="" loading="lazy" />
+        } @else {
+        <span class="no-thumb"></span>
+        } }
+        <span class="label">{{ entry.label }}</span>
+        @if (entry.hint) {
+        <small>{{ entry.hint }}</small>
+        }
+      </div>
+      }
+    </div>
+    } } @if (entries().length === 0) {
+    <p class="empty">{{ 'palette.empty' | transloco }}</p>
+    }
+  </div>
+  <p class="keys">{{ 'palette.keys' | transloco }}</p>
+</dialog>

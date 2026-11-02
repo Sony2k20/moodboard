@@ -28,3 +28,14 @@ main {
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
+
+.palette-open {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--wash);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}

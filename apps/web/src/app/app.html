@@ -1,6 +1,9 @@
 <header class="bar">
   <a class="brand" routerLink="/">{{ 'app.title' | transloco }}</a>
   @if (session.user(); as user) {
+  <button type="button" class="palette-open" (click)="palette.open()">
+    {{ 'palette.open' | transloco }}
+  </button>
   <a routerLink="/trash">{{ 'trash.title' | transloco }}</a>
   <a routerLink="/tokens">{{ 'tokens.nav' | transloco }}</a>
   @if (user.role === 'admin') {
@@ -29,6 +32,8 @@
   </button>
   }
 </header>
+
+<mb-command-palette #palette />
 
 <main>
   @switch (session.state()) { @case ('disabled') {
